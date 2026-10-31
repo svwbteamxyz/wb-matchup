@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WB相性表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a toolbar, the matchup grid (sticky row/col heads, scrolls sideways on its own), then deck setup and class record below. */
+:root{
+  --bg:#EEF0F5; --panel:#FFFFFF; --ink:#171A26; --muted:#5C6178; --line:#D4D7E3; --soft:#E5E8F0;
+  --accent:#4B3BC4; --accent-ink:#FFFFFF; --accent-soft:#E4E0FA;
+  --fav2:#1F7A55; --fav1:#7CC4A0; --even:#C9CDD9; --unf1:#E9A3A3; --unf2:#B83A3A;
+  --fav2-ink:#FFFFFF; --fav1-ink:#0F3B28; --even-ink:#2A2E3D; --unf1-ink:#4A1414; --unf2-ink:#FFFFFF;
+  --danger:#B83A3A;
+  --c-elf:#3E9A4A; --c-royal:#C9A227; --c-witch:#4A63D6; --c-dragon:#D9741F; --c-nightmare:#8A2F6E; --c-bishop:#8E97A8; --c-nemesis:#1F9AA6;
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550;
+  --fav2:#2FA374; --fav1:#2E5F49; --even:#3A3F52; --unf1:#6A3434; --unf2:#D0545A;
+  --fav2-ink:#06170F; --fav1-ink:#CDEFDD; --even-ink:#DADDE8; --unf1-ink:#F6D3D3; --unf2-ink:#1A0606;
+  --danger:#F07A80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550;
+  --fav2:#2FA374; --fav1:#2E5F49; --even:#3A3F52; --unf1:#6A3434; --unf2:#D0545A;
+  --fav2-ink:#06170F; --fav1-ink:#CDEFDD; --even-ink:#DADDE8; --unf1-ink:#F6D3D3; --unf2-ink:#1A0606;
+  --danger:#F07A80; color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.8rem;line-height:1.15;margin:0;letter-spacing:.02em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+h2{font-family:var(--f-display);font-weight:400;font-size:1.05rem;margin:0;letter-spacing:.03em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.spacer{flex:1}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;font-weight:700;font-size:.85rem}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.ghost{background:transparent}
+button.danger{color:var(--danger)}
+button.danger.armed{background:var(--danger);color:var(--panel);border-color:var(--danger)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+input[type=number]{font-family:var(--f-num)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:6px 12px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);font-weight:700}
+.banner{font-size:.85rem;padding:8px 12px;border-radius:8px;background:var(--accent-soft);color:var(--ink)}
+.banner:empty{display:none}
+.status{font-size:.78rem;color:var(--muted)}
+
+/* grid */
+.gridbox{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table.mx{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.mx th,.mx td{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.mx thead th{position:sticky;top:0;z-index:2;background:var(--panel);vertical-align:bottom;padding:8px 4px;min-width:78px;max-width:96px;font-size:.78rem;font-weight:700;line-height:1.25}
+.mx thead th.corner{left:0;z-index:3;text-align:left;min-width:150px;font-size:.72rem;color:var(--muted);font-weight:500}
+.mx thead th.sum{min-width:72px;color:var(--muted)}
+.mx tbody th{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;padding:6px 10px;min-width:150px;max-width:190px;font-size:.85rem;font-weight:700}
+.dname{display:flex;align-items:center;gap:6px;min-width:0}
+.dname span{overflow-wrap:anywhere}
+.colname{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;overflow-wrap:anywhere}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--muted)}
+.cls-elf{background:var(--c-elf)}.cls-royal{background:var(--c-royal)}.cls-witch{background:var(--c-witch)}.cls-dragon{background:var(--c-dragon)}.cls-nightmare{background:var(--c-nightmare)}.cls-bishop{background:var(--c-bishop)}.cls-nemesis{background:var(--c-nemesis)}
+.share{font-family:var(--f-num);font-size:.7rem;color:var(--muted);font-weight:500}
+td.c{padding:0}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:100%;min-height:52px;border:0;border-radius:0;padding:4px 2px;background:transparent;color:var(--muted);font-weight:700;font-size:.8rem}
+.cell .big{font-size:.92rem}
+.cell .small{font-family:var(--f-num);font-size:.68rem;font-weight:500;opacity:.9}
+.cell.has-note::after{content:"";position:absolute}
+td.c{position:relative}
+td.c .notemark{position:absolute;top:3px;right:3px;width:0;height:0;border-left:7px solid transparent;border-top:7px solid var(--accent);pointer-events:none}
+.r2{background:var(--fav2);color:var(--fav2-ink)}
+.r1{background:var(--fav1);color:var(--fav1-ink)}
+.r0{background:var(--even);color:var(--even-ink)}
+.rm1{background:var(--unf1);color:var(--unf1-ink)}
+.rm2{background:var(--unf2);color:var(--unf2-ink)}
+.mirror{background:repeating-linear-gradient(135deg,var(--soft) 0 6px,var(--panel) 6px 12px);color:var(--muted);font-size:.72rem}
+td.sum{padding:6px 8px;text-align:right;font-family:var(--f-num);font-size:.85rem;white-space:nowrap}
+td.sum .small{display:block;font-size:.68rem;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
+
+/* deck list */
+.decks{display:flex;flex-direction:column;gap:8px}
+.deck{display:grid;grid-template-columns:120px minmax(0,1fr) 92px auto;gap:8px;align-items:center}
+.deck .ctl{display:flex;gap:4px}
+.deck .ctl button{padding:6px 9px}
+@media (max-width:640px){.deck{grid-template-columns:1fr 1fr}.deck .nm{grid-column:1/-1;order:-1}.deck .ctl{grid-column:1/-1}}
+.lbl{font-size:.72rem;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+table.cs{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.88rem}
+.cs th,.cs td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+.cs th:first-child,.cs td:first-child{text-align:left}
+.cs thead th{font-size:.72rem;color:var(--muted);letter-spacing:.04em}
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden;min-width:60px}
+.bar b{display:block;height:100%;background:var(--accent)}
+textarea.io{width:100%;min-height:90px;font-family:var(--f-num);font-size:.78rem}
+
+/* editor sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,12,20,.45);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;width:min(440px,100%);max-height:calc(100% - 32px);overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+@media (max-width:520px){.scrim{align-items:flex-end;padding:0}.sheet{border-radius:14px 14px 0 0;width:100%;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}
+.vs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700}
+.vs .x{color:var(--muted);font-family:var(--f-display);font-weight:400}
+.rates{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rates button{padding:10px 2px;font-size:.8rem;border:2px solid transparent}
+.rates button[aria-pressed="true"]{border-color:var(--ink)}
+.wl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.counter{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px}
+.counter .n{flex:1;text-align:center;font-family:var(--f-num);font-size:1.3rem;font-weight:700}
+.counter .t{font-size:.75rem;color:var(--muted);font-weight:700}
+.counter button{width:38px;height:38px;padding:0;font-size:1.1rem}
+.sheet textarea{width:100%;min-height:80px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>WB相性表</h1>
+      <p class="sub">行が自分のデッキ、列が相手のデッキ。マスを押して評価と戦績を入れます。</p>
+    </div>
+    <div class="row">
+      <div class="seg" role="group" aria-label="表示">
+        <button type="button" data-mode="rate" aria-pressed="true">評価</button>
+        <button type="button" data-mode="win" aria-pressed="false">実戦績</button>
+      </div>
+      <label class="check"><input type="checkbox" id="mirrorChk" checked> 逆側も自動入力</label>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="panel">
+    <div class="row">
+      <h2>相性表</h2>
+      <span class="spacer"></span>
+      <span class="status" id="syncStatus"></span>
+      <button type="button" id="copyLink" class="primary">共有リンクをコピー</button>
+      <button type="button" id="copyTsv">表をコピー</button>
+    </div>
+    <div id="gridHost"></div>
+    <div class="legend">
+      <span><i class="r2"></i>有利</span><span><i class="r1"></i>微有利</span><span><i class="r0"></i>五分</span><span><i class="rm1"></i>微不利</span><span><i class="rm2"></i>不利</span>
+      <span>右端の「期待」＝ 使用率で重み付けした勝率（評価を 65 / 57.5 / 50 / 42.5 / 35% に換算、未評価は実戦績を使用）</span>
+    </div>
+  </section>
+
+  <div class="two">
+    <section class="panel">
+      <div class="row"><h2>デッキ</h2><span class="spacer"></span><button type="button" class="primary" id="addDeck">デッキを追加</button></div>
+      <div class="row lbl" id="deckHead" hidden><span style="width:120px">クラス</span><span style="flex:1">デッキ名</span><span style="width:92px">使用率 %</span></div>
+      <div class="decks" id="deckList"></div>
+    </section>
+    <section class="panel">
+      <h2>相手クラス別の戦績</h2>
+      <div id="classStats"></div>
+      <details>
+        <summary class="lbl" style="cursor:pointer">バックアップ／読み込み</summary>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <div class="row"><button type="button" id="copyJson">バックアップをコピー</button><span class="status" id="ioStatus"></span></div>
+          <textarea class="io" id="importBox" placeholder="バックアップの文字列を貼り付け"></textarea>
+          <div class="row"><button type="button" id="importBtn" class="danger">貼り付けた内容で置き換える</button></div>
+        </div>
+      </details>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="vs" id="sheetTitle"></div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">相性</div>
+      <div class="rates" id="rates"></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">戦績</div>
+      <div class="wl">
+        <div class="counter"><span class="t">勝</span><button type="button" data-wl="w" data-d="-1" aria-label="勝ちを1減らす">−</button><span class="n" id="wN">0</span><button type="button" data-wl="w" data-d="1" aria-label="勝ちを1増やす">＋</button></div>
+        <div class="counter"><span class="t">敗</span><button type="button" data-wl="l" data-d="-1" aria-label="負けを1減らす">−</button><span class="n" id="lN">0</span><button type="button" data-wl="l" data-d="1" aria-label="負けを1増やす">＋</button></div>
+      </div>
+      <div class="status" id="wlRate" style="margin-top:6px"></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">メモ</div>
+      <textarea id="noteBox" placeholder="キーカード、マリガン方針、先後の差など"></textarea>
+    </div>
+    <div class="row">
+      <button type="button" class="danger" id="clearCell">このマスを消す</button>
+      <span class="spacer"></span>
+      <button type="button" class="primary" id="closeSheet">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/* ===== ここだけ書き換え：Firebaseコンソール「プロジェクトの設定 → マイアプリ」の firebaseConfig を貼り付け ===== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA5Eerx9nMPguK-NLnX-nJylTzcn06Q_3A",
+  authDomain: "teamxyz-2962e.firebaseapp.com",
+  projectId: "teamxyz-2962e",
+  storageBucket: "teamxyz-2962e.firebasestorage.app",
+  messagingSenderId: "278693329996",
+  appId: "1:278693329996:web:aeff54b74a2db9c80ac8e9"
+};
+/* ===== ここまで ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import * as fs from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+(function(){
+const $=id=>document.getElementById(id);
+const CLASSES=[["elf","エルフ"],["royal","ロイヤル"],["witch","ウィッチ"],["dragon","ドラゴン"],["nightmare","ナイトメア"],["bishop","ビショップ"],["nemesis","ネメシス"]];
+const CLS=Object.fromEntries(CLASSES);
+const RATES=[[2,"有利","r2"],[1,"微有利","r1"],[0,"五分","r0"],[-1,"微不利","rm1"],[-2,"不利","rm2"]];
+const RATE=Object.fromEntries(RATES.map(r=>[r[0],r]));
+const PCT={2:65,1:57.5,0:50,"-1":42.5,"-2":35};
+const STARTER=[["witch","秘術ウィッチ"],["royal","アグロロイヤル"],["dragon","ランプドラゴン"],["elf","フェアリーエルフ"],["nightmare","ナイトメア"],["bishop","コントロールビショップ"],["nemesis","ネメシス"]];
+
+let decks=[]; let cells={}; let mode="rate"; let mirror=true; let canWrite=true; let ready=false;
+try{const p=JSON.parse(localStorage.getItem("wb-mx-prefs")||"{}");if(p.mode)mode=p.mode;if(p.mirror===false)mirror=false}catch(e){}
+function savePrefs(){try{localStorage.setItem("wb-mx-prefs",JSON.stringify({mode,mirror}))}catch(e){}}
+const uid=()=>"d"+Math.random().toString(36).slice(2,9);
+const key=(r,c)=>r+"__"+c;
+function el(t,c,txt){const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+
+/* ---------- storage: Firebase Firestore (boards/<boardId>), this browser when not configured ---------- */
+let store=null, noBoard=false, boardId="";
+function setSync(t){$("syncStatus").textContent=t}
+function makeWriter(fn){let busy=false,has=false,next;const w=async v=>{if(busy){has=true;next=v;return}busy=true;try{await fn(v);setSync("保存済み")}catch(e){onWriteError(e)}busy=false;if(has){has=false;const n=next;next=undefined;w(n)}};return w}
+function onWriteError(e){
+  console.error(e);
+  if(e&&e.code==="permission-denied"){setSync("保存が拒否されました。Firestoreのルール設定を確認してください");return}
+  setSync("保存できませんでした。通信を確認してください");
+}
+const LKEY="wb-mx-local-v1";
+function localStore(){
+  let data={decks:[],cells:{}};try{data=Object.assign(data,JSON.parse(localStorage.getItem(LKEY)||"{}"))}catch(e){}
+  const persist=()=>{try{localStorage.setItem(LKEY,JSON.stringify(data));setSync("このブラウザに保存")}catch(e){setSync("保存できませんでした")}};
+  return{
+    start(onD,onC){onD(data.decks);onC(Object.assign({},data.cells))},
+    saveDecks(list){data.decks=list;persist()},
+    saveCell(k,v){if(v)data.cells[k]=v;else delete data.cells[k];persist()},
+    deleteCells(keys){keys.forEach(k=>delete data.cells[k]);persist()}
+  };
+}
+function fireStore(db,id){
+  const writers={};
+  const boardRef=fs.doc(db,"boards",id);
+  const wDecks=makeWriter(list=>fs.setDoc(boardRef,{list}));
+  const stopped=e=>{console.error(e);setSync(e&&e.code==="permission-denied"?"読み込みが拒否されました。Firestoreのルール設定を確認してください":"同期が止まりました。再読み込みしてください")};
+  const self={
+    start(onD,onC){
+      fs.onSnapshot(boardRef,s=>{const d=s.exists()?s.data():null;onD(Array.isArray(d&&d.list)?d.list:[])},stopped);
+      fs.onSnapshot(fs.collection(db,"boards",id,"cells"),qs=>{const m={};qs.docs.forEach(d=>{m[d.id]=d.data()});onC(m)},stopped);
+    },
+    saveDecks(list){setSync("保存中…");wDecks(list)},
+    saveCell(k,v){setSync("保存中…");(writers[k]||(writers[k]=makeWriter(val=>{const ref=fs.doc(db,"boards",id,"cells",k);return val?fs.setDoc(ref,val):fs.deleteDoc(ref)})))(v)},
+    deleteCells(keys){keys.forEach(k=>self.saveCell(k,null))}
+  };
+  return self;
+}
+function newBoardId(){const a=new Uint8Array(15);crypto.getRandomValues(a);return Array.from(a,b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("")}
+async function boot(){
+  const configured=FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!String(FIREBASE_CONFIG.apiKey).startsWith("ここに");
+  if(!configured){
+    store=localStore();
+    $("banner").textContent="Firebaseの設定がまだ入っていないため、このブラウザだけに保存しています（index.html の FIREBASE_CONFIG を書き換えてください）。";
+    $("copyLink").hidden=true;
+  }else{
+    boardId=(new URLSearchParams(location.search).get("b")||"").replace(/[^a-z0-9]/gi,"");
+    if(boardId.length<16){noBoard=true;ready=true;render();return}
+    const app=initializeApp(FIREBASE_CONFIG);
+    store=fireStore(fs.getFirestore(app),boardId);
+  }
+  store.start(list=>{decks=list.map(d=>Object.assign({},d));ready=true;render()},m=>{cells=m;ready=true;render()});
+}
+$("copyLink").onclick=()=>copyText(location.href,$("syncStatus"),"共有リンクをコピーしました。このリンクを知っている人は誰でも編集できます");
+
+/* ---------- derived numbers ---------- */
+function cellPct(c){
+  if(!c)return null;
+  if(typeof c.r==="number")return PCT[c.r];
+  const g=(c.w||0)+(c.l||0);return g?100*(c.w||0)/g:null;
+}
+function rowSummary(rid){
+  let num=0,den=0,w=0,l=0;
+  for(const d of decks){
+    const share=Number(d.share)||0;
+    const c=cells[key(rid,d.id)];
+    if(c){w+=c.w||0;l+=c.l||0}
+    const p=d.id===rid?50:cellPct(c);
+    if(p!=null&&share>0){num+=p*share;den+=share}
+  }
+  return{exp:den?num/den:null,w,l};
+}
+const fmtPct=p=>p==null?"—":(Math.round(p*10)/10).toFixed(1)+"%";
+
+/* ---------- render ---------- */
+function deckLabel(d,cls){const s=el("span",cls);const dot=el("span","dot cls-"+d.cls);dot.title=CLS[d.cls]||"";s.append(dot,el("span",null,d.name||"（名前なし）"));return s}
+function render(){
+  document.querySelectorAll(".seg [data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===mode)));
+  $("mirrorChk").checked=mirror;
+  renderGrid();renderDecks();renderClassStats();
+  $("addDeck").disabled=!canWrite;$("importBtn").disabled=!canWrite;
+}
+function renderGrid(){
+  const host=$("gridHost");host.replaceChildren();
+  if(noBoard){
+    const e=el("div","empty");
+    e.append(el("div",null,"チームの相性表を新しく作ります。作ったあとのページのURLが、そのまま共有リンクになります。"));
+    const b=el("button","primary","新しい相性表を作る");b.type="button";
+    b.onclick=()=>{const u=new URL(location.href);u.searchParams.set("b",newBoardId());location.href=u.toString()};
+    e.append(b);host.append(e);return;
+  }
+  if(!ready){host.append(el("div","empty","読み込み中…"));return}
+  if(!decks.length){
+    const e=el("div","empty");
+    e.append(el("div",null,"まだデッキがありません。下の「デッキを追加」から環境のデッキを登録すると、ここに相性表ができます。"));
+    if(canWrite){const b=el("button","primary","よくある7クラスの枠で始める");b.type="button";b.onclick=()=>{const list=STARTER.map(([cls,name])=>({id:uid(),cls,name,share:0}));decks=list;store.saveDecks(list);render()};e.append(b)}
+    host.append(e);return;
+  }
+  const box=el("div","gridbox");const t=el("table","mx");
+  const thead=el("thead");const hr=el("tr");
+  const corner=el("th","corner","自分 ＼ 相手");hr.append(corner);
+  for(const d of decks){const th=el("th");const cn=el("div","colname");const dot=el("span","dot cls-"+d.cls);cn.append(dot,el("span",null,d.name||"（名前なし）"));if(Number(d.share))cn.append(el("span","share",d.share+"%"));th.append(cn);hr.append(th)}
+  hr.append(el("th","sum",mode==="rate"?"期待":"通算"));
+  thead.append(hr);t.append(thead);
+  const tb=el("tbody");
+  for(const r of decks){
+    const tr=el("tr");const th=el("th");th.append(deckLabel(r,"dname"));tr.append(th);
+    for(const c of decks){
+      const td=el("td","c");
+      if(r.id===c.id){const m=el("div","cell mirror","ミラー");td.append(m);tr.append(td);continue}
+      const v=cells[key(r.id,c.id)];
+      const b=el("button","cell");b.type="button";
+      const g=v?(v.w||0)+(v.l||0):0;
+      if(mode==="rate"){
+        if(v&&typeof v.r==="number"){b.classList.add(RATE[v.r][2]);b.append(el("span","big",RATE[v.r][1]))}else b.append(el("span","big","・"));
+        if(g)b.append(el("span","small",(v.w||0)+"-"+(v.l||0)));
+      }else{
+        if(g){const p=100*(v.w||0)/g;b.classList.add(p>=60?"r2":p>55?"r1":p>=45?"r0":p>40?"rm1":"rm2");b.append(el("span","big",Math.round(p)+"%"),el("span","small",(v.w||0)+"-"+(v.l||0)))}
+        else b.append(el("span","big","・"));
+      }
+      b.setAttribute("aria-label",(r.name||"")+" 対 "+(c.name||"")+"："+(v&&typeof v.r==="number"?RATE[v.r][1]:"未評価")+(g?"、"+v.w+"勝"+v.l+"敗":""));
+      b.disabled=!canWrite&&!(v&&v.note);
+      b.onclick=()=>openSheet(r.id,c.id);
+      td.append(b);
+      if(v&&v.note){const n=el("span","notemark");n.title=v.note;td.append(n)}
+      tr.append(td);
+    }
+    const s=rowSummary(r.id);const sd=el("td","sum");
+    if(mode==="rate"){sd.append(document.createTextNode(fmtPct(s.exp)));if(s.exp==null)sd.append(el("span","small","使用率未入力"))}
+    else{const g=s.w+s.l;sd.append(document.createTextNode(g?fmtPct(100*s.w/g):"—"));sd.append(el("span","small",s.w+"-"+s.l))}
+    tr.append(sd);tb.append(tr);
+  }
+  t.append(tb);box.append(t);host.append(box);
+}
+function renderDecks(){
+  const list=$("deckList");list.replaceChildren();$("deckHead").hidden=!decks.length||window.innerWidth<=640;
+  decks.forEach((d,i)=>{
+    const row=el("div","deck");
+    const sel=el("select");sel.id="cls-"+d.id;sel.setAttribute("aria-label","クラス");
+    CLASSES.forEach(([v,n])=>{const o=el("option",null,n);o.value=v;if(v===d.cls)o.selected=true;sel.append(o)});
+    sel.onchange=()=>{d.cls=sel.value;commitDecks()};
+    const nm=el("input","nm");nm.id="nm-"+d.id;nm.value=d.name||"";nm.placeholder="デッキ名";nm.setAttribute("aria-label","デッキ名");
+    nm.onchange=()=>{d.name=nm.value.trim();commitDecks()};
+    const sh=el("input");sh.type="number";sh.min="0";sh.max="100";sh.step="0.5";sh.id="sh-"+d.id;sh.value=d.share||"";sh.placeholder="使用率%";sh.setAttribute("aria-label","使用率（%）");
+    sh.onchange=()=>{d.share=Math.max(0,Math.min(100,Number(sh.value)||0));commitDecks()};
+    const ctl=el("div","ctl");
+    const up=el("button","ghost","↑");up.type="button";up.setAttribute("aria-label","上へ");up.disabled=i===0;up.onclick=()=>{decks.splice(i-1,0,decks.splice(i,1)[0]);commitDecks()};
+    const dn=el("button","ghost","↓");dn.type="button";dn.setAttribute("aria-label","下へ");dn.disabled=i===decks.length-1;dn.onclick=()=>{decks.splice(i+1,0,decks.splice(i,1)[0]);commitDecks()};
+    const del=el("button","danger","削除");del.type="button";
+    del.onclick=()=>{
+      if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="本当に削除";setTimeout(()=>{del.classList.remove("armed");del.textContent="削除"},3000);return}
+      const gone=d.id;decks=decks.filter(x=>x.id!==gone);
+      store.deleteCells(Object.keys(cells).filter(k=>k.split("__").includes(gone)));
+      commitDecks();
+    };
+    ctl.append(up,dn,del);
+    [sel,nm,sh,up,dn,del].forEach(x=>x.disabled=x.disabled||!canWrite);
+    row.append(sel,nm,sh,ctl);list.append(row);
+  });
+  const tot=decks.reduce((a,d)=>a+(Number(d.share)||0),0);
+  if(decks.length){const s=el("div","status","使用率の合計："+(Math.round(tot*10)/10)+"%（100%でなくても比率として計算します）");list.append(s)}
+}
+function commitDecks(){store.saveDecks(decks.map(d=>({id:d.id,cls:d.cls,name:d.name||"",share:Number(d.share)||0})));render()}
+$("addDeck").onclick=()=>{const d={id:uid(),cls:"witch",name:"",share:0};decks.push(d);commitDecks();setTimeout(()=>{const i=$("nm-"+d.id);if(i)i.focus()},0)};
+
+function renderClassStats(){
+  const host=$("classStats");host.replaceChildren();
+  const byId=Object.fromEntries(decks.map(d=>[d.id,d]));
+  const agg={};
+  for(const [k,v] of Object.entries(cells)){const [r,c]=k.split("__");const col=byId[c];if(!col||!byId[r])continue;const a=agg[col.cls]||(agg[col.cls]={w:0,l:0});a.w+=v.w||0;a.l+=v.l||0}
+  const rows=CLASSES.filter(([c])=>agg[c]&&(agg[c].w+agg[c].l));
+  if(!rows.length){host.append(el("div","status","マスに勝敗を入れると、相手クラスごとの通算がここに出ます。"));return}
+  const t=el("table","cs");t.innerHTML="<thead><tr><th>相手クラス</th><th>勝</th><th>敗</th><th>勝率</th><th></th></tr></thead>";
+  const tb=el("tbody");let W=0,L=0;
+  rows.forEach(([c,n])=>{const a=agg[c];W+=a.w;L+=a.l;const p=100*a.w/(a.w+a.l);const tr=el("tr");const nm=el("td");const s=el("span","dname");s.append(el("span","dot cls-"+c),el("span",null,n));nm.append(s);
+    const bar=el("td");const b=el("div","bar");const f=el("b");f.style.width=p+"%";b.append(f);bar.append(b);
+    tr.append(nm,el("td",null,String(a.w)),el("td",null,String(a.l)),el("td",null,fmtPct(p)),bar);tb.append(tr)});
+  const tr=el("tr");tr.append(el("th",null,"合計"),el("th",null,String(W)),el("th",null,String(L)),el("th",null,fmtPct(100*W/(W+L))),el("th"));tb.append(tr);
+  t.append(tb);host.append(t);
+}
+
+/* ---------- cell editor ---------- */
+let cur=null,noteTimer=null,lastFocus=null;
+function curVal(){return Object.assign({w:0,l:0,note:""},cells[key(cur.r,cur.c)]||{})}
+function putCell(r,c,v){
+  const k=key(r,c);const empty=!v||(typeof v.r!=="number"&&!v.w&&!v.l&&!v.note);
+  const body=empty?null:{row:r,col:c,r:typeof v.r==="number"?v.r:null,w:v.w||0,l:v.l||0,note:v.note||""};
+  if(body)cells[k]=body;else delete cells[k];
+  store.saveCell(k,body);
+}
+function mirrorUpdate(fn){if(!mirror)return;const k=key(cur.c,cur.r);const m=Object.assign({w:0,l:0,note:""},cells[k]||{});fn(m);putCell(cur.c,cur.r,m)}
+function openSheet(r,c){
+  lastFocus=document.activeElement;cur={r,c};
+  const R=decks.find(d=>d.id===r),C=decks.find(d=>d.id===c);
+  const t=$("sheetTitle");t.replaceChildren(deckLabel(R,"dname"),el("span","x","VS"),deckLabel(C,"dname"));
+  $("scrim").hidden=false;fillSheet();
+  setTimeout(()=>{const p=document.querySelector('#rates [aria-pressed="true"]')||document.querySelector("#rates button");p&&p.focus()},0);
+}
+function fillSheet(){
+  const v=curVal();
+  const rates=$("rates");rates.replaceChildren();
+  RATES.forEach(([val,label,cls])=>{const b=el("button",cls,label);b.type="button";b.disabled=!canWrite;b.setAttribute("aria-pressed",String(v.r===val));
+    b.onclick=()=>{const nv=curVal();const unset=nv.r===val;nv.r=unset?null:val;putCell(cur.r,cur.c,nv);mirrorUpdate(m=>{m.r=unset?null:-val});fillSheet();render()};rates.append(b)});
+  $("wN").textContent=v.w;$("lN").textContent=v.l;
+  const g=v.w+v.l;$("wlRate").textContent=g?("勝率 "+fmtPct(100*v.w/g)+"（"+g+"戦）"):"まだ記録がありません";
+  if(document.activeElement!==$("noteBox"))$("noteBox").value=v.note||"";
+  $("noteBox").disabled=!canWrite;$("clearCell").disabled=!canWrite;
+  document.querySelectorAll("[data-wl]").forEach(b=>b.disabled=!canWrite);
+}
+document.querySelectorAll("[data-wl]").forEach(b=>b.onclick=()=>{
+  const f=b.dataset.wl,d=Number(b.dataset.d);const v=curVal();const nv=Math.max(0,(v[f]||0)+d);if(nv===v[f])return;v[f]=nv;putCell(cur.r,cur.c,v);
+  const of=f==="w"?"l":"w";mirrorUpdate(m=>{m[of]=Math.max(0,(m[of]||0)+d)});fillSheet();render();
+});
+$("noteBox").oninput=()=>{clearTimeout(noteTimer);const r=cur.r,c=cur.c,txt=$("noteBox").value;noteTimer=setTimeout(()=>{const v=Object.assign({w:0,l:0,note:""},cells[key(r,c)]||{});v.note=txt;putCell(r,c,v);render()},600)};
+$("clearCell").onclick=()=>{const b=$("clearCell");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="もう一度押すと消去";setTimeout(()=>{b.classList.remove("armed");b.textContent="このマスを消す"},3000);return}
+  b.classList.remove("armed");b.textContent="このマスを消す";putCell(cur.r,cur.c,null);$("noteBox").value="";fillSheet();render()};
+function closeSheet(){
+  if(noteTimer){clearTimeout(noteTimer);noteTimer=null;const v=curVal();if((v.note||"")!==$("noteBox").value){v.note=$("noteBox").value;putCell(cur.r,cur.c,v)}}
+  $("scrim").hidden=true;cur=null;render();lastFocus&&lastFocus.focus&&lastFocus.focus();
+}
+$("closeSheet").onclick=closeSheet;
+$("scrim").onclick=e=>{if(e.target===$("scrim"))closeSheet()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("scrim").hidden)closeSheet()});
+
+/* ---------- toolbar / io ---------- */
+document.querySelectorAll(".seg [data-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;savePrefs();render()});
+$("mirrorChk").onchange=()=>{mirror=$("mirrorChk").checked;savePrefs()};
+async function copyText(txt,statusEl,ok){
+  try{await navigator.clipboard.writeText(txt);statusEl.textContent=ok}
+  catch(e){const box=$("importBox");box.value=txt;box.select();statusEl.textContent="下の欄に出しました。選択してコピーしてください"}
+}
+$("copyTsv").onclick=()=>{
+  const head=["自分＼相手"].concat(decks.map(d=>d.name),["期待勝率"]);
+  const lines=[head.join("\t")].concat(decks.map(r=>[r.name].concat(decks.map(c=>{if(r.id===c.id)return"ミラー";const v=cells[key(r.id,c.id)];if(!v)return"";const parts=[];if(typeof v.r==="number")parts.push(RATE[v.r][1]);if(v.w||v.l)parts.push(v.w+"-"+v.l);return parts.join(" ")}),[fmtPct(rowSummary(r.id).exp)]).join("\t")));
+  copyText(lines.join("\n"),$("syncStatus"),"表をコピーしました（スプレッドシートに貼り付けできます）");
+};
+$("copyJson").onclick=()=>copyText(JSON.stringify({v:1,decks,cells}),$("ioStatus"),"コピーしました");
+$("importBtn").onclick=()=>{
+  const b=$("importBtn");let data;
+  try{data=JSON.parse($("importBox").value);if(!Array.isArray(data.decks)||typeof data.cells!=="object")throw 0}
+  catch(e){$("ioStatus").textContent="読み込めませんでした。「バックアップをコピー」で出した文字列をそのまま貼ってください";return}
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="今の表を消して置き換える";setTimeout(()=>{b.classList.remove("armed");b.textContent="貼り付けた内容で置き換える"},4000);return}
+  b.classList.remove("armed");b.textContent="貼り付けた内容で置き換える";
+  const ids=new Set(data.decks.map(d=>d.id));
+  store.deleteCells(Object.keys(cells).filter(k=>!(k in data.cells)));
+  decks=data.decks.map(d=>({id:String(d.id),cls:CLS[d.cls]?d.cls:"witch",name:String(d.name||""),share:Number(d.share)||0}));
+  store.saveDecks(decks);
+  for(const [k,v] of Object.entries(data.cells)){const [r,c]=k.split("__");if(ids.has(r)&&ids.has(c)){cells[k]=v;store.saveCell(k,v)}}
+  $("ioStatus").textContent="置き換えました";render();
+};
+window.addEventListener("resize",()=>{$("deckHead").hidden=!decks.length||window.innerWidth<=640});
+
+render();boot();
+})();
+</script>
+</body>
+</html>
