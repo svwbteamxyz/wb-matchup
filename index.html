@@ -137,6 +137,7 @@ textarea.io{width:100%;min-height:90px;font-family:var(--f-num);font-size:.78rem
       <p class="sub">行が自分のデッキ、列が相手のデッキ。マスを押して評価と戦績を入れます。</p>
     </div>
     <div class="row">
+      <a id="toScore" href="score.html" style="color:var(--accent);font-weight:700;font-size:.9rem">スコア表へ</a>
       <div class="seg" role="group" aria-label="表示">
         <button type="button" data-mode="rate" aria-pressed="true">評価</button>
         <button type="button" data-mode="win" aria-pressed="false">実戦績</button>
@@ -285,6 +286,7 @@ async function boot(){
   }else{
     boardId=(new URLSearchParams(location.search).get("b")||"").replace(/[^a-z0-9]/gi,"");
     if(boardId.length<16){noBoard=true;ready=true;render();return}
+    $("toScore").href="score.html?b="+boardId;
     const app=initializeApp(FIREBASE_CONFIG);
     store=fireStore(fs.getFirestore(app),boardId);
   }
