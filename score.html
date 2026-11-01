@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CRスコア管理表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Serif+JP:wght@700;900&family=Noto+Sans+JP:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+
+/* Layout: toolbar, class rate strip (1位/100位), then the wide player table with sticky name column. */
+:root{
+  --bg:#EEF0F5; --panel:#FFFFFF; --ink:#171A26; --muted:#5C6178; --line:#D4D7E3; --soft:#E5E8F0;
+  --accent:#4B3BC4; --accent-ink:#FFFFFF; --accent-soft:#E4E0FA; --danger:#B83A3A; --gold:#A9771A;
+  --c-elf:#5DAA4E; --c-royal:#D9AE1E; --c-witch:#4A6FD6; --c-dragon:#C9741F; --c-nightmare:#B4232F; --c-bishop:#B9BEC9; --c-nemesis:#2EA3B8;
+  --c-ink:#FFFFFF;
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550; --danger:#F07A80; --gold:#E3B456; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550; --danger:#F07A80; --gold:#E3B456; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.8rem;line-height:1.15;margin:0;letter-spacing:.02em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+h2{font-family:var(--f-display);font-weight:400;font-size:1.05rem;margin:0;letter-spacing:.03em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.spacer{flex:1}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;font-weight:700;font-size:.85rem}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--danger)}
+button.danger.armed{background:var(--danger);color:var(--panel);border-color:var(--danger)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px;min-width:0}
+input.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.banner{font-size:.85rem;padding:8px 12px;border-radius:8px;background:var(--accent-soft)}
+.banner:empty{display:none}
+.status{font-size:.78rem;color:var(--muted)}
+.formula{font-size:.82rem;color:var(--muted)}
+.formula b{color:var(--ink);font-weight:700}
+
+/* class strip */
+.classes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+@media (max-width:980px){.classes{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:560px){.classes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cls{border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.cls .nm{padding:5px 8px;font-weight:700;font-size:.85rem;color:var(--c-ink);text-align:center;letter-spacing:.08em}
+.cls label{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;padding:5px 8px;font-size:.72rem;color:var(--muted);font-weight:700}
+.cls input{width:100%}
+.bg-elf{background:var(--c-elf)}.bg-royal{background:var(--c-royal)}.bg-witch{background:var(--c-witch)}.bg-dragon{background:var(--c-dragon)}.bg-nightmare{background:var(--c-nightmare)}.bg-bishop{background:var(--c-bishop);color:#2A2E3D!important}.bg-nemesis{background:var(--c-nemesis)}
+
+/* table */
+.tbox{overflow:auto;max-height:80vh;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table.sc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:.85rem}
+.sc th,.sc td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0}
+.sc thead th{position:sticky;background:var(--panel);z-index:2;font-weight:700;font-size:.75rem;padding:5px 4px;white-space:nowrap}
+.sc thead tr:first-child th{top:0;height:30px}
+.sc thead tr:nth-child(2) th{top:30px;color:var(--muted)}
+.sc thead th.cl{color:var(--c-ink);font-size:.82rem;letter-spacing:.08em}
+.sc .stick{position:sticky;left:0;z-index:1;background:var(--panel)}
+.sc thead .stick{z-index:3}
+.sc td.name{min-width:150px}
+.sc td.name input{width:100%;border:0;background:transparent;font-weight:700;padding:7px 8px 2px}
+.sc td.name input.h{font-weight:500;font-size:.78rem;color:var(--muted);padding:0 8px 6px}
+.imgbox{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#FFFFFF}
+.imgbox img{display:block;width:100%;height:auto}
+.sc td.rk input{width:52px;border:0;background:transparent;padding:8px 6px}
+.sc td.rt input{width:76px;border:0;background:transparent;padding:8px 6px}
+.sc td.s{min-width:64px;text-align:right;padding:0 8px;font-family:var(--f-num);font-size:.82rem;color:var(--muted)}
+.sc td.s.on{color:var(--ink);font-weight:700}
+.sc td.rank{text-align:center;font-family:var(--f-num);font-weight:700;min-width:56px}
+.sc td.tot{text-align:right;padding:0 10px;font-family:var(--f-num);font-weight:700;min-width:80px}
+.sc tr.top1 td.rank{color:var(--gold)}
+.sc td.del{padding:0 4px}
+.sc td.del button{padding:4px 8px;font-size:.75rem}
+.sc input:focus{background:var(--accent-soft)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
+.io{width:100%;min-height:80px;font-family:var(--f-num);font-size:.78rem;font:inherit}
+
+/* post */
+textarea.post{width:100%;font:inherit;font-size:.95rem;line-height:1.6;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;resize:vertical}
+.btnlink{display:inline-flex;align-items:center;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;font-weight:700;font-size:.85rem;text-decoration:none}
+.btnlink:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.over{color:var(--danger);font-weight:700}
+/* seasons + members */
+.seasonbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.seasonbar select{font:inherit;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0;max-width:100%}
+.tag{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.past{background:var(--soft);color:var(--muted)}
+.inline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:8px}
+.inline input[type=text]{flex:1 1 220px}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);font-weight:700}
+details.members>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.members>summary::-webkit-details-marker{display:none}
+details.members>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details.members[open]>summary::before{transform:rotate(90deg)}
+.mlist{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.mrow .at{position:relative}
+.mrow .at::before{content:"@";position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem}
+.mrow .at input{padding-left:22px;width:100%}
+.mrow input{width:100%}
+.addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.addrow select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+.sc td.name .linked{padding:7px 8px 6px;display:flex;flex-direction:column;line-height:1.3}
+.sc td.name .linked b{font-weight:700}
+.sc td.name .linked span{font-size:.78rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>CRスコア管理表</h1>
+      <p class="sub">環境ごとにスコア表を作り、クラスごとのレートからスコアを自動計算します。</p>
+    </div>
+    <div class="row">
+      <a id="toMatchup" href="./" hidden>相性表へ</a>
+      <button type="button" id="copyLink" class="primary" hidden>共有リンクをコピー</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="panel">
+    <div class="row"><h2>環境</h2><span class="spacer"></span><span class="status" id="syncStatus"></span></div>
+    <div class="seasonbar">
+      <select id="seasonSel" aria-label="表示する環境"></select>
+      <span class="tag" id="seasonTag"></span>
+      <span class="spacer"></span>
+      <button type="button" id="renameBtn">名前を変更</button>
+      <button type="button" class="primary" id="newSeasonBtn">新しい環境を始める</button>
+    </div>
+    <div class="inline" id="newSeasonForm" hidden>
+      <input type="text" id="newSeasonName" placeholder="例：2026年11月 環境" maxlength="40" aria-label="新しい環境の名前">
+      <label class="check"><input type="checkbox" id="newSeasonMembers" checked> 名簿のメンバーを全員入れておく</label>
+      <button type="button" class="primary" id="createSeason">作成</button>
+      <button type="button" id="cancelSeason">やめる</button>
+    </div>
+    <div class="inline" id="renameForm" hidden>
+      <input type="text" id="renameInput" maxlength="40" aria-label="環境の名前">
+      <button type="button" class="primary" id="renameSave">変更</button>
+      <button type="button" id="renameCancel">やめる</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <details class="members" id="membersBox">
+      <summary><h2>チームメンバー名簿</h2><span class="status" id="memberCount"></span></summary>
+      <div class="mlist" id="memberList"></div>
+      <div class="row" style="margin-top:10px"><button type="button" id="addMember">メンバーを追加</button><span class="status">名前とXのIDを登録しておくと、スコア表で選ぶだけで入ります。</span></div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <div class="row"><h2>基準レート</h2></div>
+    <div class="classes" id="classStrip"></div>
+    <div class="formula">スコア ＝ <b>15 ＋ 85 ×（自分のレート − 100位のレート）÷（1位のレート − 100位のレート）</b>。1位が100点、100位が15点。100位のレートより低い場合は 0 点。</div>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <h2>スコア</h2><span class="spacer"></span>
+      <button type="button" id="copyTsv">表をコピー</button>
+    </div>
+    <div class="addrow">
+      <select id="memberPick" aria-label="追加するメンバー"></select>
+      <button type="button" class="primary" id="addPicked">追加</button>
+      <button type="button" id="addAll">名簿の全員を追加</button>
+      <button type="button" id="addFree">名簿にない人を追加</button>
+    </div>
+    <div id="tableHost"></div>
+    <div class="status">名簿から追加した人の名前とXのIDは名簿と連動します。順位とレートは空欄でも大丈夫です。並び順は総計の高い順で、同点は同じ順位です。</div>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <h2>ランキング画像</h2><span class="spacer"></span>
+      <span class="status" id="imgStatus"></span>
+      <button type="button" class="primary" id="saveImg">画像を保存</button>
+    </div>
+    <div class="imgbox" id="imgBox"><img id="rankImg" alt="CRスコアランキングの画像"></div>
+    <div class="status">表示中の環境のスコアから自動で作られます。総計が0のプレイヤーは載りません。</div>
+  </section>
+
+  <section class="panel">
+    <div class="row"><h2>Xに投稿</h2><span class="spacer"></span><span class="status" id="postCount"></span></div>
+    <textarea id="postText" class="post" rows="10" aria-label="投稿する文章"></textarea>
+    <div class="row">
+      <button type="button" class="primary" id="shareBtn" hidden>画像付きでXにシェア</button>
+      <a class="btnlink" id="intentLink" href="https://x.com/intent/post" target="_blank" rel="noopener">Xの投稿画面を開く</a>
+      <button type="button" id="copyPost">文章をコピー</button>
+      <button type="button" id="resetPost" hidden>自動の文章に戻す</button>
+    </div>
+    <div class="status" id="postHelp"></div>
+  </section>
+</div>
+
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA5Eerx9nMPguK-NLnX-nJylTzcn06Q_3A",
+  authDomain: "teamxyz-2962e.firebaseapp.com",
+  projectId: "teamxyz-2962e",
+  storageBucket: "teamxyz-2962e.firebasestorage.app",
+  messagingSenderId: "278693329996",
+  appId: "1:278693329996:web:aeff54b74a2db9c80ac8e9"
+};
+const FB="https://www.gstatic.com/firebasejs/10.12.2/";
+
+const $=id=>document.getElementById(id);
+const CLASSES=[["elf","エルフ"],["royal","ロイヤル"],["witch","ウィッチ"],["dragon","ドラゴン"],["nightmare","ナイトメア"],["bishop","ビショップ"],["nemesis","ネメシス"]];
+function el(t,c,txt){const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+const num=v=>{if(v===""||v==null)return null;const n=Number(String(v).replace(/,/g,""));return Number.isFinite(n)?n:null};
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const f2=v=>v==null?"":v.toFixed(2);
+
+/* ---------- state ---------- */
+let A=null, ROOT="", LEGACY=null;      // adapter, root doc path, legacy locations
+let meta={seasons:[],current:null}, members={}, viewSid=null, classes={}, players={};
+let ready=false, pending=false, unsubSeason=[], migrating=false;
+const seasonName=()=>{const s=meta.seasons.find(x=>x.id===viewSid);return s?s.name:""};
+const seasonPath=sid=>`${ROOT}/seasons/${sid}`;
+
+/* ---------- adapters ---------- */
+function setSync(t){$("syncStatus").textContent=t}
+const writers={};
+function write(path,val){
+  setSync("保存中…");
+  const w=writers[path]||(writers[path]=(()=>{let busy=false,has=false,next;const go=async v=>{if(busy){has=true;next=v;return}busy=true;
+    try{await (v?A.set(path,v):A.del(path));setSync("保存済み")}catch(e){console.error(e);setSync(e&&(e.code==="permission-denied"||e.code==="invalid_argument")?"保存が拒否されました。ルール設定を確認してください":"保存できませんでした。通信を確認してください")}
+    busy=false;if(has){has=false;const n=next;next=undefined;go(n)}};return go})());
+  w(val);
+}
+const stopped=e=>{console.error(e);setSync(e&&e.code==="permission-denied"?"読み込みが拒否されました。ルール設定を確認してください":"同期が止まりました。再読み込みしてください")};
+function firebaseAdapter(fs,db){return{
+  watchDoc:(p,cb)=>fs.onSnapshot(fs.doc(db,p),s=>cb(s.exists()?s.data():null),stopped),
+  watchColl:(p,cb)=>fs.onSnapshot(fs.collection(db,p),qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
+  getDoc:async p=>{const s=await fs.getDoc(fs.doc(db,p));return s.exists()?s.data():null},
+  getColl:async p=>{const qs=await fs.getDocs(fs.collection(db,p));const m={};qs.docs.forEach(d=>m[d.id]=d.data());return m},
+  set:(p,v)=>fs.setDoc(fs.doc(db,p),v), del:p=>fs.deleteDoc(fs.doc(db,p))
+}}
+function claudeAdapter(db){return{
+  watchDoc:(p,cb)=>db.doc(p).onSnapshot(s=>cb(s.exists?s.data():null),stopped),
+  watchColl:(p,cb)=>db.collection(p).onSnapshot(qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
+  getDoc:async p=>{const s=await db.doc(p).get();return s.exists?s.data():null},
+  getColl:async p=>{const qs=await db.collection(p).get();const m={};qs.docs.forEach(d=>m[d.id]=d.data());return m},
+  set:(p,v)=>db.doc(p).set(v), del:p=>db.doc(p).delete()
+}}
+function localAdapter(){
+  const K="cr-score-local-v2";let d={};try{d=JSON.parse(localStorage.getItem(K)||"{}")}catch(e){}
+  const subs=new Set();const save=()=>{try{localStorage.setItem(K,JSON.stringify(d))}catch(e){}subs.forEach(f=>f())};
+  const coll=p=>{const m={},pre=p+"/";for(const k in d){if(k.startsWith(pre)&&!k.slice(pre.length).includes("/"))m[k.slice(pre.length)]=d[k]}return m};
+  const sub=f=>{subs.add(f);f();return()=>subs.delete(f)};
+  return{
+    watchDoc:(p,cb)=>sub(()=>cb(d[p]?JSON.parse(JSON.stringify(d[p])):null)),
+    watchColl:(p,cb)=>sub(()=>cb(JSON.parse(JSON.stringify(coll(p))))),
+    getDoc:async p=>d[p]||null,getColl:async p=>coll(p),
+    set:async(p,v)=>{d[p]=v;save()},del:async p=>{delete d[p];save()}
+  };
+}
+
+/* ---------- score ---------- */
+function score(cls,rate){
+  const c=classes[cls]||{};const top=num(c.top),low=num(c.r100);rate=num(rate);
+  if(rate==null||top==null||low==null||top<=low)return null;
+  if(rate<low)return 0;
+  return 15+85*(rate-low)/(top-low);
+}
+const who=p=>{const m=p.member&&members[p.member];return{name:m?m.name:(p.name||""),handle:m?m.handle:(p.handle||"")}};
+function computed(){
+  const rows=Object.entries(players).map(([id,p])=>{
+    let total=0;const s={};
+    for(const [c] of CLASSES){const v=score(c,p.e&&p.e[c]&&p.e[c].rate);s[c]=v;if(v)total+=v}
+    const w=who(p);
+    return{id,p:Object.assign({e:{}},p),s,total:Math.round(total*100)/100,name:w.name,handle:w.handle};
+  });
+  rows.sort((a,b)=>b.total-a.total||(a.p.order||0)-(b.p.order||0));
+  rows.forEach((r,i)=>{r.rank=(i>0&&r.total===rows[i-1].total)?rows[i-1].rank:i+1});
+  return rows;
+}
+
+/* ---------- seasons ---------- */
+function sortedSeasons(){return meta.seasons.slice().sort((a,b)=>(b.created||0)-(a.created||0))}
+function renderSeasonBar(){
+  const sel=$("seasonSel");sel.replaceChildren();
+  for(const s of sortedSeasons()){const o=el("option",null,s.name+(s.id===meta.current?"（最新）":""));o.value=s.id;if(s.id===viewSid)o.selected=true;sel.append(o)}
+  const isCur=viewSid&&viewSid===meta.current;
+  $("seasonTag").textContent=viewSid?(isCur?"入力中の環境":"過去の環境"):"";
+  $("seasonTag").className="tag"+(isCur?"":" past");
+  $("seasonTag").hidden=!viewSid;$("renameBtn").disabled=!viewSid;
+  if(viewSid&&!isCur)$("banner").textContent=`過去の環境「${seasonName()}」を表示しています。修正もできます。`;
+  else if($("banner").dataset.base!=null)$("banner").textContent=$("banner").dataset.base;
+}
+function openSeason(sid){
+  if(sid===viewSid)return;
+  unsubSeason.forEach(u=>{try{u()}catch(e){}});unsubSeason=[];
+  viewSid=sid;classes={};players={};ready=false;render();
+  if(!sid)return;
+  let gotC=false,gotP=false;
+  unsubSeason.push(A.watchDoc(seasonPath(sid),d=>{classes=Object.assign({},(d&&d.classes)||{});gotC=true;ready=gotC&&gotP;renderStrip();if(!editingTable())renderTable();else scheduleImage()}));
+  unsubSeason.push(A.watchColl(seasonPath(sid)+"/players",m=>{players=m;gotP=true;ready=gotC&&gotP;
+    if(editingTable()){pending=true;Object.keys(players).forEach(softUpdate)}else{renderTable();renderPicker()}}));
+}
+$("seasonSel").onchange=()=>openSeason($("seasonSel").value);
+$("newSeasonBtn").onclick=()=>{$("newSeasonForm").hidden=false;$("renameForm").hidden=true;$("newSeasonName").focus()};
+$("cancelSeason").onclick=()=>{$("newSeasonForm").hidden=true};
+$("createSeason").onclick=()=>{
+  const name=$("newSeasonName").value.trim();
+  if(!name){$("newSeasonName").focus();$("newSeasonName").placeholder="名前を入れてください（例：2026年11月 環境）";return}
+  const id=uid("s");
+  write(seasonPath(id),{classes:{}});
+  if($("newSeasonMembers").checked){
+    let order=0;for(const [mid,m] of sortedMembers())write(`${seasonPath(id)}/players/${uid("p")}`,{member:mid,name:m.name||"",handle:m.handle||"",order:++order,e:{}});
+  }
+  meta={seasons:meta.seasons.concat([{id,name:name.slice(0,40),created:Date.now()}]),current:id};
+  write(ROOT,{seasons:meta.seasons,current:id});
+  $("newSeasonForm").hidden=true;$("newSeasonName").value="";
+  renderSeasonBar();openSeason(id);
+};
+$("renameBtn").onclick=()=>{$("renameForm").hidden=false;$("newSeasonForm").hidden=true;$("renameInput").value=seasonName();$("renameInput").focus()};
+$("renameCancel").onclick=()=>{$("renameForm").hidden=true};
+$("renameSave").onclick=()=>{
+  const name=$("renameInput").value.trim().slice(0,40);if(!name)return;
+  meta={seasons:meta.seasons.map(s=>s.id===viewSid?Object.assign({},s,{name}):s),current:meta.current};
+  write(ROOT,{seasons:meta.seasons,current:meta.current});$("renameForm").hidden=true;renderSeasonBar();scheduleImage();
+};
+async function migrate(){
+  // first run: move the old single sheet into the first season
+  if(migrating)return;migrating=true;
+  let oldClasses={},oldPlayers={};
+  try{const d=await A.getDoc(LEGACY.doc);oldClasses=(d&&d.classes)||{};oldPlayers=await A.getColl(LEGACY.coll)}catch(e){}
+  const id=uid("s");
+  write(seasonPath(id),{classes:oldClasses});
+  for(const [pid,p] of Object.entries(oldPlayers))write(`${seasonPath(id)}/players/${pid}`,{name:p.name||"",handle:p.handle||"",order:p.order||0,e:p.e||{}});
+  const now=new Date();
+  write(ROOT,{seasons:[{id,name:`${now.getFullYear()}年${now.getMonth()+1}月 環境`,created:Date.now()}],current:id});
+}
+
+/* ---------- members ---------- */
+function sortedMembers(){return Object.entries(members).sort((a,b)=>(a[1].order||0)-(b[1].order||0))}
+function renderMembers(){
+  const list=$("memberList");const focusId=document.activeElement&&list.contains(document.activeElement)?document.activeElement.id:null;
+  list.replaceChildren();
+  const ms=sortedMembers();$("memberCount").textContent=ms.length?`${ms.length}人`:"まだ登録がありません";
+  if(!ms.length&&!$("membersBox").dataset.touched){$("membersBox").open=true}
+  for(const [mid,m] of ms){
+    const row=el("div","mrow");
+    const n=el("input");n.id="mn-"+mid;n.value=m.name||"";n.placeholder="名前";n.setAttribute("aria-label","メンバー名");
+    n.onchange=()=>{write(`${ROOT}/members/${mid}`,Object.assign({},members[mid],{name:n.value.trim().slice(0,40)}))};
+    const hw=el("div","at");const h=el("input");h.id="mh-"+mid;h.value=m.handle||"";h.placeholder="XのID";h.setAttribute("aria-label","XのID");
+    h.onchange=()=>{const v=h.value.trim().replace(/^@+/,"").slice(0,30);h.value=v;write(`${ROOT}/members/${mid}`,Object.assign({},members[mid],{handle:v}))};
+    hw.append(h);
+    const del=el("button","danger","削除");del.type="button";
+    del.onclick=()=>{if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="本当に削除";setTimeout(()=>{del.classList.remove("armed");del.textContent="削除"},3000);return}
+      write(`${ROOT}/members/${mid}`,null)};
+    row.append(n,hw,del);list.append(row);
+  }
+  if(focusId&&$(focusId))$(focusId).focus();
+}
+$("membersBox").addEventListener("toggle",()=>{$("membersBox").dataset.touched="1"});
+$("addMember").onclick=()=>{
+  const mid=uid("m");const order=Object.values(members).reduce((a,m)=>Math.max(a,m.order||0),0)+1;
+  members[mid]={name:"",handle:"",order};write(`${ROOT}/members/${mid}`,members[mid]);renderMembers();
+  setTimeout(()=>{const i=$("mn-"+mid);if(i)i.focus()},0);
+};
+function renderPicker(){
+  const used=new Set(Object.values(players).map(p=>p.member).filter(Boolean));
+  const sel=$("memberPick");sel.replaceChildren();
+  const avail=sortedMembers().filter(([mid,m])=>!used.has(mid)&&(m.name||m.handle));
+  if(!avail.length){const o=el("option",null,Object.keys(members).length?"名簿の全員が入っています":"名簿にメンバーがいません");o.value="";sel.append(o)}
+  for(const [mid,m] of avail){const o=el("option",null,(m.name||"（名前なし）")+(m.handle?"  @"+m.handle:""));o.value=mid;sel.append(o)}
+  const off=!viewSid;
+  sel.disabled=off||!avail.length;$("addPicked").disabled=off||!avail.length;$("addAll").disabled=off||!avail.length;$("addFree").disabled=off;
+}
+function nextOrder(){return Object.values(players).reduce((a,p)=>Math.max(a,p.order||0),0)+1}
+function addPlayer(p){const pid=uid("p");players[pid]=Object.assign({order:nextOrder(),e:{}},p);write(`${seasonPath(viewSid)}/players/${pid}`,players[pid]);return pid}
+$("addPicked").onclick=()=>{const mid=$("memberPick").value;const m=members[mid];if(!m)return;addPlayer({member:mid,name:m.name||"",handle:m.handle||""});renderTable();renderPicker()};
+$("addAll").onclick=()=>{const used=new Set(Object.values(players).map(p=>p.member));for(const [mid,m] of sortedMembers()){if(!used.has(mid)&&(m.name||m.handle))addPlayer({member:mid,name:m.name||"",handle:m.handle||""})}renderTable();renderPicker()};
+$("addFree").onclick=()=>{const pid=addPlayer({name:"",handle:""});renderTable();renderPicker();setTimeout(()=>{const i=$("name-"+pid);if(i)i.focus()},0)};
+
+/* ---------- table ---------- */
+const editingTable=()=>$("tableHost").contains(document.activeElement)&&document.activeElement.tagName==="INPUT";
+function savePlayer(pid){write(`${seasonPath(viewSid)}/players/${pid}`,players[pid]||null)}
+function softUpdate(pid){
+  const p=players[pid];if(!p)return;let total=0;
+  for(const [c] of CLASSES){const v=score(c,p.e&&p.e[c]&&p.e[c].rate);if(v)total+=v;const cell=$(`s-${pid}-${c}`);if(cell){cell.textContent=v==null?"":f2(v);cell.classList.toggle("on",!!v)}}
+  const t=$("t-"+pid);if(t)t.textContent=(Math.round(total*100)/100).toFixed(2);
+  pending=true;scheduleImage();
+}
+function renderStrip(){
+  const host=$("classStrip");
+  if(!host.childElementCount){
+    for(const [c,n] of CLASSES){
+      const box=el("div","cls");box.append(el("div","nm bg-"+c,n));
+      for(const [k,lab] of [["top","1位"],["r100","100位"]]){
+        const l=el("label");l.append(el("span",null,lab));
+        const i=el("input","num");i.id=`base-${c}-${k}`;i.inputMode="decimal";i.placeholder="レート";i.setAttribute("aria-label",`${n} ${lab}のレート`);
+        i.addEventListener("change",()=>{if(!viewSid)return;classes[c]=Object.assign({},classes[c],{[k]:num(i.value)});write(seasonPath(viewSid),{classes});renderTable()});
+        l.append(i);box.append(l);
+      }
+      host.append(box);
+    }
+  }
+  for(const [c] of CLASSES)for(const k of ["top","r100"]){const i=$(`base-${c}-${k}`);i.disabled=!viewSid;if(document.activeElement!==i){const v=classes[c]&&classes[c][k];i.value=v==null?"":v}}
+}
+function playerInput(pid,cls,field,cellCls,label){
+  const td=el("td",cellCls);const i=el("input","num");i.id=`${field}-${pid}-${cls}`;i.inputMode=field==="rank"?"numeric":"decimal";i.setAttribute("aria-label",label);
+  const p=players[pid];const v=p.e&&p.e[cls]&&p.e[cls][field];i.value=v==null?"":v;
+  i.addEventListener("change",()=>{
+    const cur=players[pid];if(!cur)return;
+    const e=Object.assign({},cur.e);e[cls]=Object.assign({},e[cls],{[field]:num(i.value)});
+    if(e[cls].rank==null&&e[cls].rate==null)delete e[cls];
+    players[pid]=Object.assign({},cur,{e});savePlayer(pid);softUpdate(pid);
+  });
+  td.append(i);return td;
+}
+function renderTable(){
+  pending=false;
+  const host=$("tableHost");host.replaceChildren();
+  if(!viewSid){host.append(el("div","empty","環境がまだありません。「新しい環境を始める」から作ってください。"));scheduleImage();return}
+  if(!ready){host.append(el("div","empty","読み込み中…"));return}
+  const rows=computed();
+  if(!rows.length){host.append(el("div","empty","この環境にはまだプレイヤーがいません。上の「追加」や「名簿の全員を追加」から入れてください。"));scheduleImage();return}
+  const box=el("div","tbox");const t=el("table","sc");
+  const th=el("thead");const h1=el("tr"),h2=el("tr");
+  const nameH=el("th","stick","名前");nameH.rowSpan=2;h1.append(nameH);
+  const rkH=el("th",null,"総合順位");rkH.rowSpan=2;const totH=el("th",null,"総計");totH.rowSpan=2;h1.append(rkH,totH);
+  for(const [c,n] of CLASSES){const x=el("th","cl bg-"+c,n);x.style.background=`var(--c-${c})`;x.colSpan=3;h1.append(x);h2.append(el("th",null,"順位"),el("th",null,"レート"),el("th",null,"スコア"))}
+  const dH=el("th");dH.rowSpan=2;h1.append(dH);
+  th.append(h1,h2);t.append(th);
+  const tb=el("tbody");
+  for(const r of rows){
+    const tr=el("tr",r.rank===1&&r.total>0?"top1":"");
+    const nm=el("td","name stick");
+    if(r.p.member&&members[r.p.member]){
+      const d=el("div","linked");d.append(el("b",null,r.name||"（名前なし）"),el("span",null,r.handle?"@"+r.handle:""));d.title="名前とXのIDは名簿で変更できます";nm.append(d);
+    }else{
+      const ni=el("input");ni.id="name-"+r.id;ni.value=r.p.name||"";ni.placeholder="名前";ni.setAttribute("aria-label","プレイヤー名");
+      ni.addEventListener("change",()=>{const cur=players[r.id];if(!cur)return;players[r.id]=Object.assign({},cur,{name:ni.value.trim().slice(0,40)});savePlayer(r.id);pending=true;scheduleImage()});
+      const hi=el("input","h");hi.id="handle-"+r.id;hi.value=r.p.handle||"";hi.placeholder="@XのID";hi.setAttribute("aria-label","XのID");
+      hi.addEventListener("change",()=>{const cur=players[r.id];if(!cur)return;const v=hi.value.trim().replace(/^@+/,"").slice(0,30);hi.value=v;players[r.id]=Object.assign({},cur,{handle:v});savePlayer(r.id);scheduleImage()});
+      nm.append(ni,hi);
+    }
+    tr.append(nm);
+    const tt=el("td","tot",r.total.toFixed(2));tt.id="t-"+r.id;tr.append(el("td","rank",String(r.rank)),tt);
+    for(const [c,n] of CLASSES){
+      tr.append(playerInput(r.id,c,"rank","rk",`${r.name} ${n}の順位`));
+      tr.append(playerInput(r.id,c,"rate","rt",`${r.name} ${n}のレート`));
+      const s=r.s[c];const sd=el("td","s"+(s?" on":""),s==null?"":f2(s));sd.id=`s-${r.id}-${c}`;tr.append(sd);
+    }
+    const dd=el("td","del");const db=el("button","danger","外す");db.type="button";db.title="この環境のスコア表から外します（名簿からは消えません）";
+    db.onclick=()=>{if(!db.classList.contains("armed")){db.classList.add("armed");db.textContent="本当に外す";setTimeout(()=>{db.classList.remove("armed");db.textContent="外す"},3000);return}
+      delete players[r.id];savePlayer(r.id);renderTable();renderPicker()};
+    dd.append(db);tr.append(dd);tb.append(tr);
+  }
+  t.append(tb);box.append(t);host.append(box);
+  scheduleImage();
+}
+$("tableHost").addEventListener("focusout",()=>setTimeout(()=>{if(pending&&!editingTable())renderTable()},0));
+
+/* ---------- ranking image ---------- */
+const IMG={W:2000,L:120,R:1880,ink:"#16181F",grey:"#6B7080",light:"#9A9EAC",navy:"#23306A",rule:"#D9DBE0",track:"#E9E9EC",
+  col:{elf:"#3E9E5C",royal:"#C9952B",witch:"#3E74C9",dragon:"#C8622E",nightmare:"#C0334A",bishop:"#7C8299",nemesis:"#22A5B0"}};
+const SERIF='"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif', SANS='"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif';
+let imgTimer=null,imgUrl=null,imgBlob=null;
+function scheduleImage(){clearTimeout(imgTimer);imgTimer=setTimeout(drawImage,350)}
+function spaced(ctx,text,x,y,sp){for(const ch of text){ctx.fillText(ch,x,y);x+=ctx.measureText(ch).width+sp}return x}
+function spacedWidth(ctx,text,sp){let w=0;for(const ch of text)w+=ctx.measureText(ch).width+sp;return w-sp}
+const fmtRate=v=>Number.isInteger(v)?String(v):String(Math.round(v*10)/10);
+function legendItems(r){
+  return CLASSES.filter(([c])=>r.s[c]>0).map(([c,n])=>{const e=r.p.e[c]||{};return{c,n,rank:e.rank,rate:e.rate,score:r.s[c]}});
+}
+async function drawImage(){
+  try{updatePost()}catch(e){}
+  const rows=computed().filter(r=>r.total>0);
+  const imgEl=$("rankImg");
+  if(!rows.length){imgEl.removeAttribute("src");$("imgBox").hidden=true;$("saveImg").disabled=true;$("imgStatus").textContent="スコアが入ると画像ができます";return}
+  $("imgBox").hidden=false;$("saveImg").disabled=false;
+  const allText="CRスコアランキング0123456789#@.ptTEAMXYZSHADOWVERSE:WORLDSBEYONDOVERALLRANKING/エルフロイヤルウィッチドラゴンナイトメアビショップネメシスチームシャドウバースWB"+rows.map(r=>(r.name||"")+(r.handle||"")).join("")+seasonName();
+  try{await Promise.all([document.fonts.load(`900 100px "Noto Serif JP"`,allText),document.fonts.load(`700 76px "Noto Serif JP"`,"0123456789"),
+    document.fonts.load(`900 40px "Noto Sans JP"`,allText),document.fonts.load(`700 22px "Noto Sans JP"`,allText),document.fonts.load(`500 22px "Noto Sans JP"`,allText)])}catch(e){}
+  const ctx0=document.createElement("canvas").getContext("2d");
+  // layout pass
+  const BX=657,BW=930,LINE=55;
+  ctx0.font=`700 22px ${SANS}`;
+  const layout=rows.map(r=>{
+    const items=legendItems(r);const lines=[];let cur=[],x=BX;
+    for(const it of items){
+      const w=itemWidth(ctx0,it);
+      if(cur.length&&(cur.length>=2||x+w>BX+BW+120)){lines.push(cur);cur=[];x=BX}
+      cur.push(it);x+=w+30;
+    }
+    if(cur.length)lines.push(cur);
+    const block=56+(Math.max(1,lines.length)-1)*LINE;
+    return{r,lines,block,h:Math.max(195,block+84)};
+  });
+  const top=390;const H=top+layout.reduce((a,l)=>a+l.h,0)+150;
+  const cv=document.createElement("canvas");cv.width=IMG.W;cv.height=H;const ctx=cv.getContext("2d");
+  ctx.fillStyle="#FFFFFF";ctx.fillRect(0,0,IMG.W,H);ctx.textBaseline="middle";
+  // header
+  ctx.font=`700 22px ${SANS}`;ctx.fillStyle=IMG.grey;
+  let x=spaced(ctx,"TEAM ",IMG.L,118,6);ctx.fillStyle=IMG.navy;x=spaced(ctx,"XYZ",x,118,6);ctx.fillStyle=IMG.grey;spaced(ctx,"  /  SHADOWVERSE: WORLDS BEYOND",x,118,6);
+  ctx.fillStyle=IMG.ink;ctx.fillRect(IMG.L,161,IMG.R-IMG.L,4);
+  ctx.font=`900 94px ${SERIF}`;ctx.fillText("CRスコアランキング",IMG.L-4,268);
+  ctx.font=`700 20px ${SANS}`;ctx.fillStyle="#7A7F8E";let ox=spaced(ctx,"OVERALL RANKING",IMG.L,352,4);
+  if(seasonName()){ctx.fillStyle=IMG.navy;ctx.font=`700 22px ${SANS}`;ctx.fillText("｜ "+seasonName(),ox+14,352);ox+=ctx.measureText("｜ "+seasonName()).width+14;}
+  ctx.fillStyle=IMG.rule;ctx.fillRect(ox+14,351,IMG.R-ox-14,1.5);
+  // rows
+  let y=top;const max=rows[0].total;
+  for(const L of layout){
+    const r=L.r,mid=y+L.h/2;
+    ctx.fillStyle=r.rank<=2?IMG.navy:IMG.ink;ctx.font=`700 76px ${SERIF}`;ctx.fillText(String(r.rank).padStart(2,"0"),IMG.L-2,mid+2);
+    ctx.fillStyle=IMG.ink;ctx.font=`900 36px ${SANS}`;ctx.fillText(clip(ctx,r.name||"（名前なし）",360),280,mid-36);
+    ctx.fillStyle=IMG.grey;ctx.font=`500 22px ${SANS}`;if(r.handle)ctx.fillText(clip(ctx,"@"+r.handle,360),280,mid+8);
+    ctx.font=`700 18px ${SANS}`;spaced(ctx,"RANK "+String(r.rank).padStart(2,"0"),280,mid+44,3);
+    // bar
+    const bt=mid-L.block/2;
+    ctx.save();roundRect(ctx,BX,bt,BW,14,7);ctx.clip();ctx.fillStyle=IMG.track;ctx.fillRect(BX,bt,BW,14);
+    let bx=BX;for(const [c] of CLASSES){const v=r.s[c];if(!(v>0))continue;const w=v/max*BW;ctx.fillStyle=IMG.col[c];ctx.fillRect(bx,bt,w+0.5,14);bx+=w}
+    ctx.restore();
+    L.lines.forEach((line,i)=>{let lx=BX;const ly=bt+44+i*LINE;for(const it of line){lx=drawItem(ctx,it,lx,ly)+30}});
+    // total
+    ctx.textAlign="right";ctx.textBaseline="alphabetic";
+    ctx.fillStyle=IMG.grey;ctx.font=`500 22px ${SANS}`;ctx.fillText("pt",IMG.R,mid+22);const ptw=ctx.measureText("pt").width;
+    ctx.fillStyle=IMG.ink;ctx.font=`900 56px ${SANS}`;ctx.fillText(r.total.toFixed(2),IMG.R-ptw-6,mid+22);
+    ctx.textAlign="left";ctx.textBaseline="middle";
+    y+=L.h;ctx.fillStyle=IMG.rule;ctx.fillRect(IMG.L,y-1.5,IMG.R-IMG.L,1.5);
+  }
+  // footer
+  const fy=y+72;ctx.font=`700 22px ${SANS}`;ctx.fillStyle=IMG.grey;ctx.fillText(CLASSES.map(c=>c[1]).join(" / "),IMG.L,fy);
+  ctx.textAlign="right";ctx.fillText("#シャドウバースWB",IMG.R,fy);const w2=ctx.measureText(" #シャドウバースWB").width;
+  ctx.fillStyle=IMG.navy;ctx.fillText("#チームXYZ",IMG.R-w2,fy);ctx.textAlign="left";
+  cv.toBlob(b=>{if(!b)return;imgBlob=b;if(imgUrl)URL.revokeObjectURL(imgUrl);imgUrl=URL.createObjectURL(b);imgEl.src=imgUrl;$("imgStatus").textContent=""},"image/png");
+}
+function itemWidth(ctx,it){let w=20;ctx.font=`700 22px ${SANS}`;w+=ctx.measureText(it.n).width;ctx.font=`500 22px ${SANS}`;if(it.rank!=null)w+=ctx.measureText("  #"+it.rank).width;
+  ctx.font=`700 22px ${SANS}`;if(it.rate!=null)w+=ctx.measureText("  CR"+fmtRate(it.rate)).width;w+=ctx.measureText("  "+it.score.toFixed(2)+"pt").width;return w}
+function drawItem(ctx,it,x,y){
+  ctx.fillStyle=IMG.col[it.c];ctx.beginPath();ctx.arc(x+5,y,5,0,Math.PI*2);ctx.fill();x+=20;
+  const seg=(t,f,c)=>{ctx.font=f;ctx.fillStyle=c;ctx.fillText(t,x,y);x+=ctx.measureText(t).width};
+  seg(it.n,`700 22px ${SANS}`,"#3A3D4A");
+  if(it.rank!=null)seg("  #"+it.rank,`500 22px ${SANS}`,IMG.light);
+  if(it.rate!=null)seg("  CR"+fmtRate(it.rate),`700 22px ${SANS}`,"#3A3D4A");
+  seg("  "+it.score.toFixed(2)+"pt",`700 22px ${SANS}`,IMG.navy);
+  return x;
+}
+function clip(ctx,t,max){if(ctx.measureText(t).width<=max)return t;while(t.length>1&&ctx.measureText(t+"…").width>max)t=t.slice(0,-1);return t+"…"}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+$("saveImg").onclick=async()=>{
+  if(!imgBlob)return;const d=new Date();const name=`CRランキング_${(seasonName()||"").replace(/[\\/:*?"<>|\s]+/g,"_")}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}.png`;
+  if(window.claude&&window.claude.use){
+    const dl=await window.claude.use("downloads").catch(()=>null);
+    if(dl){try{await dl.save({filename:name,data:imgBlob});$("imgStatus").textContent="保存しました"}catch(e){$("imgStatus").textContent=e&&e.code==="cancelled"?"":"保存できませんでした。画像を長押し（右クリック）して保存してください"}return}
+    $("imgStatus").textContent="画像を長押し（右クリック）して保存してください";return;
+  }
+  const a=document.createElement("a");a.href=imgUrl;a.download=name;document.body.append(a);a.click();a.remove();
+};
+
+
+/* ---------- X post ---------- */
+let postDirty=false,lastAuto="";
+function autoPost(){
+  const rows=computed().filter(r=>r.total>0);
+  const lines=["#シャドバWBチーム"];if(seasonName())lines.push(seasonName());lines.push("メンバーCR結果報告","");
+  for(const r of rows)lines.push(`・${r.name||"（名前なし）"}${r.handle?" @"+r.handle:""}`);
+  return lines.join("\n");
+}
+function xLength(t){let n=0;for(const ch of t){const c=ch.codePointAt(0);n+=(c<=0x10FF||(c>=0x2000&&c<=0x200D)||(c>=0x2010&&c<=0x201F)||(c>=0x2032&&c<=0x2037))?1:2}return n}
+function updatePost(){
+  const ta=$("postText");const auto=autoPost();
+  if(!postDirty||ta.value===lastAuto){ta.value=auto;postDirty=false}
+  lastAuto=auto;$("resetPost").hidden=!postDirty;postMeta();
+}
+function postMeta(){
+  const t=$("postText").value;const n=xLength(t);
+  $("postCount").textContent=`${n} / 280`;$("postCount").className="status"+(n>280?" over":"");
+  $("intentLink").href="https://x.com/intent/post?text="+encodeURIComponent(t);
+}
+$("postText").addEventListener("input",()=>{postDirty=$("postText").value!==lastAuto;$("resetPost").hidden=!postDirty;postMeta()});
+$("resetPost").onclick=()=>{postDirty=false;updatePost()};
+$("copyPost").onclick=()=>copyText($("postText").value,"文章をコピーしました");
+const canShareFiles=(()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File([new Blob(["x"],{type:"image/png"})],"a.png",{type:"image/png"})]}))}catch(e){return false}})();
+$("shareBtn").hidden=!canShareFiles;
+$("postHelp").textContent=canShareFiles
+  ?"「画像付きでXにシェア」を押して共有先からXを選ぶと、画像と文章が入った状態で投稿画面が開きます。"
+  :"「Xの投稿画面を開く」で文章入りの投稿画面が開きます。画像は上の「画像を保存」で保存してから添付してください（スマホで開くと画像付きでシェアできます）。";
+$("shareBtn").onclick=async()=>{
+  if(!imgBlob)return;
+  const file=new File([imgBlob],"CRranking.png",{type:"image/png"});
+  try{await navigator.share({files:[file],text:$("postText").value})}catch(e){if(e&&e.name!=="AbortError"){setSync("シェアできませんでした。「Xの投稿画面を開く」を使ってください")}}
+};
+function render(){renderSeasonBar();renderStrip();renderTable();renderPicker()}
+
+async function copyText(txt,ok){try{await navigator.clipboard.writeText(txt);setSync(ok)}catch(e){setSync("コピーできませんでした")}}
+$("copyTsv").onclick=()=>{
+  const head=["名前","XのID","総合順位","総計"];for(const [,n] of CLASSES)head.push(n+"順位",n+"レート",n+"スコア");
+  const lines=[head.join("\t")].concat(computed().map(r=>{const a=[r.name,r.handle?"@"+r.handle:"",r.rank,r.total.toFixed(2)];for(const [c] of CLASSES){const e=r.p.e[c]||{};a.push(e.rank??"",e.rate??"",f2(r.s[c]||0))}return a.join("\t")}));
+  copyText(lines.join("\n"),"表をコピーしました（スプレッドシートに貼り付けできます）");
+};
+$("copyLink").onclick=()=>copyText(location.href,"共有リンクをコピーしました。このリンクを知っている人は誰でも編集できます");
+function setBanner(t){$("banner").dataset.base=t;$("banner").textContent=t}
+
+/* ---------- boot ---------- */
+(async()=>{
+  render();
+  let db=null;
+  if(window.claude&&window.claude.use){try{db=await window.claude.use("db")}catch(e){}}
+  const bid=(new URLSearchParams(location.search).get("b")||"").replace(/[^a-z0-9]/gi,"");
+  if(db){
+    A=claudeAdapter(db);ROOT="sb/main";LEGACY={doc:"meta/score",coll:"players"};setBanner("試用版：入力内容はこのページに保存されます。");
+  }else if(bid.length>=16){
+    try{
+      const [{initializeApp},fs]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-firestore.js")]);
+      A=firebaseAdapter(fs,fs.getFirestore(initializeApp(FIREBASE_CONFIG)));ROOT=`scoreboards/${bid}`;LEGACY={doc:ROOT,coll:ROOT+"/players"};
+      $("toMatchup").href="./?b="+bid;$("toMatchup").hidden=false;$("copyLink").hidden=false;setBanner("");
+    }catch(e){console.error(e);setBanner("共有データに接続できませんでした。通信を確認して再読み込みしてください。");return}
+  }else{
+    A=localAdapter();ROOT="sb/local";LEGACY={doc:"sb/legacy",coll:"sb/legacy/players"};
+    setBanner("表のIDが付いていないので、このブラウザだけに保存しています。相性表のページの「スコア表へ」から開くと、チームで共有されます。");
+  }
+  A.watchColl(ROOT+"/members",m=>{members=m;renderMembers();renderPicker();if(!editingTable())renderTable();else scheduleImage()});
+  A.watchDoc(ROOT,d=>{
+    const seasons=Array.isArray(d&&d.seasons)?d.seasons:[];
+    if(!seasons.length){migrate();return}
+    meta={seasons,current:d.current||seasons[seasons.length-1].id};
+    if(!viewSid||!seasons.some(s=>s.id===viewSid))openSeason(meta.current);
+    renderSeasonBar();scheduleImage();
+  });
+})();
+</script>
+</body>
+</html>
