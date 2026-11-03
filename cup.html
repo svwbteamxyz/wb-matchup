@@ -126,6 +126,16 @@ table.mtab{margin:0 12px;width:calc(100% - 24px);table-layout:fixed}
 table.mtab td:first-child{width:7em}table.mtab td:last-child{text-align:right;width:8em}
 table.mtab td.w{color:#1F8A4C;font-weight:700}
 table.mtab td.l{color:var(--danger);font-weight:700}
+.ci{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-radius:10px;padding:10px 12px;margin-bottom:10px;border:1px solid var(--line)}
+.ci b{font-size:1rem}.ci .status{flex:1 1 240px}
+.ci-open{border-color:var(--accent);background:var(--accent-soft)}
+.ci-done{border-color:#7CC79A;background:rgba(46,158,82,.10)}.ci-done b{color:#1F8A4C}
+.prow .who span.ci-ok{color:#1F8A4C;font-weight:700}.prow .who span.ci-ng{color:var(--danger);font-weight:700}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-size:.75rem;text-decoration:underline;text-align:left;font-weight:500}
+.startask{gap:8px;padding:10px 12px;border:1px solid var(--danger);border-radius:10px}
+.evcard .ci-badge{background:var(--accent);color:var(--accent-ink);font-size:.72rem;padding:1px 7px;border-radius:999px;font-weight:700}
+.cidecks{flex:1 1 100%}
+.prow .deckhid{grid-column:span 2;font-size:.78rem}
 .trophy{display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .trophy .tc{font-size:.68em;font-weight:800;color:#A77A00;margin-left:1px;font-variant-numeric:tabular-nums}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .trophy .tc{color:#F2C94C}}
@@ -330,11 +340,16 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
         <label>決勝フォーマット <select id="tFormatTop"><option value="bo1">2デッキBO1</option><option value="bo3c" selected>BO3コンクエスト</option></select></label>
       </div>
       <div class="f">
+        <label>開催日時 <input type="datetime-local" id="tStart" aria-label="開催日時" style="font-family:var(--f-num)"></label>
+        <span class="status">決めておくと、開始30分前から参加者がチェックインできます</span>
+      </div>
+      <div class="f">
         <label>プライベートロビー <select id="tLobby"><option value="0">使わない</option><option value="1">使う</option></select></label>
         <input type="text" id="tLobbyCode" maxlength="20" placeholder="ロビーコード" aria-label="ロビーコード" hidden style="flex:0 1 200px;font-family:var(--f-num)">
       </div>
       <div class="row"><button type="button" class="primary" id="createTour">作成</button><button type="button" id="cancelTour">やめる</button></div>
     </div>
+    <div class="lobby" id="startBox" hidden></div>
     <div class="lobby" id="lobbyBox" hidden></div>
     <div id="champ"></div>
   </section>
@@ -369,6 +384,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
       <button type="button" class="primary" id="startBtn">予選を始める</button>
       <span class="status" id="startNote"></span>
     </div>
+    <div class="row startask" id="startAskBox" hidden></div>
   </section>
 
   <section class="panel" id="swissPanel" hidden>
@@ -507,7 +523,7 @@ function players(){
   return list;
 }
 const entryPath=pid=>`${cupPath()}/entries/${pid}`;
-function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;E[p.id]=o;write(entryPath(p.id),o)}
+function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;if(p.checkedIn)o.checkedIn=p.checkedIn;E[p.id]=o;write(entryPath(p.id),o)}
 function removeEntry(pid){delete E[pid];write(entryPath(pid),null);if((T.players||[]).some(p=>p.id===pid)){T.players=T.players.filter(p=>p.id!==pid);saveT()}}
 const P=id=>players().find(p=>p.id===id)||null;
 function rosterMap(){if(MODE==="admin")return members;const o={};for(const r of (T&&T.roster)||[])o[r.mid]={name:r.name,handle:r.handle,order:r.order};return o}
@@ -764,7 +780,7 @@ function usedDeck(m,res,slot){
 
 /* ---------- render ---------- */
 function renderAll(){
-  renderTourBar();
+  renderTourBar();renderStartBox();
   $("tourPanel").hidden=MODE==="portal"&&!(pview==="cup"&&pub);$("tourTitle").textContent=!admin&&T&&T.name?T.name:"大会";
   const has=!!T;
   $("newTourBtn").hidden=!admin;if(!admin)$("newTourForm").hidden=true;$("tourSel").hidden=!admin;
@@ -777,6 +793,44 @@ function renderAll(){
   renderBans();renderHall();renderUidPanel();adminPortalSync();
   if(!has){$("lobbyBox").hidden=true;$("champ").replaceChildren(T===null&&tid?el("div","empty","読み込み中…"):el("div","empty",admin?"「新しい大会を作る」から始めてください。":MODE==="player"?"大会が見つかりません。運営から受け取ったURLをもう一度確認してください。":"読み込み中…"));return}
   renderCalls();renderLobby();renderPlayers();renderSwiss();renderStand();renderTop();renderDecks();renderChamp();
+}
+/* ---------- start time + check-in ---------- */
+const CHECKIN_MS=30*60*1000;const ciDecks={pid:null,d:[null,null]};
+const WD="日月火水木金土";
+function fmtDT(ms){const d=new Date(ms);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]}) ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+function toLocalInput(ms){const d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);return d.toISOString().slice(0,16)}
+// check-in opens 30 minutes before the start time and stays open until the organizer starts round 1
+const viewerId=()=>MODE==="portal"?myEntryId():(getReg()||getMe());
+const ciOpen=()=>!!(T&&T.startAt&&T.status==="setup"&&now()>=T.startAt-CHECKIN_MS);
+const ciUsed=()=>!!(T&&T.startAt);
+function renderStartBox(){
+  const box=$("startBox");box.replaceChildren();
+  if(!T||(!admin&&!T.startAt)){box.hidden=true;return}
+  box.hidden=false;box.append(el("span","k","開催日時"));
+  if(admin&&T.status==="setup"){
+    const i=el("input");i.type="datetime-local";i.id="startEdit";i.setAttribute("aria-label","開催日時");i.style.fontFamily="var(--f-num)";if(T.startAt)i.value=toLocalInput(T.startAt);
+    i.onchange=()=>{const v=i.value?new Date(i.value).getTime():null;T.startAt=Number.isFinite(v)?v:null;saveT();render()};box.append(i);
+    if(T.startAt){const n=players().length,c=players().filter(p=>p.checkedIn).length;
+      box.append(el("span","status",ciOpen()?`チェックイン受付中（${c}/${n}人）`:`チェックインは ${fmtDT(T.startAt-CHECKIN_MS)} から`))}
+    else box.append(el("span","status","未設定（チェックインなし）"));
+  }else{
+    box.append(el("span","code",T.startAt?fmtDT(T.startAt):"未定"));
+    if(T.status==="setup"&&T.startAt)box.append(el("span","status",ciOpen()?"チェックイン受付中":`チェックインは ${fmtDT(T.startAt-CHECKIN_MS)} から`));
+  }
+}
+setInterval(()=>{if(T&&T.startAt&&T.status==="setup"&&!editing()){const o=ciOpen();if(o!==renderStartBox.last){renderStartBox.last=o;render()}}},15000);
+function checkinBlock(me){
+  const p=P(me);if(!p||!ciUsed()||T.status!=="setup")return null;
+  const box=el("div","ci "+(p.checkedIn?"ci-done":ciOpen()?"ci-open":"ci-wait"));
+  if(p.checkedIn){box.append(el("b",null,"✓ チェックイン済み"),el("span","status",`開始 ${fmtDT(T.startAt)}。予選が始まるまでお待ちください`));return box}
+  if(!ciOpen()){box.append(el("b",null,"チェックイン前"),el("span","status",`${fmtDT(T.startAt-CHECKIN_MS)} からチェックインできます（開始 ${fmtDT(T.startAt)}）。チェックインしないと参加できません`));return box}
+  box.append(el("b",null,"チェックイン受付中"),el("span","status",`開始 ${fmtDT(T.startAt)}。使うデッキを2つ選んでチェックインしてください。チェックインしていない人は、大会開始時に参加取り消しになります`));
+  if(ciDecks.pid!==me){ciDecks.pid=me;ciDecks.d=[p.decks[0]||null,p.decks[1]||null]}
+  const dr=deckRow(ciDecks.d,(k,v)=>{ciDecks.d[k]=v;render()},"cideck");dr.classList.add("cidecks");box.append(dr);
+  const ok=ciDecks.d[0]&&ciDecks.d[1];
+  const b=el("button","primary big","チェックインする");b.type="button";b.disabled=!ok;b.onclick=()=>{const q=P(me);if(!q||!(ciDecks.d[0]&&ciDecks.d[1]))return;q.decks=ciDecks.d.slice();q.checkedIn=now();saveEntry(q);render()};box.append(b);
+  if(!ok)box.append(el("span","status","デッキを2つ選ぶとチェックインできます"));
+  return box;
 }
 function renderLobby(){
   const box=$("lobbyBox");box.replaceChildren();const L=T&&T.lobby;
@@ -840,8 +894,14 @@ function renderPlayers(){
     const nm=el("div","who");const nmh=el("div","whoav");nmh.append(avatar(p,26),nameEl(p,w.name));nm.append(nmh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
     if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
     if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
+    if(setup&&ciUsed()){
+      if(p.checkedIn)nm.append(el("span","ci-ok","✓ チェックイン済み"));else if(ciOpen())nm.append(el("span","ci-ng","未チェックイン"));
+      if(admin&&ciOpen()){const cb=el("button","linkbtn",p.checkedIn?"チェックインを取り消す":"運営がチェックインする");cb.type="button";cb.onclick=()=>{const q=P(p.id);q.checkedIn=q.checkedIn?null:now();saveEntry(q);render()};nm.append(cb)}
+    }
     row.append(nm);
-    for(const k of [0,1]){
+    const hideDecks=!admin&&setup&&p.id!==viewerId();
+    if(hideDecks){row.append(el("span","status deckhid","デッキは予選開始時に公開されます"))}
+    else for(const k of [0,1]){
       const s=el("select");s.id=`deck${k}-${p.id}`;s.setAttribute("aria-label",`${w.name}のデッキ${k+1}`);s.disabled=!admin||(!setup&&!!p.decks[k]);
       const o0=el("option",null,`デッキ${k+1}：未選択`);o0.value="";s.append(o0);
       for(const [c,n] of CLASSES){if(p.decks[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(p.decks[k]===c)o.selected=true;s.append(o)}
@@ -869,7 +929,14 @@ function renderPlayers(){
     const rounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(Math.max(2,n))));
     $("startBtn").disabled=n<2||(T.topCut&&n<T.topCut);
     $("startNote").textContent=n<2?"2人以上で始められます":(T.topCut&&n<T.topCut)?`決勝トーナメント（上位${T.topCut}名）には${T.topCut}人以上必要です`:
-      `予選は${rounds}ラウンドの予定です`+(missing?`。デッキ未登録が${missing}人います（あとから登録もできます）`:"");
+      `予選は${rounds}ラウンドの予定です`+(missing?`。デッキ未登録が${missing}人います（あとから登録もできます）`:"")+(ciUsed()&&ciOpen()?`。チェックイン済み ${PL.filter(p=>p.checkedIn).length}/${n}人`:"");
+    const ask=$("startAskBox");ask.replaceChildren();const noShow=ciUsed()&&ciOpen()?PL.filter(p=>!p.checkedIn):[];
+    if(startAsk&&noShow.length){ask.hidden=false;
+      ask.append(el("span","warn",`チェックインしていない人が${noShow.length}人います：${noShow.map(p=>who(p).name).join("、")}`));
+      const a=el("button","primary",`この${noShow.length}人を外して予選を始める`);a.type="button";a.onclick=()=>{startAsk=false;doStart(true)};
+      const b=el("button",null,"全員のまま始める");b.type="button";b.onclick=()=>{startAsk=false;doStart(false)};
+      const c=el("button",null,"やめる");c.type="button";c.onclick=()=>{startAsk=false;render()};ask.append(a,b,c)}
+    else{ask.hidden=true;startAsk=false}
   }
 }
 function joinMember(mid,decks,icon){const m=rosterMap()[mid];if(!m)return null;const mu=MODE==="admin"?normUid(memberUids[mid]&&memberUids[mid].uid):"";const ex=players().find(p=>p.member===mid||(mu&&normUid(p.uid)===mu));if(ex)return ex.id;const pid=mu?"u_"+mu:uid("p");saveEntry({id:pid,member:mid,name:m.name||"",handle:m.handle||"",uid:mu||null,decks:decks||[null,null],icon:icon||null,hideTeam:!!(MODE!=="admin"&&(loadProfile()||{}).hideTeam),order:now()+Math.random()});return pid}
@@ -889,11 +956,18 @@ $("regSave").onclick=()=>{
   if($("regJoin").checked&&T&&T.status==="setup"){joinMember(mid)}
   $("regName").value="";$("regHandle").value="";$("regUid").value="";$("regName").focus();setSync(`${name} を名簿に登録しました`);render();
 };
+let startAsk=false;
 $("startBtn").onclick=()=>{
-  const n=players().length;if(n<2)return;
+  const noShow=ciUsed()&&ciOpen()?players().filter(p=>!p.checkedIn):[];
+  if(noShow.length&&!startAsk){startAsk=true;render();return}
+  startAsk=false;doStart(false);
+};
+function doStart(dropNoShow){
+  if(dropNoShow){for(const p of players().filter(p=>!p.checkedIn))removeEntry(p.id)}
+  const n=players().length;if(n<2){setSync("参加者が2人未満のため始められません");render();return}
   T.swissRounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(n)));
   T.rounds=[];const r=makeRound();delete r.rematch;T.rounds.push(r);T.status="swiss";viewRound=1;saveT();render();
-};
+}
 function renderSwiss(){
   const rs=T.rounds||[];$("swissPanel").hidden=!rs.length;if(!rs.length)return;
   if(!viewRound||viewRound>rs.length)viewRound=rs.length;
@@ -1361,7 +1435,8 @@ function listView(){
     for(const e of list.sort((a,b)=>(b.created||0)-(a.created||0))){
       const card=el("div","evcard");const info=el("div","evinfo");
       const nm=el("div","evname",e.name||"（大会名なし）");if(myEntries[e.pub])nm.append(el("span","bdg b-mine","参加登録済み"));
-      info.append(nm,el("div","status",[e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",`${e.n||0}人`,e.created?new Date(e.created).toLocaleDateString("ja-JP"):""].filter(Boolean).join("・")));
+      const ciNow=e.status==="setup"&&e.startAt&&myEntries[e.pub]&&now()>=e.startAt-CHECKIN_MS;if(ciNow)nm.append(el("span","ci-badge","チェックイン受付中"));
+      info.append(nm,el("div","status",[e.startAt?"開催 "+fmtDT(e.startAt):"",e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",`${e.n||0}人`].filter(Boolean).join("・")));
       const b=el("button",e.status==="setup"&&!myEntries[e.pub]?"primary":null,e.status==="setup"&&!myEntries[e.pub]?"参加登録へ":"大会ページを開く");b.type="button";b.onclick=()=>openEvent(e.pub);
       card.append(info,el("span","evst st-"+(e.status||"setup"),ST_LABEL[e.status]||""),b);wrap.append(card)}}
   if(!any)wrap.append(el("div","empty","いま表示できる大会はありません。運営が大会を作ると、ここに表示されます。"));
@@ -1394,7 +1469,7 @@ function myView(){
   };
   const r2=el("div","row");r2.append(sv);box.append(r2,msg);
   // --- results (written by the organizer's page when tournaments progress)
-  const all=Object.entries(MYST).map(([k,v])=>Object.assign({pub:k},v)).sort((a,b)=>(b.created||0)-(a.created||0));
+  const all=Object.entries(MYST).filter(([k])=>EV[k]).map(([k,v])=>Object.assign({pub:k},v)).sort((a,b)=>(b.created||0)-(a.created||0));
   const rb=el("div","rep");host.append(rb);rb.append(el("div","lab","戦績"));
   let kind="external";
   if(isXYZ){if(!myTab)myTab=(all[0]&&all[0].kind)||"internal";kind=myTab;
@@ -1427,14 +1502,16 @@ function portalJoin(box){
   if(!setup){box.append(el("div",null,"この大会には参加していません。対戦表と順位は下で見られます。"));return}
   if(T.kind!=="external"&&!isXYZ){box.append(el("div",null,"この大会はXYZメンバー限定です。"));return}
   if(T.kind==="external"&&!U.handle){box.append(el("div",null,"外戦に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
-  box.append(el("div","lab","参加登録"),el("div",null,`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
-  box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"));
-  const ready=draftDecks[0]&&draftDecks[1];const err=el("div","warn",regErr.t);
+  const later=ciUsed();
+  box.append(el("div","lab","参加登録"),el("div",null,later?`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキは、開始30分前からのチェックインのときに選びます。`:`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
+  if(later)box.append(el("div","status",`開催 ${fmtDT(T.startAt)}　チェックイン ${fmtDT(T.startAt-CHECKIN_MS)} から`));
+  else box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"));
+  const ready=later||(draftDecks[0]&&draftDecks[1]);const err=el("div","warn",regErr.t);
   const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
   b.onclick=async()=>{
     if((T.banHashes||[]).length){const ks=await banKeys(LOGIN,U.handle);if(ks.some(k=>T.banHashes.includes(k))){regErr.t="この大会には参加登録できません。運営にお問い合わせください";render();return}}
     if(players().some(p=>p.id!==myEntryId()&&who(p).name===U.name)){regErr.t=`「${U.name}」という名前の参加者がすでにいます。マイページで名前を変えてから登録してください`;render();return}
-    regErr.t="";saveEntry({id:myEntryId(),member:null,name:U.name,handle:U.handle||"",uid:LOGIN,icon:U.icon||null,decks:draftDecks.slice(),hideTeam:!!U.hideTeam,order:now()+Math.random()});
+    regErr.t="";saveEntry({id:myEntryId(),member:null,name:U.name,handle:U.handle||"",uid:LOGIN,icon:U.icon||null,decks:later?[null,null]:draftDecks.slice(),hideTeam:!!U.hideTeam,order:now()+Math.random()});
     draftDecks[0]=draftDecks[1]=null;render()};
   box.append(b,err);if(!ready)box.append(el("div","status","デッキを2つ選ぶと参加登録できます"));
 }
@@ -1461,8 +1538,8 @@ function memberUidSet(){const s=new Set();for(const [mid,r] of Object.entries(me
 async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
   try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
     if(JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;PDA={xyz:list};write(portalPath(),{xyz:list,updated:now()})}finally{xyzBusy=false}}
-const EV_KEYS=["name","kind","status","created","format","n"];
-function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length};
+const EV_KEYS=["name","kind","status","created","format","n","startAt"];
+function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null};
   if(sameObj(EVA[pub],e,EV_KEYS))return;EVA[pub]=e;write(`${portalPath()}/events/${pub}`,e)}
 function syncStats(){if(!PKEY||!T||!pub||T.status==="setup")return;
   for(const p of players()){const u=normUid(p.uid);if(!u)continue;const s=summaryFor(p.id);const j=JSON.stringify(s);const k=pub+"|"+u;if(statSent[k]===j)continue;statSent[k]=j;write(`${portalPath()}/stats/${u}/events/${pub}`,s)}}
@@ -1563,10 +1640,12 @@ function renderReport(){
   if(MODE==="portal"&&!mp){portalJoin(box);return}
   if(!mp){box.append(el("div",null,setup?(T.kind==="external"?"右上の「あなたは」で「新しく参加登録する」を選び、名前を入れて参加してください。":"右上で自分の名前を選んで、この大会に参加してください。名簿にいない人は「名簿にいない（新しく登録する）」を選びます。"):PL.length?"右上で自分の名前を選ぶと、自分の試合と報告ボタンが出ます。この端末では次から自動で選ばれます。":"参加者が登録されると、ここから自分の試合を報告できます。"));return}
   if(setup){
+    {const ci=checkinBlock(me);if(ci)box.append(ci)}
     box.append(el("div","lab","参加登録済み　デッキは予選が始まるまで変更できます"));
     box.append(iconPicker(mp.icon,d=>{const p=P(me);p.icon=d;saveEntry(p);saveProfile({icon:d||null});if(MODE==="portal"&&U)write(`${portalPath()}/users/${LOGIN}`,Object.assign({},U,{icon:d||null,at:now()}));render()},"myicon"));
-    const row=el("div","row");
-    for(const k of [0,1]){const s=el("select");s.id=`mydeck${k}`;s.setAttribute("aria-label",`デッキ${k+1}`);
+    const row=el("div","row");const deckLater=ciUsed()&&!mp.checkedIn;
+    if(deckLater)row.append(el("span","status","使うデッキはチェックインのときに選びます"));
+    else for(const k of [0,1]){const s=el("select");s.id=`mydeck${k}`;s.setAttribute("aria-label",`デッキ${k+1}`);
       const z=el("option",null,`デッキ${k+1}：未選択`);z.value="";s.append(z);
       for(const [c,n] of CLASSES){if(mp.decks[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(mp.decks[k]===c)o.selected=true;s.append(o)}
       s.onchange=()=>{const p=P(me);p.decks=p.decks.slice();p.decks[k]=s.value||null;saveEntry(p);saveProfile({decks:p.decks.slice()});render()};row.append(s)}
@@ -1670,13 +1749,17 @@ $("createTour").onclick=()=>{
   const idx={name:name.slice(0,40),created:now(),pub:key};
   tours[id]=idx;write(idxPath(id),idx);
   pub=key;
-  const t={name:idx.name,created:idx.created,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
+  const stv=$("tStart").value;const startAt=stv?new Date(stv).getTime():null;
+  const t={name:idx.name,created:idx.created,startAt:Number.isFinite(startAt)?startAt:null,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
   T=t;syncRoster();write(cupPath(),T);
-  $("newTourForm").hidden=true;$("tName").value="";$("tLobby").value="0";$("tLobbyCode").value="";$("tLobbyCode").hidden=true;openCup(key,id);
+  $("newTourForm").hidden=true;$("tName").value="";$("tStart").value="";$("tLobby").value="0";$("tLobbyCode").value="";$("tLobbyCode").hidden=true;openCup(key,id);
 };
 $("delTour").onclick=()=>{
   const b=$("delTour");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="本当に削除する";setTimeout(()=>{b.classList.remove("armed");b.textContent="この大会を削除"},3000);return}
-  for(const k of Object.keys(M))write(`${cupPath()}/matches/${k}`,null);for(const k of Object.keys(E))write(`${cupPath()}/entries/${k}`,null);for(const k of Object.keys(C))write(`${cupPath()}/chat/${k}`,null);write(cupPath(),null);write(idxPath(tid),null);if(PKEY){write(`${portalPath()}/events/${pub}`,null);delete EVA[pub]}delete tours[tid];
+  for(const k of Object.keys(M))write(`${cupPath()}/matches/${k}`,null);for(const k of Object.keys(E))write(`${cupPath()}/entries/${k}`,null);for(const k of Object.keys(C))write(`${cupPath()}/chat/${k}`,null);write(cupPath(),null);write(idxPath(tid),null);
+  if(PKEY){for(const p of players()){const u=normUid(p.uid);if(u)write(`${portalPath()}/stats/${u}/events/${pub}`,null)}write(`${portalPath()}/events/${pub}`,null);delete EVA[pub]}
+  for(const [rid,rec] of Object.entries(records)){if(rec&&rec.events&&rec.events[pub]){const ev=Object.assign({},rec.events);delete ev[pub];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}}
+  delete tours[tid];
   const next=Object.entries(tours).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];openTour(next?next[0]:null);
 };
 $("copyPub").onclick=()=>copyText(portalUrl(),"参加者用URLをコピーしました");
