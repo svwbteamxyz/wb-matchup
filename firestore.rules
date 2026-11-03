@@ -112,7 +112,7 @@ service cloud.firestore {
       match /events/{ev} {
         allow read, delete: if key.size() >= 20;
         allow create, update: if key.size() >= 20
-          && request.resource.data.keys().hasOnly(['name', 'kind', 'status', 'created', 'format', 'n']);
+          && request.resource.data.keys().hasOnly(['name', 'kind', 'status', 'created', 'format', 'n', 'startAt']);
       }
 
       // 参加者のプロフィール：ログインした本人だけが読み書きできる
@@ -143,7 +143,7 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.token.email == u + '@player.xyzcup.app';
         allow create, update: if key.size() >= 20
           && request.resource.data.keys().hasOnly(['name', 'kind', 'created', 'status', 'me', 'n', 'rank', 'place', 'w', 'l', 'matches']);
-        allow delete: if false;
+        allow delete: if key.size() >= 20;
       }
     }
 
@@ -151,7 +151,7 @@ service cloud.firestore {
     match /cups/{cup} {
       allow get, delete: if cup.size() >= 20;
       allow create, update: if cup.size() >= 20
-        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz'])
+        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 40;
       allow list: if false;
@@ -159,7 +159,7 @@ service cloud.firestore {
       match /entries/{entry} {
         allow read, delete: if cup.size() >= 20;
         allow create, update: if cup.size() >= 20
-          && request.resource.data.keys().hasOnly(['member', 'name', 'handle', 'uid', 'icon', 'decks', 'order', 'hideTeam'])
+          && request.resource.data.keys().hasOnly(['member', 'name', 'handle', 'uid', 'icon', 'decks', 'order', 'hideTeam', 'checkedIn'])
           && (!('icon' in request.resource.data) || request.resource.data.icon == null || (request.resource.data.icon is string && request.resource.data.icon.size() <= 40000))
           && request.resource.data.name is string
           && request.resource.data.name.size() <= 40;
@@ -176,7 +176,7 @@ service cloud.firestore {
         allow update: if false;
       }
 
-      match /matches/{match} {
+      match /matches/{mid} {
         allow read, delete: if cup.size() >= 20;
         allow create, update: if cup.size() >= 20
           && request.resource.data.keys().hasOnly(['winner', 'score', 'da', 'db', 'ba', 'bb', 'at', 'room', 'roomBy', 'roomAt', 'entered', 'forfeit', 'manual', 'games']);
