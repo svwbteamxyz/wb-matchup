@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>XYZ CUP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+
+/* Layout: toolbar, class rate strip (1位/100位), then the wide player table with sticky name column. */
+:root{
+  --bg:#EEF0F5; --panel:#FFFFFF; --ink:#171A26; --muted:#5C6178; --line:#D4D7E3; --soft:#E5E8F0;
+  --accent:#4B3BC4; --accent-ink:#FFFFFF; --accent-soft:#E4E0FA; --danger:#B83A3A; --gold:#A9771A;
+  --c-elf:#5DAA4E; --c-royal:#D9AE1E; --c-witch:#4A6FD6; --c-dragon:#C9741F; --c-nightmare:#B4232F; --c-bishop:#B9BEC9; --c-nemesis:#2EA3B8;
+  --c-ink:#FFFFFF;
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550; --danger:#F07A80; --gold:#E3B456; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131B; --panel:#1A1D29; --ink:#E7E9F2; --muted:#9A9FB7; --line:#2D3145; --soft:#232738;
+  --accent:#9A88FF; --accent-ink:#141220; --accent-soft:#2A2550; --danger:#F07A80; --gold:#E3B456; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.8rem;line-height:1.15;margin:0;letter-spacing:.02em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+h2{font-family:var(--f-display);font-weight:400;font-size:1.05rem;margin:0;letter-spacing:.03em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.spacer{flex:1}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;font-weight:700;font-size:.85rem}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--danger)}
+button.danger.armed{background:var(--danger);color:var(--panel);border-color:var(--danger)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px;min-width:0}
+input.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.banner{font-size:.85rem;padding:8px 12px;border-radius:8px;background:var(--accent-soft)}
+.banner:empty{display:none}
+.status{font-size:.78rem;color:var(--muted)}
+.formula{font-size:.82rem;color:var(--muted)}
+.formula b{color:var(--ink);font-weight:700}
+
+/* class strip */
+.classes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+@media (max-width:980px){.classes{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:560px){.classes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cls{border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.cls .nm{padding:5px 8px;font-weight:700;font-size:.85rem;color:var(--c-ink);text-align:center;letter-spacing:.08em}
+.cls label{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;padding:5px 8px;font-size:.72rem;color:var(--muted);font-weight:700}
+.cls input{width:100%}
+.bg-elf{background:var(--c-elf)}.bg-royal{background:var(--c-royal)}.bg-witch{background:var(--c-witch)}.bg-dragon{background:var(--c-dragon)}.bg-nightmare{background:var(--c-nightmare)}.bg-bishop{background:var(--c-bishop);color:#2A2E3D!important}.bg-nemesis{background:var(--c-nemesis)}
+
+/* table */
+.tbox{overflow:auto;max-height:80vh;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table.sc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:.85rem}
+.sc th,.sc td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0}
+.sc thead th{position:sticky;background:var(--panel);z-index:2;font-weight:700;font-size:.75rem;padding:5px 4px;white-space:nowrap}
+.sc thead tr:first-child th{top:0;height:30px}
+.sc thead tr:nth-child(2) th{top:30px;color:var(--muted)}
+.sc thead th.cl{color:var(--c-ink);font-size:.82rem;letter-spacing:.08em}
+.sc .stick{position:sticky;left:0;z-index:1;background:var(--panel)}
+.sc thead .stick{z-index:3}
+.sc td.name{min-width:150px}
+.sc td.name input{width:100%;border:0;background:transparent;font-weight:700;padding:7px 8px 2px}
+.sc td.name input.h{font-weight:500;font-size:.78rem;color:var(--muted);padding:0 8px 6px}
+.imgbox{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#FFFFFF}
+.imgbox img{display:block;width:100%;height:auto}
+.sc td.rk input{width:52px;border:0;background:transparent;padding:8px 6px}
+.sc td.rt input{width:76px;border:0;background:transparent;padding:8px 6px}
+.sc td.s{min-width:64px;text-align:right;padding:0 8px;font-family:var(--f-num);font-size:.82rem;color:var(--muted)}
+.sc td.s.on{color:var(--ink);font-weight:700}
+.sc td.rank{text-align:center;font-family:var(--f-num);font-weight:700;min-width:56px}
+.sc td.tot{text-align:right;padding:0 10px;font-family:var(--f-num);font-weight:700;min-width:80px}
+.sc tr.top1 td.rank{color:var(--gold)}
+.sc td.del{padding:0 4px}
+.sc td.del button{padding:4px 8px;font-size:.75rem}
+.sc input:focus{background:var(--accent-soft)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
+.io{width:100%;min-height:80px;font-family:var(--f-num);font-size:.78rem;font:inherit}
+
+/* cup */
+.tm{display:inline-flex;align-items:center;line-height:1;margin-left:2px}
+.prow .who span.tm,.prow .who span.trophy{font-size:1rem}
+.prow select.teamsel{width:10.5em;min-width:0}
+.hallkind{gap:6px;margin:4px 0 8px}
+.hallkind button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.teamhide{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:.9rem;cursor:pointer}
+.teamhide input{width:18px;height:18px;margin:0}
+.teamhide .tm{font-size:1rem}
+.pnav{gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.pnav button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.pwho{display:flex;align-items:center;gap:8px}
+.login{max-width:640px}
+.plab{margin:14px 0 6px}
+.evcard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0;background:var(--bg)}
+.evinfo{flex:1 1 220px;min-width:0}
+.evname{font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.evst{font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink)}
+.evst.st-done{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.pn span.bdg.b-mine,.evname .b-mine{background:#DCF3E4;color:#14532D;font-size:.72rem;padding:1px 7px;border-radius:999px;font-weight:700}
+.pendbox{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.pendrow{gap:8px;margin:6px 0;flex-wrap:wrap}
+.pendhot{color:var(--danger);font-weight:700}
+.uidrow{gap:10px;margin:4px 0}.uidrow .nm{min-width:8em;font-weight:700}.uidrow input{width:11em;font-family:var(--f-num)}
+.mysum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:6px 0 12px}
+.mysum .ms{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.mysum .ms .k{font-size:.75rem;color:var(--muted)}
+details.myt{border:1px solid var(--line);border-radius:8px;margin:6px 0;background:var(--bg)}
+details.myt summary{cursor:pointer;padding:10px 12px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+details.myt .mt-name{font-weight:700;display:inline-flex;gap:4px;align-items:center}
+details.myt .mt-res{margin-left:auto;font-variant-numeric:tabular-nums}
+details.myt[open]{padding-bottom:10px}
+table.mtab{margin:0 12px;width:calc(100% - 24px);table-layout:fixed}
+table.mtab td:first-child{width:7em}table.mtab td:last-child{text-align:right;width:8em}
+table.mtab td.w{color:#1F8A4C;font-weight:700}
+table.mtab td.l{color:var(--danger);font-weight:700}
+.trophy{display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
+.trophy .tc{font-size:.68em;font-weight:800;color:#A77A00;margin-left:1px;font-variant-numeric:tabular-nums}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .trophy .tc{color:#F2C94C}}
+:root[data-theme="dark"] .trophy .tc{color:#F2C94C}
+
+.pn{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.pname{overflow-wrap:anywhere}
+.n-gold{background:linear-gradient(100deg,#B8860B,#E8B923 45%,#B8860B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.n-legend{background:linear-gradient(100deg,#B8860B,#E8B923 30%,#C2185B 60%,#5A3CCB);-webkit-background-clip:text;background-clip:text;color:transparent}
+.n-silver{background:linear-gradient(100deg,#6B7385,#A9B1C3 45%,#6B7385);-webkit-background-clip:text;background-clip:text;color:transparent}
+.n-bronze{background:linear-gradient(100deg,#8A4F22,#C7834A 45%,#8A4F22);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pn span.bdg{font-size:.66rem;line-height:1.5;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+.pn span.bdg.b-gold{background:#F6E7B4;color:#6B4E00;box-shadow:inset 0 0 0 1px #E0C66A}
+.pn span.bdg.b-silver{background:#E5E8EF;color:#3F4656;box-shadow:inset 0 0 0 1px #C3C8D4}
+.pn span.bdg.b-top{background:#F3E1D2;color:#6E3B12;box-shadow:inset 0 0 0 1px #DDB896}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .n-gold,:root:not([data-theme="light"]) .n-legend{background-image:linear-gradient(100deg,#E8B923,#FFE18A 45%,#E8B923)}
+  :root:not([data-theme="light"]) .n-bronze{background-image:linear-gradient(100deg,#C7834A,#F3C29B 45%,#C7834A)}
+  :root:not([data-theme="light"]) .n-silver{background-image:linear-gradient(100deg,#B9C0CF,#EEF1F7 45%,#B9C0CF)}}
+:root[data-theme="dark"] .n-gold,:root[data-theme="dark"] .n-legend{background-image:linear-gradient(100deg,#E8B923,#FFE18A 45%,#E8B923)}
+:root[data-theme="dark"] .n-bronze{background-image:linear-gradient(100deg,#C7834A,#F3C29B 45%,#C7834A)}
+:root[data-theme="dark"] .n-silver{background-image:linear-gradient(100deg,#B9C0CF,#EEF1F7 45%,#B9C0CF)}
+
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;aspect-ratio:1/1;align-self:center;box-sizing:border-box;padding:0;overflow:hidden;flex:none;color:#fff;font-weight:700;line-height:1;background:var(--soft);vertical-align:middle}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av.empty{border:1px dashed var(--line);background:var(--bg)}
+.av.ini{background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 60% 26%);box-shadow:inset 0 0 0 1.5px hsl(var(--h) 45% 72%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .av.ini{background:hsl(var(--h) 30% 26%);color:hsl(var(--h) 80% 88%);box-shadow:inset 0 0 0 1.5px hsl(var(--h) 35% 42%)}}
+:root[data-theme="dark"] .av.ini{background:hsl(var(--h) 30% 26%);color:hsl(var(--h) 80% 88%);box-shadow:inset 0 0 0 1.5px hsl(var(--h) 35% 42%)}
+.whoav{display:flex;align-items:center;gap:8px;min-width:0}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:5px 12px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.games{display:flex;flex-direction:column;gap:6px}
+.game{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.game .gn{font-family:var(--f-num);font-weight:700;color:var(--muted);width:2.2em}
+.game select{font:inherit;font-size:.85rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+
+.callpanel{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger)}
+.callitem{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:8px;background:var(--bg)}
+.match.calling{border-color:var(--danger)}
+.msg.adm{background:color-mix(in srgb,var(--accent) 18%,var(--bg))}
+.msg.call{background:color-mix(in srgb,var(--danger) 16%,var(--bg))}
+.msg.res{background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
+img.shot{display:block;max-width:180px;max-height:140px;margin-top:4px;border-radius:6px;border:1px solid var(--line);cursor:zoom-in}
+img.shot.big{max-width:100%;max-height:none;cursor:zoom-out}
+.warn{color:var(--danger);font-weight:700}
+
+.chat{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line)}
+.chat .k{font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.chatlog{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto}
+.msg{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;font-size:.88rem;padding:4px 8px;border-radius:6px;background:var(--bg)}
+.msg.me{background:var(--accent-soft)}
+.msg span{overflow-wrap:anywhere}
+.msg time{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{font-size:.78rem;padding:5px 9px;font-weight:500}
+.chat input{flex:1 1 200px}
+
+.cd{font-size:.8rem;font-weight:700;color:var(--danger);font-variant-numeric:tabular-nums}
+
+.room{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line)}
+.room .k{font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.room .code{font-family:var(--f-num);font-size:1.3rem;font-weight:700;letter-spacing:.1em}
+.room input{font-family:var(--f-num);font-size:1rem;width:180px}
+
+.lobby{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+.lobby .k{font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.lobby .code{font-family:var(--f-num);font-size:1.25rem;font-weight:700;letter-spacing:.12em}
+.lobby input{font-family:var(--f-num);width:160px}
+
+.pub{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:var(--accent-soft)}
+.pub .lab{font-size:.8rem;font-weight:700}
+.pub input{flex:1 1 280px;font-family:var(--f-num);font-size:.8rem}
+.btnlink{display:inline-flex;align-items:center;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;font-weight:700;font-size:.85rem;text-decoration:none}
+.modetag{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--ink);color:var(--panel);letter-spacing:.06em}
+
+.rep{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.rep .lab{font-size:.75rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.rep .opp{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px}
+.rep .opp b{font-size:1.25rem}
+.rep .big{font-size:1rem;padding:12px 18px}
+.rep .ok{font-weight:700;color:var(--accent)}
+.rep .warn{font-weight:700;color:var(--danger)}
+.rep select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.side .ro{font-size:.75rem;color:var(--muted);text-align:right}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.bar select,.f select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+.bar select#tourSel{font-weight:700}
+.inline{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px dashed var(--line);border-radius:8px}
+.f{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.f label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.f input[type=text]{flex:1 1 240px}
+.steps{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem;font-weight:700}
+.steps span{padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.steps span.on{background:var(--accent);color:var(--accent-ink)}
+.steps span.done{background:var(--accent-soft);color:var(--accent)}
+.champ{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:10px;background:var(--accent-soft)}
+.champ .t{font-family:var(--f-display);font-size:1.5rem;line-height:1.2}
+.champ .k{font-size:.75rem;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+/* players */
+.plist{display:flex;flex-direction:column;gap:6px}
+.prow{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center}
+.prow .no{font-family:var(--f-num);color:var(--muted);font-size:.8rem;text-align:right}
+.prow .who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.prow .who b{overflow-wrap:anywhere}
+.prow .who span{font-size:.78rem;color:var(--muted)}
+.prow select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px;min-width:0;width:100%}
+@media (max-width:600px){.prow{grid-template-columns:22px minmax(0,1fr) auto}.prow select{grid-column:2/-1}}
+.addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.addrow input{flex:1 1 140px}
+.chk{display:flex;flex-wrap:wrap;gap:6px}
+.chk label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.85rem;cursor:pointer}
+.chk label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+/* matches */
+.rtabs{display:flex;flex-wrap:wrap;gap:6px}
+.rtabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:10px}
+.match{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.match.done{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.match .mh{display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.side{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;align-items:center;padding:6px 8px;border-radius:8px}
+.side.win{background:var(--accent-soft)}
+.side.lose{opacity:.6}
+.side .nm{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.side .nm b{overflow-wrap:anywhere}
+.side .nm span{font-size:.75rem;color:var(--muted)}
+.side .ctl{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.side select{font:inherit;font-size:.8rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 4px;max-width:150px}
+.side .wbtn{padding:5px 10px;font-size:.8rem}
+.side.win .wbtn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.side.win .wbtn:not(.on){background:transparent;color:var(--ink);border-color:var(--line)}
+.side .wbtn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.side .lbl{font-size:.7rem;color:var(--muted);font-weight:700}
+.vs{text-align:center;font-family:var(--f-display);font-size:.8rem;color:var(--muted);line-height:1}
+.bye{padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:.88rem}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;color:#fff;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.used{font-size:.75rem;font-weight:700}
+/* standings */
+.tbox{overflow:auto;border:1px solid var(--line);border-radius:8px}
+table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.88rem}
+.st th,.st td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.st th:nth-child(2),.st td:nth-child(2){text-align:left;white-space:normal;min-width:120px}
+.st thead th{font-size:.72rem;color:var(--muted);letter-spacing:.04em;background:var(--panel);position:sticky;top:0}
+.st tr.cut td{background:var(--accent-soft)}
+.st td.rk{font-family:var(--f-num);font-weight:700}
+/* bracket */
+.bracket{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,1fr);gap:14px;overflow-x:auto;padding-bottom:4px}
+.bcol{display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.bcol h3{margin:0;font-size:.85rem;color:var(--muted);text-align:center}
+.tbd{color:var(--muted);font-size:.85rem;padding:12px;border:1px dashed var(--line);border-radius:10px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>XYZ CUP</h1>
+      <p class="sub">予選スイスドロー → 決勝トーナメント。</p>
+    </div>
+    <div class="row">
+      <span class="modetag" id="modeTag" hidden></span>
+      <button type="button" id="backAdmin" hidden>運営画面に戻る</button>
+      <a id="toScore" href="score.html" hidden>スコア表へ</a>
+      <button type="button" id="copyLink" class="primary" hidden>共有リンクをコピー</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="panel callpanel" id="callPanel" hidden>
+    <div class="row"><h2>運営呼び出し</h2><span class="spacer"></span><span class="status">対応が終わったら「対応済みにする」を押してください</span></div>
+    <div id="callHost"></div>
+  </section>
+
+  <section class="panel" id="myPanel" hidden>
+    <div id="myHost"></div>
+  </section>
+
+  <section class="panel" id="tourPanel">
+    <div class="row"><h2 id="tourTitle">大会</h2><span class="spacer"></span><span class="status" id="syncStatus"></span></div>
+    <div class="bar">
+      <select id="tourSel" aria-label="表示する大会"></select>
+      <div class="steps" id="steps"></div>
+      <span class="spacer"></span>
+      <button type="button" class="primary" id="newTourBtn">新しい大会を作る</button>
+    </div>
+    <div class="pub" id="pubRow" hidden>
+      <div class="lab">参加者用URL（全大会共通）　<span class="status">参加者はここからユーザーIDとパスワードでログインし、大会一覧から参加登録します。大会ごとにURLを配る必要はありません</span></div>
+      <div class="addrow"><input type="text" id="pubUrl" readonly aria-label="参加者用URL"><button type="button" class="primary" id="copyPub">コピー</button><a class="btnlink" id="openPub" href="#" target="_blank" rel="noopener">参加者画面を開く</a></div>
+    </div>
+    <div class="inline" id="newTourForm" hidden>
+      <div class="f"><input type="text" id="tName" maxlength="40" placeholder="例：第1回 XYZ CUP" aria-label="大会名"></div>
+      <div class="f">
+        <label>予選ラウンド数 <select id="tRounds"><option value="0">人数から自動</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
+        <label>決勝トーナメント <select id="tCut"><option value="0">なし（予選のみ）</option><option value="2">上位2名</option><option value="4" selected>上位4名</option><option value="8">上位8名</option></select></label>
+        <label>種別 <select id="tKind"><option value="internal">内戦（チームメンバーのみ）</option><option value="external">外戦（外部プレイヤーも参加）</option></select></label>
+        <label>予選フォーマット <select id="tFormat"><option value="bo1">2デッキBO1</option><option value="bo3c">BO3コンクエスト</option></select></label>
+        <label>決勝フォーマット <select id="tFormatTop"><option value="bo1">2デッキBO1</option><option value="bo3c" selected>BO3コンクエスト</option></select></label>
+      </div>
+      <div class="f">
+        <label>プライベートロビー <select id="tLobby"><option value="0">使わない</option><option value="1">使う</option></select></label>
+        <input type="text" id="tLobbyCode" maxlength="20" placeholder="ロビーコード" aria-label="ロビーコード" hidden style="flex:0 1 200px;font-family:var(--f-num)">
+      </div>
+      <div class="row"><button type="button" class="primary" id="createTour">作成</button><button type="button" id="cancelTour">やめる</button></div>
+    </div>
+    <div class="lobby" id="lobbyBox" hidden></div>
+    <div id="champ"></div>
+  </section>
+
+  <section class="panel" id="reportPanel" hidden>
+    <div class="row"><h2 id="reportTitle">結果報告</h2><span class="spacer"></span>
+      <label class="f" style="gap:6px;font-size:.85rem;font-weight:700;color:var(--muted)">あなたは <select id="meSel" aria-label="自分の名前"></select></label></div>
+    <div id="reportHost"></div>
+  </section>
+
+  <section class="panel" id="playersPanel" hidden>
+    <div class="row"><h2>参加者</h2><span class="status" id="pCount"></span><span class="spacer"></span><span class="status" id="formatNote"></span></div>
+    <div class="addrow" id="pickRow">
+      <select id="memberPick" aria-label="追加するメンバー"></select>
+      <button type="button" class="primary" id="addPicked">追加</button>
+      <button type="button" id="addAll">名簿の全員を追加</button>
+      <span class="spacer"></span>
+      <button type="button" id="regBtn">メンバー登録</button>
+    </div>
+    <div class="inline" id="regForm" hidden>
+      <div class="addrow">
+        <input type="text" id="regName" maxlength="40" placeholder="名前" aria-label="登録するメンバーの名前">
+        <input type="text" id="regHandle" maxlength="30" placeholder="XのID（任意）" aria-label="XのID">
+        <input type="text" id="regUid" maxlength="20" inputmode="numeric" placeholder="ユーザーID（ゲーム内）" aria-label="ユーザーID" style="font-family:var(--f-num)">
+      </div>
+      <div class="warn" id="regMsg"></div>
+      <div class="f"><label><input type="checkbox" id="regJoin" checked> この大会の参加者にも入れる</label></div>
+      <div class="row"><button type="button" class="primary" id="regSave">名簿に登録</button><button type="button" id="regCancel">やめる</button><span class="status">名簿はスコア表と共通です</span></div>
+    </div>
+    <div class="plist" id="plist"></div>
+    <div class="row" id="startRow">
+      <button type="button" class="primary" id="startBtn">予選を始める</button>
+      <span class="status" id="startNote"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="swissPanel" hidden>
+    <div class="row"><h2>予選（スイスドロー）</h2><span class="spacer"></span><div class="rtabs" id="rtabs"></div></div>
+    <div id="roundHost"></div>
+    <div class="row" id="roundActions"></div>
+  </section>
+
+  <section class="panel" id="standPanel" hidden>
+    <div class="row"><h2>予選順位</h2><span class="spacer"></span><span class="status" id="tbNote">勝数 → OMW%（対戦相手の勝率）→ OOMW% の順で並べています</span></div>
+    <div id="standHost"></div>
+  </section>
+
+  <section class="panel" id="topPanel" hidden>
+    <div class="row"><h2>決勝トーナメント</h2></div>
+    <div id="bracketHost"></div>
+  </section>
+
+  <section class="panel" id="deckPanel" hidden>
+    <div class="row"><h2>クラス別成績</h2><span class="spacer"></span><span class="status">結果に使用デッキが入っている試合だけを数えています</span></div>
+    <div id="deckHost"></div>
+  </section>
+
+  <section class="panel" id="hallPanel" hidden>
+    <details id="hallBox">
+      <summary class="row" style="cursor:pointer"><h2>実績</h2><span class="status" id="hallCount"></span></summary>
+      <div class="status" style="margin:8px 0">大会が終わると、優勝・準優勝・3位・決勝トーナメント進出が自動で記録されます。実績は内戦と外戦で別々に数え、内戦の大会では内戦の実績、外戦の大会では外戦の実績だけが名前に付きます。同じ人かどうかはユーザーIDで見分けます（内戦でユーザーIDがない人は名簿で見分けます）。実績に応じて名前の後ろにアイコンが付きます：優勝は金トロフィー、準優勝は銀トロフィー、3位は銅トロフィー、決勝R進出はリボンメダル。いちばん高い実績のアイコンだけを表示します。</div>
+      <div class="row hallkind" id="hallKind" role="group" aria-label="内戦・外戦の切り替え"></div>
+      <div class="tbox"><table class="st" id="hallTable"></table></div>
+      <h3 style="margin:14px 0 6px;font-size:.95rem">チームアイコン</h3>
+      <div class="status" style="margin-bottom:6px">参加者一覧の「所属」から選ぶと、名前の横にチームアイコンが付きます。チーム名簿に登録されている人（XのIDが名簿と同じ人も含む）には自動でXYZアイコンが付きます。ユーザーID（内戦は名簿）にひも付き、次の大会以降も引き継がれます。</div>
+      <div id="proList"></div>
+    </details>
+  </section>
+
+  <section class="panel" id="uidPanel" hidden>
+    <details id="uidBox">
+      <summary class="row" style="cursor:pointer"><h2>メンバーのユーザーID</h2><span class="status" id="uidCount"></span></summary>
+      <div class="status" style="margin:8px 0">名簿のメンバーにゲーム内のユーザーIDを登録すると、参加者ページでその人がXYZメンバーとして扱われます（内戦が見える・XYZバッジ・戦績の内戦タブ）。入力したら枠の外を押すと保存されます。</div>
+      <div id="uidHost"></div>
+    </details>
+  </section>
+
+  <section class="panel" id="banPanel" hidden>
+    <details id="banBox">
+      <summary class="row" style="cursor:pointer"><h2>出禁リスト</h2><span class="status" id="banCount"></span></summary>
+      <div class="status" style="margin:8px 0">ここに登録したユーザーIDかXのIDのどちらかが一致する人は、以後の大会で参加登録できません。リストは運営画面にだけ表示されます。</div>
+      <div class="addrow">
+        <input type="text" id="banName" maxlength="40" placeholder="名前（メモ用）" aria-label="名前">
+        <input type="text" id="banUid" maxlength="20" inputmode="numeric" placeholder="ユーザーID" aria-label="ユーザーID">
+        <input type="text" id="banX" maxlength="30" placeholder="XのID" aria-label="XのID">
+        <input type="text" id="banReason" maxlength="80" placeholder="理由（メモ）" aria-label="理由">
+        <button type="button" class="danger" id="banAdd">出禁に登録</button>
+      </div>
+      <div class="status" id="banMsg"></div>
+      <div class="tbox" style="margin-top:8px"><table class="st" id="banTable"></table></div>
+    </details>
+  </section>
+
+  <section class="panel" id="dangerPanel" hidden>
+    <div class="row"><span class="status">大会を消すと、組み合わせと結果もすべて消えます。</span><span class="spacer"></span><button type="button" class="danger" id="delTour">この大会を削除</button></div>
+  </section>
+</div>
+
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA5Eerx9nMPguK-NLnX-nJylTzcn06Q_3A",
+  authDomain: "teamxyz-2962e.firebaseapp.com",
+  projectId: "teamxyz-2962e",
+  storageBucket: "teamxyz-2962e.firebasestorage.app",
+  messagingSenderId: "278693329996",
+  appId: "1:278693329996:web:aeff54b74a2db9c80ac8e9"
+};
+const FB="https://www.gstatic.com/firebasejs/10.12.2/";
+const $=id=>document.getElementById(id);
+const CLASSES=[["elf","エルフ"],["royal","ロイヤル"],["witch","ウィッチ"],["dragon","ドラゴン"],["nightmare","ナイトメア"],["bishop","ビショップ"],["nemesis","ネメシス"]];
+const CN=Object.fromEntries(CLASSES);
+function el(t,c,txt){const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+// Devices' clocks can be off (even by an hour), so all match timing uses the web server's clock.
+let clockOffset=0;
+const now=()=>Date.now()+clockOffset;
+async function syncClock(){
+  try{const t0=Date.now();const r=await fetch(location.pathname+"?clock="+t0,{method:"HEAD",cache:"no-store"});const d=r.headers.get("date");const t1=Date.now();
+    if(d){const srv=new Date(d).getTime();if(Number.isFinite(srv))clockOffset=srv+500-(t0+t1)/2}}catch(e){}
+}
+const pct=v=>(v*100).toFixed(1)+"%";
+
+/* ---------- state ---------- */
+let A=null,ROOT="",admin=false,fbApp=null;
+let members={},tours={},tid=null,T=null,M={},E={},C={},viewRound=null;
+let unsub=[],deferred=false;
+
+/* ---------- adapters (same shape as スコア表) ---------- */
+function setSync(t){$("syncStatus").textContent=t}
+const writers={};
+function write(path,val){
+  setSync("保存中…");
+  const w=writers[path]||(writers[path]=(()=>{let busy=false,has=false,next;const go=async v=>{if(busy){has=true;next=v;return}busy=true;
+    try{await (v?A.set(path,v):A.del(path));setSync("保存済み")}catch(e){console.error(e);setSync(e&&(e.code==="permission-denied"||e.code==="invalid_argument")?"保存が拒否されました。ルール設定を確認してください":"保存できませんでした。通信を確認してください")}
+    busy=false;if(has){has=false;const n=next;next=undefined;go(n)}};return go})());
+  w(val);
+}
+const stopped=e=>{console.error(e);setSync(e&&e.code==="permission-denied"?"読み込みが拒否されました。ルール設定を確認してください":"同期が止まりました。再読み込みしてください")};
+function firebaseAdapter(fs,db){return{
+  watchDoc:(p,cb)=>fs.onSnapshot(fs.doc(db,p),s=>cb(s.exists()?s.data():null),stopped),
+  watchColl:(p,cb)=>fs.onSnapshot(fs.collection(db,p),qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
+  set:(p,v)=>fs.setDoc(fs.doc(db,p),v),del:p=>fs.deleteDoc(fs.doc(db,p))
+}}
+function claudeAdapter(db){return{
+  watchDoc:(p,cb)=>db.doc(p).onSnapshot(s=>cb(s.exists?s.data():null),stopped),
+  watchColl:(p,cb)=>db.collection(p).onSnapshot(qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
+  set:(p,v)=>db.doc(p).set(v),del:p=>db.doc(p).delete()
+}}
+function localAdapter(){
+  const K="xyz-cup-local-v1";let d={};try{d=JSON.parse(localStorage.getItem(K)||"{}")}catch(e){}
+  const subs=new Set();const save=()=>{try{localStorage.setItem(K,JSON.stringify(d))}catch(e){}subs.forEach(f=>f())};
+  const coll=p=>{const m={},pre=p+"/";for(const k in d){if(k.startsWith(pre)&&!k.slice(pre.length).includes("/"))m[k.slice(pre.length)]=d[k]}return m};
+  const sub=f=>{subs.add(f);f();return()=>subs.delete(f)};
+  return{watchDoc:(p,cb)=>sub(()=>cb(d[p]?JSON.parse(JSON.stringify(d[p])):null)),watchColl:(p,cb)=>sub(()=>cb(JSON.parse(JSON.stringify(coll(p))))),
+    set:async(p,v)=>{d[p]=v;save()},del:async p=>{for(const k of Object.keys(d))if(k===p||k.startsWith(p+"/"))delete d[k];save()}};
+}
+let pub=null,MODE="admin";
+const idxPath=id=>`${ROOT}/tournaments/${id}`;
+const cupPath=()=>`cups/${pub}`;
+const matchPath=mid=>`${cupPath()}/matches/${mid}`;
+function saveT(){write(cupPath(),T)}
+
+/* ---------- helpers ---------- */
+// participants live one-per-document under entries/, so several people can register at once
+function players(){
+  if(!T)return [];
+  const list=Object.entries(E).map(([id,e])=>Object.assign({id,decks:[null,null]},e)).sort((a,b)=>(a.order||0)-(b.order||0));
+  const have=new Set(list.map(p=>p.id));
+  for(const p of T.players||[])if(!have.has(p.id))list.push(Object.assign({decks:[null,null]},p));
+  return list;
+}
+const entryPath=pid=>`${cupPath()}/entries/${pid}`;
+function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;E[p.id]=o;write(entryPath(p.id),o)}
+function removeEntry(pid){delete E[pid];write(entryPath(pid),null);if((T.players||[]).some(p=>p.id===pid)){T.players=T.players.filter(p=>p.id!==pid);saveT()}}
+const P=id=>players().find(p=>p.id===id)||null;
+function rosterMap(){if(MODE==="admin")return members;const o={};for(const r of (T&&T.roster)||[])o[r.mid]={name:r.name,handle:r.handle,order:r.order};return o}
+/* ---------- player icons ---------- */
+async function shrinkIcon(file){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,ng)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ng;i.src=url});
+    const side=Math.min(img.naturalWidth,img.naturalHeight);const sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2;
+    for(const [px,q] of [[160,.82],[128,.72],[96,.62]]){const cv=document.createElement("canvas");cv.width=cv.height=px;const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,px,px);cx.drawImage(img,sx,sy,side,side,0,0,px,px);
+      const d=cv.toDataURL("image/jpeg",q);if(d.length<36000)return d}
+    return null}finally{URL.revokeObjectURL(url)}
+}
+const AVC=["#5A3CCB","#1F7A55","#B83A3A","#C9741F","#2E7FB8","#8A2F6E","#4A6B2A"];
+function avatar(p,size){
+  const s=size||28;const w=el("span","av");for(const k of ["width","height","minWidth","minHeight","maxWidth","maxHeight"])w.style[k]=s+"px";
+  if(p&&p.icon){const im=el("img");im.src=p.icon;im.alt="";w.append(im)}
+  else{const n=(p&&who(p).name)||"?";let h=0;for(const ch of n)h=(h*31+ch.codePointAt(0))>>>0;w.classList.add("ini");w.style.setProperty("--h",String([250,155,15,30,205,320,95][h%7]));w.textContent=([...n][0]||"?").toUpperCase();w.style.fontSize=Math.round(s*0.46)+"px"}
+  return w;
+}
+function iconPicker(cur,onPick,id){
+  const row=el("div","row");row.style.marginTop="6px";const f=el("input");f.type="file";f.accept="image/*";f.id=id;f.hidden=true;
+  const pv=avatar({icon:cur,name:"?"},44);if(!cur){pv.textContent="";pv.classList.remove("ini");pv.classList.add("empty");pv.style.removeProperty("--h")}
+  const b=el("button",null,cur?"アイコンを変更":"アイコンを設定する");b.type="button";b.onclick=()=>f.click();
+  const st=el("span","status");
+  f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;st.textContent="読み込み中…";try{const d=await shrinkIcon(file);if(!d){st.textContent="この画像は使えませんでした";return}onPick(d)}catch(e){st.textContent="画像を読み込めませんでした"}};
+  row.append(pv,b,f);if(cur){const x=el("button",null,"アイコンを外す");x.type="button";x.onclick=()=>onPick(null);row.append(x)}row.append(st);return row;
+}
+/* ---------- ban list (出禁) ---------- */
+// The list itself stays on the organizer side. Each tournament only gets salted SHA-256 digests,
+// so the participant page can refuse a banned user ID / X ID without seeing anyone's IDs.
+let bans={};
+const normUid=v=>String(v||"").replace(/[^0-9]/g,"");
+const normX=v=>String(v||"").trim().replace(/^@+/,"").toLowerCase();
+async function digest(v){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(`xyzcup:${pub}:${v}`));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}
+async function banKeys(uidv,handle){const out=[];const u=normUid(uidv),x=normX(handle);if(u)out.push(await digest("u:"+u));if(x)out.push(await digest("x:"+x));return out}
+/* ---------- achievements (name decorations) ---------- */
+// Same person = same user ID (internal events without a user ID fall back to the roster member).
+// The organizer side keeps the records; each tournament gets {digest: counts} so names can be decorated
+// on the participant page without exposing anyone's ID.
+let records={};let teams={};
+const achKey=p=>{const u=normUid(p&&p.uid);if(u)return "u:"+u;if(p&&p.member)return "m:"+p.member;return null};
+const recId=k=>k.replace(":","_");
+function placements(){
+  // {entryId: "champion"|"runner"|"top"} for a finished tournament
+  const out={};if(!T||T.status!=="done")return out;
+  if(T.topCut){const b=bracket();if(!b)return out;for(const s of T.bracket.seeds)out[s]="top";if(b.length>=2)for(const m of b[b.length-2])if(m.winner&&m.a&&m.b)out[m.winner===m.a?m.b:m.a]="third";const f=b[b.length-1][0];if(f.winner){out[f.winner]="champion";out[f.winner===f.a?f.b:f.a]="runner"}}
+  else{const st=standings();if(st[0])out[st[0].id]="champion";if(st[1])out[st[1].id]="runner";if(st[2])out[st[2].id]="third"}
+  return out;
+}
+function syncRecords(){
+  if(MODE!=="admin"||!T||T.status!=="done")return;
+  const pl=placements();
+  for(const [pid,place] of Object.entries(pl)){
+    const p=P(pid);const k=achKey(p);if(!k)continue;const id=recId(k);const cur=records[id]||{name:"",events:{}};
+    const kind=T.kind==="external"?"external":"internal";const ev=cur.events&&cur.events[pub];if(ev&&ev.place===place&&(ev.kind||"internal")===kind)continue;
+    const next={name:who(p).name,events:Object.assign({},cur.events,{[pub]:{t:T.name,place,kind,at:T.created||now()}})};
+    records[id]=next;write(`${ROOT}/records/${id}`,next);
+  }
+}
+// achievements are counted separately for internal (内戦) and external (外戦) events
+function tally(rec,kind){const c={w:0,r:0,b:0,t:0};for(const e of Object.values((rec&&rec.events)||{})){if(kind&&(e.kind||"internal")!==kind)continue;if(e.place==="champion")c.w++;else if(e.place==="runner")c.r++;else if(e.place==="third")c.b++;c.t++}return c}
+let badgeSyncing=false;
+async function syncBadges(){
+  if(MODE!=="admin"||!T||!pub||T.status==="done"||badgeSyncing)return;badgeSyncing=true;
+  try{const map={};for(const [id,rec] of Object.entries(allRecords())){const c=tally(rec,T.kind==="external"?"external":"internal");if(!c.t)continue;map[await digest("a:"+id)]=[c.w,c.r,c.t,c.b]}
+    const tm={};
+    // roster members automatically get the XYZ tag (an explicitly chosen team wins)
+    for(const p of players()){if(!autoXYZ(p))continue;const k=achKey(p);if(!k)continue;const id=recId(k);if(teams[id])continue;tm[await digest("a:"+id)]="XYZ"}
+    for(const [id,r] of Object.entries(teams))if(r&&TEAM[r.team])tm[await digest("a:"+id)]=r.team;
+    const same=JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.badges||{}).sort())&&!T.pros&&!T.xyz;
+    const sameP=JSON.stringify(Object.entries(tm).sort())===JSON.stringify(Object.entries(T.teams||{}).sort());
+    if(!same||!sameP){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;saveT()}}finally{badgeSyncing=false}
+}
+const entryDigest={};const digestPending=new Set();
+function decoOf(p){
+  const k=achKey(p);if(!k||!T||!(T.badges||T.teams))return null;const id=recId(k);const ck=pub+"|"+id;
+  if(!(ck in entryDigest)){if(!digestPending.has(ck)){digestPending.add(ck);digest("a:"+id).then(h=>{entryDigest[ck]=h;digestPending.delete(ck);render()})}return null}
+  const h=entryDigest[ck];const v=(T.badges||{})[h];const rawTeam=(T.teams||{})[h]||null;const team=p.hideTeam?null:rawTeam;
+  if(!v&&!rawTeam)return null;return Object.assign(v?{w:v[0],r:v[1],t:v[2],b:v[3]||0}:{w:0,r:0,t:0,b:0},{team,rawTeam});
+}
+const MEDAL_COLORS={gold:["#FFE38A","#E8B923","#B8860B"],silver:["#F4F6FA","#B9C0CF","#7A8296"],bronze:["#F3C29B","#C7834A","#8A4F22"]};
+function trophySvg(kind){const c=MEDAL_COLORS[kind];return `<svg viewBox="0 0 24 24" width="1.35em" height="1.35em" aria-hidden="true"><defs><linearGradient id="tg-${kind}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset=".5" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><path fill="url(#tg-${kind})" stroke="${c[2]}" stroke-width=".6" d="M7 3h10v2h3a1 1 0 0 1 1 1v1.5A4.5 4.5 0 0 1 16.9 12 5.5 5.5 0 0 1 13 15.3V18h3a1 1 0 0 1 1 1v2H7v-2a1 1 0 0 1 1-1h3v-2.7A5.5 5.5 0 0 1 7.1 12 4.5 4.5 0 0 1 3 7.5V6a1 1 0 0 1 1-1h3V3Zm10 4v3.3A2.5 2.5 0 0 0 19 7.8V7h-2ZM5 7v.8a2.5 2.5 0 0 0 2 2.5V7H5Z"/><path fill="#fff" fill-opacity=".5" d="M9 5h1.6v6.2A3 3 0 0 1 9 9.5V5Z"/></svg>`}
+// finals: a ribbon rosette with a star
+const FINALIST='<svg viewBox="0 0 24 24" width="1.35em" height="1.35em" aria-hidden="true"><defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7FA8FF"/><stop offset="1" stop-color="#3B5BDB"/></linearGradient></defs><path fill="#E5484D" d="M8.2 13.5 5.5 22l3.1-1.6 2 2.6 1.6-7.4Z"/><path fill="#C2185B" d="M15.8 13.5 18.5 22l-3.1-1.6-2 2.6-1.6-7.4Z"/><circle cx="12" cy="9.2" r="7" fill="url(#fg)" stroke="#2B44A8" stroke-width=".6"/><circle cx="12" cy="9.2" r="5.2" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".8"/><path fill="#fff" d="m12 5.4 1.15 2.35 2.6.38-1.88 1.83.44 2.58L12 11.32l-2.31 1.22.44-2.58-1.88-1.83 2.6-.38Z"/></svg>';
+// team tags. Edit this list to add/remove teams: [code, gradient start, gradient end, label shown, text color, text outline (optional), border color (optional)]
+const TEAMS=[["XYZ","#8E96A6","#E9ECF2","XYZ","#1E2430"],["DNF","#0A0A0F","#1F5FD6","DNF","#fff"],["MRG","#000","#2A2A2E","純","#fff"],["CR","#000","#2A2A2E","CR","#E53935"],["RC","#000","#1A1A1D","RC","#fff","","#E53935"],["ZETA","#000","#2A2A2E","ZETA","#fff"],["LVH","#050A06","#1F9D4C","LVH","#000","#7CE3A2"],["RID","#C99A0E","#F6CD3A","RID","#2A1F00"],["VL","#063B2C","#0E7A5A","VL","url(#tmg-VL)"]];
+const TEAM=Object.fromEntries(TEAMS.map(t=>[t[0],t]));
+// generic smiley used in place of text for RID (original design: round eyes, centered smile)
+const FACE_TEAMS={};
+function faceSvg(code,t){return `<svg viewBox="0 0 24 20" width="1.2em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient></defs><rect x=".5" y=".5" width="23" height="19" rx="5" fill="url(#tm-${code})" stroke="#000" stroke-opacity=".22"/><circle cx="8.6" cy="8" r="1.6" fill="${t[4]}"/><circle cx="15.4" cy="8" r="1.6" fill="${t[4]}"/><path d="M7 11.6Q12 16.6 17 11.6" fill="none" stroke="${t[4]}" stroke-width="1.8" stroke-linecap="round"/></svg>`}
+function teamSvg(code){const t=TEAM[code];if(!t)return"";if(FACE_TEAMS[code])return faceSvg(code,t);const lab=t[3]||code,ink=t[4]||"#fff";const cjk=/[^\x00-\x7f]/.test(lab);const w=Math.max(30,(cjk?14:9.6)*lab.length+12);
+  return `<svg viewBox="0 0 ${w} 20" width="${w/20}em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient>${ink.startsWith("url(")?`<linearGradient id="tmg-${code}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1B0"/><stop offset=".5" stop-color="#E8B923"/><stop offset="1" stop-color="#B8860B"/></linearGradient>`:""}</defs><rect x="${t[6]?1:.5}" y="${t[6]?1:.5}" width="${t[6]?w-2:w-1}" height="${t[6]?18:19}" rx="5" fill="url(#tm-${code})" ${t[6]?`stroke="${t[6]}" stroke-width="1.8"`:`stroke="${code==="XYZ"||code==="RID"?"#000":"#fff"}" stroke-opacity=".22"`}/><path d="M3 17 ${w-3} 3" stroke="#fff" stroke-opacity=".1" stroke-width="3"/><text x="${w/2}" y="${cjk?15:14.6}" text-anchor="middle" font-family="${cjk?"Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,serif":"Arial Black,Arial,Helvetica,sans-serif"}" font-weight="900" font-size="${cjk?14:13}" letter-spacing=".5" fill="${ink}"${t[5]?` stroke="${t[5]}" stroke-width="1.6" paint-order="stroke" stroke-linejoin="round"`:""}${cjk?"":' font-style="italic"'}>${lab}</text></svg>`}
+function nameEl(p,name){
+  const d=decoOf(p);const b=el("b","pname",name);
+  const wrap=el("span","pn");wrap.append(b);if(!d)return wrap;
+  if(d.team&&TEAM[d.team]){const x=el("span","tm");x.innerHTML=teamSvg(d.team);x.setAttribute("role","img");x.setAttribute("aria-label",d.team+"所属");x.title=d.team+"所属";wrap.append(x)}
+  // only the highest achievement is shown, with no counts, to keep names tidy
+  let icon=null,label="";
+  if(d.w){icon=trophySvg("gold");label="優勝経験あり"}
+  else if(d.r){icon=trophySvg("silver");label="準優勝経験あり"}
+  else if(d.b){icon=trophySvg("bronze");label="3位経験あり"}
+  else if(d.t){icon=FINALIST;label="決勝R進出経験あり"}
+  if(icon){const t=el("span","trophy");t.innerHTML=icon;t.setAttribute("role","img");t.setAttribute("aria-label",label);wrap.append(t)}
+  if(d.t)wrap.title=`これまでの実績：優勝${d.w}回・準優勝${d.r}回・3位${d.b}回・決勝R進出${d.t}回`;
+  return wrap;
+}
+let banSyncing=false;
+async function syncBans(){
+  if(MODE!=="admin"||!T||!pub||T.status!=="setup"||banSyncing)return;banSyncing=true;
+  try{const set=new Set();for(const b of Object.values(bans))for(const k of await banKeys(b.uid,b.handle))set.add(k);
+    const arr=[...set].sort();if(JSON.stringify(arr)!==JSON.stringify((T.banHashes||[]).slice().sort())){T.banHashes=arr;saveT()}}
+  finally{banSyncing=false}
+}
+function isBannedEntry(p){const u=normUid(p.uid),x=normX(who(p).handle);return Object.values(bans).some(b=>(u&&normUid(b.uid)===u)||(x&&normX(b.handle)===x))}
+// is this entry a registered XYZ member? (linked to the roster, or same X handle as a roster member)
+function autoXYZ(p){if(!p)return false;if(p.member&&members[p.member])return true;const u=normUid(p.uid);if(u&&memberUidSet().has(u))return true;const h=normX(p.handle);if(!h)return false;return Object.values(members).some(m=>normX(m.handle)===h)}
+function syncRoster(){
+  if(MODE!=="admin"||!T||T.status!=="setup")return;
+  if(T.kind==="external"){if((T.roster||[]).length){T.roster=[];saveT()}return}
+  const r=Object.entries(members).filter(([,m])=>m.name||m.handle).sort((a,b)=>(a[1].order||0)-(b[1].order||0)).map(([mid,m])=>({mid,name:m.name||"",handle:m.handle||"",order:m.order||0}));
+  const norm=a=>JSON.stringify((a||[]).map(x=>[x.mid,x.name||"",x.handle||"",x.order||0]));
+  if(norm(r)!==norm(T.roster)){T.roster=r;saveT()}
+}
+function who(p){if(!p)return{name:"?",handle:""};const m=p.member&&rosterMap()[p.member];return{name:p.name||(m&&m.name)||"（名前なし）",handle:p.handle||(m&&m.handle)||""}}
+const CHIP_INK={elf:"#0E2A0A",royal:"#3A2B00",dragon:"#2E1600",bishop:"#22262F",nemesis:"#062A30",witch:"#FFFFFF",nightmare:"#FFFFFF"};
+function chip(c){const s=el("span","chip",CN[c]||c);s.style.background=`var(--c-${c})`;s.style.color=CHIP_INK[c]||"#fff";return s}
+const editing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&/^(text|number|search)$/.test(a.type)))&&a.closest(".wrap")&&!a.closest("#regForm,#newTourForm"))};
+function render(){if(editing()){deferred=true;return}deferred=false;renderAll()}
+document.addEventListener("focusout",()=>setTimeout(()=>{if(deferred&&!editing())render()},0));
+
+const fmtOf=stage=>(T&&(stage==="top"?T.formatTop:T.formatSwiss))||(T&&T.format)||"bo1";
+const isBo3m=mid=>fmtOf(String(mid||"").startsWith("b")?"top":"swiss")==="bo3c";
+const FMT={bo1:"2デッキBO1",bo3c:"BO3コンクエスト"};
+function fmtLabel(){const k=T&&T.kind==="external"?"外戦・":"内戦・";const a=fmtOf("swiss"),b=fmtOf("top");
+  if(!T||!T.topCut||a===b)return k+(T&&T.ban&&a==="bo1"?"2デッキBO1（BANあり）":FMT[a]);return `${k}予選：${FMT[a]}／決勝：${FMT[b]}`}
+const scoreOf=res=>res&&res.score==="2-1"?[2,1]:[2,0];
+/* ---------- standings ---------- */
+function standings(){
+  const PL=players();const S={};for(const p of PL)S[p.id]={id:p.id,w:0,l:0,gw:0,gl:0,opps:[],bye:0,order:PL.indexOf(p)};
+  for(const r of T.rounds||[])for(const m of r.pairs){
+    if(!m.b){if(S[m.a]){S[m.a].w++;S[m.a].bye++;S[m.a].gw+=2}continue}
+    const res=M[m.id];if(!S[m.a]||!S[m.b])continue;
+    S[m.a].opps.push(m.b);S[m.b].opps.push(m.a);
+    if(res&&res.winner){const win=res.winner,lose=win===m.a?m.b:m.a;S[win].w++;S[lose].l++;const [x,y]=scoreOf(res);S[win].gw+=x;S[win].gl+=y;S[lose].gw+=y;S[lose].gl+=x}
+  }
+  const mwp=s=>{const g=s.w+s.l;return g?Math.max(1/3,s.w/g):0};
+  for(const s of Object.values(S)){s.mwp=mwp(s);const g=s.gw+s.gl;s.gwp=g?Math.max(1/3,s.gw/g):0}
+  for(const s of Object.values(S)){s.omw=s.opps.length?s.opps.reduce((a,o)=>a+S[o].mwp,0)/s.opps.length:0}
+  for(const s of Object.values(S)){s.oomw=s.opps.length?s.opps.reduce((a,o)=>a+S[o].omw,0)/s.opps.length:0}
+  const b3=fmtOf("swiss")==="bo3c";
+  return Object.values(S).sort((a,b)=>b.w-a.w||b.omw-a.omw||(b3?b.gwp-a.gwp:0)||b.oomw-a.oomw||a.order-b.order);
+}
+function roundDone(r){return r.pairs.every(m=>!m.b||(M[m.id]&&M[m.id].winner))}
+
+/* ---------- pairing ---------- */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeRound(){
+  const n=(T.rounds||[]).length+1;
+  const played=new Set();const hadBye=new Set();
+  for(const r of T.rounds||[])for(const m of r.pairs){if(m.b)played.add([m.a,m.b].sort().join("|"));else hadBye.add(m.a)}
+  let order;
+  if(n===1)order=shuffle(players().map(p=>p.id));
+  else{
+    // shuffle inside each win-group so equal records meet randomly, then keep the group order
+    const st=standings();const groups={};for(const s of st)(groups[s.w]=groups[s.w]||[]).push(s.id);
+    order=Object.keys(groups).map(Number).sort((a,b)=>b-a).flatMap(w=>shuffle(groups[w]));
+  }
+  const pairs=[];
+  if(order.length%2===1){
+    let bi=order.length-1;for(let i=order.length-1;i>=0;i--){if(!hadBye.has(order[i])){bi=i;break}}
+    const b=order.splice(bi,1)[0];pairs.push({id:`r${n}-bye`,a:b,b:null});
+  }
+  const res=[];const used=new Set();
+  const key=(a,b)=>[a,b].sort().join("|");
+  let steps=0;
+  function dfs(i){
+    if(++steps>200000)return false;
+    while(i<order.length&&used.has(order[i]))i++;
+    if(i>=order.length)return true;
+    const a=order[i];used.add(a);
+    for(let j=i+1;j<order.length;j++){const b=order[j];if(used.has(b)||played.has(key(a,b)))continue;used.add(b);res.push([a,b]);if(dfs(i+1))return true;res.pop();used.delete(b)}
+    used.delete(a);return false;
+  }
+  let ok=dfs(0);
+  if(!ok){res.length=0;for(let i=0;i+1<order.length;i+=2)res.push([order[i],order[i+1]])}
+  res.forEach(([a,b],i)=>pairs.unshift({id:`r${n}-${i}`,a,b}));
+  pairs.sort((x,y)=>(x.b?0:1)-(y.b?0:1)||x.id.localeCompare(y.id,undefined,{numeric:true}));
+  return{n,pairs,rematch:!ok,startedAt:now()};
+}
+
+/* ---------- bracket ---------- */
+const SEED={2:[1,2],4:[1,4,2,3],8:[1,8,4,5,2,7,3,6]};
+function bracket(){
+  const B=T.bracket;if(!B)return null;const K=B.seeds.length;const R=Math.log2(K);const rounds=[];
+  for(let r=0;r<R;r++){
+    const cnt=K/2**(r+1);const ms=[];
+    for(let i=0;i<cnt;i++){
+      let a,b;
+      if(r===0){a=B.seeds[SEED[K][2*i]-1];b=B.seeds[SEED[K][2*i+1]-1]}
+      let start=r===0?(B.startedAt||null):null;
+      if(r>0){const pa=rounds[r-1][2*i],pb=rounds[r-1][2*i+1];a=pa.winner;b=pb.winner;if(a&&b&&pa.doneAt&&pb.doneAt)start=Math.max(pa.doneAt,pb.doneAt)}
+      const id=`b${r}-${i}`;const res=M[id];
+      const winner=a&&b&&res&&(res.winner===a||res.winner===b)?res.winner:null;
+      ms.push({id,a,b,winner,start,doneAt:winner?(res.at||null):null,seedA:r===0?SEED[K][2*i]:null,seedB:r===0?SEED[K][2*i+1]:null});
+    }
+    rounds.push(ms);
+  }
+  return rounds;
+}
+function roundLabel(r,R){const left=R-r;return left===1?"決勝":left===2?"準決勝":left===3?"準々決勝":`${r+1}回戦`}
+
+/* ---------- match card ---------- */
+function matchCard(m,label){
+  const card=el("div","match");const res=M[m.id]||{};const done=!!(res.winner&&(res.winner===m.a||res.winner===m.b));
+  if(done)card.classList.add("done");
+  const mh=el("div","mh");mh.append(el("span",null,label+(res.room&&!done?`　ルームID ${res.room}`:"")),el("span",null,done&&res.forfeit?`不戦（${WHY[res.forfeit]}）`:done?(isBo3m(m.id)?`結果入力済み（${res.score||"2-0"}）`:"結果入力済み"):"結果待ち"));card.append(mh);
+  const ban=!!T.ban;
+  const sideEl=(pid,me,opp,slot)=>{
+    const p=P(pid),q=P(opp),w=who(p);const s=el("div","side");
+    if(done)s.classList.add(res.winner===pid?"win":"lose");
+    const nm=el("div","nm");const nh=el("div","whoav");nh.append(avatar(p,24),nameEl(p,w.name));nm.append(nh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
+    const chips=el("div","chips");(p&&p.decks||[]).filter(Boolean).forEach(c=>chips.append(chip(c)));nm.append(chips);
+    const ctl=el("div","ctl");
+    // deck pick: with BAN, this player bans one of the opponent's decks; without, picks own deck
+    const field=ban?(slot==="a"?"ba":"bb"):(slot==="a"?"da":"db");
+    const src=ban?(q&&q.decks||[]):(p&&p.decks||[]);
+    const sel=el("select");sel.id=`${field}-${m.id}`;sel.setAttribute("aria-label",ban?`${w.name}がBANするデッキ`:`${w.name}の使用デッキ`);
+    const o0=el("option",null,ban?"BAN：未選択":"使用：未選択");o0.value="";sel.append(o0);
+    src.filter(Boolean).forEach(c=>{const o=el("option",null,(ban?"BAN：":"使用：")+CN[c]);o.value=c;if(res[field]===c)o.selected=true;sel.append(o)});
+    sel.onchange=()=>{const cur=Object.assign({},M[m.id]||{});cur[field]=sel.value||null;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+    const wb=el("button","wbtn",done&&res.winner===pid?"勝ち ✓":"勝ち");wb.type="button";
+    wb.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.winner=cur.winner===pid?null:pid;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+    if(isBo3m(m.id)){
+      for(const sc of ["2-0","2-1"]){const b=el("button","wbtn",`${sc}で勝ち`);b.type="button";if(done&&res.winner===pid&&(res.score||"2-0")===sc){b.textContent=`${sc}で勝ち ✓`;b.classList.add("on")}
+        b.onclick=()=>{const cur=Object.assign({},M[m.id]||{});const same=cur.winner===pid&&(cur.score||"2-0")===sc;cur.winner=same?null:pid;cur.score=same?null:sc;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};ctl.append(b)}
+    }else ctl.append(sel,wb);
+    if(admin)s.append(nm,ctl);
+    else{const ro=el("div","ro");if(ban&&res[field])ro.append(document.createTextNode("BAN "),chip(res[field]));if(done&&res.winner===pid)ro.append(el("div","ok",isBo3m(m.id)?`勝ち ${res.score||"2-0"}`:"勝ち"));s.append(nm,ro)}
+    const used=usedDeck(m,res,slot);if(used){const u=el("div","used");u.append(el("span","lbl","使用 "),chip(used));nm.append(u)}
+    return s;
+  };
+  card.append(sideEl(m.a,"a",m.b,"a"),el("div","vs","VS"),sideEl(m.b,"b",m.a,"b"));
+  if(isBo3m(m.id)&&(res.games||[]).some(g=>g&&g.w)){const gs=el("div","chips");(res.games||[]).forEach((g,i)=>{if(!g||!g.w)return;const sp=el("span","status",`G${i+1}:`);gs.append(sp);if(g.da)gs.append(chip(g.da));gs.append(el("span","status",g.w==="a"?"○-×":"×-○"));if(g.db)gs.append(chip(g.db))});card.append(gs)}
+  if(admin&&chatLines(m.id).length){const call=unresolvedCall(m.id);const d=el("details");d.open=!!call;
+    d.append(el("summary",call?"warn":"status",call?`運営呼び出し中（チャット ${chatLines(m.id).length}件）`:`チャット ${chatLines(m.id).length}件`),chatLog(m.id,"admin"),adminReply(m.id));card.append(d);if(call)card.classList.add("calling")}
+  return card;
+}
+function cleanRes(r){const o={};for(const k of ["winner","score","da","db","ba","bb","at","room","roomBy","roomAt","entered","forfeit","manual","games"])o[k]=r[k]==null?null:r[k];return o}
+function usedDeck(m,res,slot){
+  if(!T.ban)return res[slot==="a"?"da":"db"]||null;
+  const p=P(slot==="a"?m.a:m.b);const banned=res[slot==="a"?"bb":"ba"];
+  if(!p||!banned)return null;const left=(p.decks||[]).filter(c=>c&&c!==banned);return left.length===1?left[0]:null;
+}
+
+/* ---------- render ---------- */
+function renderAll(){
+  renderTourBar();
+  $("tourPanel").hidden=MODE==="portal"&&!(pview==="cup"&&pub);$("tourTitle").textContent=!admin&&T&&T.name?T.name:"大会";
+  const has=!!T;
+  $("newTourBtn").hidden=!admin;if(!admin)$("newTourForm").hidden=true;$("tourSel").hidden=!admin;
+  $("pubRow").hidden=!(admin&&PKEY);
+  if(admin&&PKEY){const u=portalUrl();if($("pubUrl").value!==u)$("pubUrl").value=u;$("openPub").href=u}
+  for(const id of ["playersPanel","swissPanel","standPanel","topPanel","deckPanel"])$(id).hidden=!has;
+  $("dangerPanel").hidden=!has||!admin;
+  if(MODE==="portal"){if(renderPortal())return}else $("myPanel").hidden=true;
+  renderReport();
+  renderBans();renderHall();renderUidPanel();adminPortalSync();
+  if(!has){$("lobbyBox").hidden=true;$("champ").replaceChildren(T===null&&tid?el("div","empty","読み込み中…"):el("div","empty",admin?"「新しい大会を作る」から始めてください。":MODE==="player"?"大会が見つかりません。運営から受け取ったURLをもう一度確認してください。":"読み込み中…"));return}
+  renderCalls();renderLobby();renderPlayers();renderSwiss();renderStand();renderTop();renderDecks();renderChamp();
+}
+function renderLobby(){
+  const box=$("lobbyBox");box.replaceChildren();const L=T&&T.lobby;
+  if(!L){box.hidden=!(admin&&T);if(admin&&T){const b=el("button",null,"プライベートロビーを使う");b.type="button";b.onclick=()=>{T.lobby={code:""};saveT();render()};box.append(el("span","k","プライベートロビー：使わない"),b)}return}
+  box.hidden=false;box.append(el("span","k","プライベートロビー"));
+  if(admin){
+    const i=el("input");i.type="text";i.id="lobbyCode";i.maxLength=20;i.value=L.code||"";i.placeholder="ロビーコード";i.setAttribute("aria-label","ロビーコード");
+    const sv=el("button","primary","コードを更新");sv.type="button";sv.onclick=()=>{T.lobby={code:i.value.trim().slice(0,20)};saveT();setSync("ロビーコードを更新しました");render()};
+    const off=el("button",null,"ロビーを使わない");off.type="button";off.onclick=()=>{T.lobby=null;saveT();render()};
+    box.append(i,sv,off);
+  }else{
+    box.append(el("span","code",L.code||"（運営が準備中）"));
+    if(L.code){const c=el("button",null,"コピー");c.type="button";c.onclick=()=>copyText(L.code,"ロビーコードをコピーしました");box.append(c)}
+  }
+}
+function renderTourBar(){
+  const sel=$("tourSel");sel.replaceChildren();
+  const list=Object.entries(tours).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0));
+  if(!list.length){const o=el("option",null,"大会がまだありません");o.value="";sel.append(o)}
+  for(const [id,t] of list){const o=el("option",null,t.name||"（名前なし）");o.value=id;if(id===tid)o.selected=true;sel.append(o)}
+  sel.disabled=!list.length;
+  const st=$("steps");st.replaceChildren();
+  if(T){
+    const nR=T.swissRounds||0;const cur=(T.rounds||[]).length;
+    const add=(t,state)=>{const s=el("span",state,t);st.append(s)};
+    add("参加登録",T.status==="setup"?"on":"done");
+    for(let i=1;i<=Math.max(nR,cur);i++)add(`予選R${i}`,T.status==="setup"?"":i<cur||(i===cur&&T.status!=="swiss")?"done":i===cur?"on":"");
+    if(T.topCut)add("決勝",T.status==="top"?"on":T.status==="done"?"done":"");
+    add("終了",T.status==="done"?"on":"");
+  }
+}
+function renderChamp(){
+  const host=$("champ");host.replaceChildren();
+  if(T.status!=="done")return;
+  let cid=null;
+  if(T.topCut){const b=bracket();cid=b&&b[b.length-1][0].winner}else{const s=standings();cid=s[0]&&s[0].id}
+  if(!cid)return;
+  syncRecords();
+  const w=who(P(cid));const d=el("div","champ");const tx=el("div");
+  tx.append(el("div","k","CHAMPION"),el("div","t",w.name+(w.handle?"  @"+w.handle:"")));
+  d.append(tx);host.append(d);
+}
+function renderPlayers(){
+  const setup=T.status==="setup";
+  const PL=players();$("pCount").textContent=`${PL.length}人`;
+  $("formatNote").textContent=fmtLabel();
+  // roster picker
+  $("pickRow").hidden=!setup||!admin;$("startRow").hidden=!setup||!admin;if(!setup)$("regForm").hidden=true;
+  if(setup){
+    const inT=new Set(PL.map(p=>p.member).filter(Boolean));
+    const avail=Object.entries(members).filter(([mid,m])=>(m.name||m.handle)&&!inT.has(mid)).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+    const sel=$("memberPick");const keep=sel.value;sel.replaceChildren();
+    if(!avail.length){const o=el("option",null,Object.keys(members).length?"名簿の全員が参加者に入っています":"名簿にメンバーがいません（右の「メンバー登録」から）");o.value="";sel.append(o)}
+    for(const [mid,m] of avail){const o=el("option",null,(m.name||"（名前なし）")+(m.handle?"  @"+m.handle:""));o.value=mid;if(mid===keep)o.selected=true;sel.append(o)}
+    sel.disabled=!avail.length;$("addPicked").disabled=!avail.length;$("addAll").disabled=!avail.length;
+  }
+  const list=$("plist");list.replaceChildren();
+  PL.forEach((p,i)=>{
+    const w=who(p);const row=el("div","prow");
+    row.append(el("span","no",String(i+1)));
+    const nm=el("div","who");const nmh=el("div","whoav");nmh.append(avatar(p,26),nameEl(p,w.name));nm.append(nmh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
+    if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
+    if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
+    row.append(nm);
+    for(const k of [0,1]){
+      const s=el("select");s.id=`deck${k}-${p.id}`;s.setAttribute("aria-label",`${w.name}のデッキ${k+1}`);s.disabled=!admin||(!setup&&!!p.decks[k]);
+      const o0=el("option",null,`デッキ${k+1}：未選択`);o0.value="";s.append(o0);
+      for(const [c,n] of CLASSES){if(p.decks[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(p.decks[k]===c)o.selected=true;s.append(o)}
+      s.onchange=()=>{p.decks=p.decks.slice();p.decks[k]=s.value||null;saveEntry(p);render()};
+      row.append(s);
+    }
+    if(admin&&!p.member){const rb=el("button",null,"名簿に登録");rb.type="button";rb.title="この人をチームの名簿に登録します";
+      rb.onclick=()=>{const mid=uid("m");const order=Object.values(members).reduce((a,x)=>Math.max(a,x.order||0),0)+1;members[mid]={name:p.name||"",handle:p.handle||"",order};write(`${ROOT}/members/${mid}`,members[mid]);const pu=normUid(p.uid);if(pu&&!memberUidSet().has(pu)){memberUids[mid]={uid:pu};write(`${ROOT}/memberUids/${mid}`,{uid:pu});syncXYZ()}p.member=mid;saveEntry(p);render()};
+      row.append(rb)}else row.append(el("span"));
+    if(admin){const k=achKey(p);const id=k&&recId(k);const cur=id&&teams[id]?teams[id].team:"";
+      const ts=el("select","teamsel");ts.id="team-"+p.id;ts.setAttribute("aria-label",`${w.name}の所属チーム`);
+      const o0=el("option",null,autoXYZ(p)?"XYZ（名簿で自動）":"所属なし");o0.value="";ts.append(o0);for(const [c,,,lab] of TEAMS){const o=el("option",null,lab&&lab!==c?`${lab}（${c}）`:c);o.value=c;if(c===cur)o.selected=true;ts.append(o)}
+      if(!id){ts.disabled=true;ts.title="ユーザーIDか名簿登録がある人だけ付けられます"}else ts.title="名前の横にチームアイコンを付けます（次の大会以降も引き継がれます）";
+      ts.onchange=()=>{if(!id)return;if(!ts.value){delete teams[id];write(`${ROOT}/teams/${id}`,null)}else{teams[id]={name:w.name||"",team:ts.value,at:now()};write(`${ROOT}/teams/${id}`,teams[id])}syncBadges();render()};
+      row.append(ts)}
+    if(admin){const bb=el("button","danger","出禁");bb.type="button";bb.title="出禁リストに登録して、この大会からも外します";
+      bb.onclick=()=>{if(!bb.classList.contains("armed")){bb.classList.add("armed");bb.textContent="本当に出禁にする";setTimeout(()=>{if(bb.isConnected){bb.classList.remove("armed");bb.textContent="出禁"}},3000);return}
+        addBan({name:w.name,uid:p.uid||"",handle:w.handle||"",reason:""});if(setup)removeEntry(p.id);render()};row.append(bb)}
+    const del=el("button","danger","外す");del.type="button";del.hidden=!setup||!admin;
+    del.onclick=()=>{removeEntry(p.id);render()};
+    row.append(del);list.append(row);
+  });
+  if(setup){
+    const n=PL.length;const missing=PL.filter(p=>!p.decks[0]||!p.decks[1]).length;
+    const rounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(Math.max(2,n))));
+    $("startBtn").disabled=n<2||(T.topCut&&n<T.topCut);
+    $("startNote").textContent=n<2?"2人以上で始められます":(T.topCut&&n<T.topCut)?`決勝トーナメント（上位${T.topCut}名）には${T.topCut}人以上必要です`:
+      `予選は${rounds}ラウンドの予定です`+(missing?`。デッキ未登録が${missing}人います（あとから登録もできます）`:"");
+  }
+}
+function joinMember(mid,decks,icon){const m=rosterMap()[mid];if(!m)return null;const mu=MODE==="admin"?normUid(memberUids[mid]&&memberUids[mid].uid):"";const ex=players().find(p=>p.member===mid||(mu&&normUid(p.uid)===mu));if(ex)return ex.id;const pid=mu?"u_"+mu:uid("p");saveEntry({id:pid,member:mid,name:m.name||"",handle:m.handle||"",uid:mu||null,decks:decks||[null,null],icon:icon||null,hideTeam:!!(MODE!=="admin"&&(loadProfile()||{}).hideTeam),order:now()+Math.random()});return pid}
+$("addPicked").onclick=()=>{const mid=$("memberPick").value;if(!mid)return;joinMember(mid);render()};
+$("addAll").onclick=()=>{Object.entries(members).sort((a,b)=>(a[1].order||0)-(b[1].order||0)).forEach(([mid,m])=>{if(m.name||m.handle)joinMember(mid)});render()};
+$("regBtn").onclick=()=>{$("regForm").hidden=false;$("regName").focus()};
+$("regCancel").onclick=()=>{$("regForm").hidden=true};
+$("regSave").onclick=()=>{
+  const name=$("regName").value.trim().slice(0,40);if(!name){$("regName").focus();return}
+  const handle=$("regHandle").value.trim().replace(/^@+/,"").slice(0,30);
+  const raw=$("regUid").value;const mu=normUid(raw);$("regMsg").textContent="";
+  if(raw.trim()&&(!/^[0-9]{5,15}$/.test(mu)||/[^0-9\s-]/.test(raw))){$("regMsg").textContent="ユーザーIDは数字で入力してください";$("regUid").focus();return}
+  if(mu){const dup=Object.entries(memberUids).find(([m2,r])=>members[m2]&&normUid(r&&r.uid)===mu);if(dup){$("regMsg").textContent=`このユーザーIDは ${members[dup[0]].name} さんに登録済みです`;$("regUid").focus();return}}
+  const mid=uid("m");const order=Object.values(members).reduce((a,m)=>Math.max(a,m.order||0),0)+1;
+  members[mid]={name,handle,order};write(`${ROOT}/members/${mid}`,members[mid]);
+  if(mu){memberUids[mid]={uid:mu};write(`${ROOT}/memberUids/${mid}`,{uid:mu});syncXYZ();syncBadges()}
+  if($("regJoin").checked&&T&&T.status==="setup"){joinMember(mid)}
+  $("regName").value="";$("regHandle").value="";$("regUid").value="";$("regName").focus();setSync(`${name} を名簿に登録しました`);render();
+};
+$("startBtn").onclick=()=>{
+  const n=players().length;if(n<2)return;
+  T.swissRounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(n)));
+  T.rounds=[];const r=makeRound();delete r.rematch;T.rounds.push(r);T.status="swiss";viewRound=1;saveT();render();
+};
+function renderSwiss(){
+  const rs=T.rounds||[];$("swissPanel").hidden=!rs.length;if(!rs.length)return;
+  if(!viewRound||viewRound>rs.length)viewRound=rs.length;
+  const tabs=$("rtabs");tabs.replaceChildren();
+  rs.forEach(r=>{const b=el("button",null,`R${r.n}`+(roundDone(r)?" ✓":""));b.type="button";b.setAttribute("aria-pressed",String(r.n===viewRound));b.onclick=()=>{viewRound=r.n;render()};tabs.append(b)});
+  const r=rs[viewRound-1];const host=$("roundHost");host.replaceChildren();
+  const grid=el("div","mgrid");
+  r.pairs.forEach((m,i)=>{
+    if(!m.b){grid.append(el("div","bye",`不戦勝（BYE）：${who(P(m.a)).name}　1勝として数えます`));return}
+    grid.append(matchCard(m,`R${r.n} 第${i+1}卓`));
+  });
+  host.append(grid);
+  const act=$("roundActions");act.replaceChildren();act.hidden=!admin;
+  const isLast=viewRound===rs.length;
+  if(isLast&&T.status==="swiss"){
+    const done=roundDone(r);const left=r.pairs.filter(m=>m.b&&!(M[m.id]&&M[m.id].winner)).length;
+    if(rs.length<T.swissRounds){
+      const b=el("button","primary",`R${rs.length+1}の組み合わせを作る`);b.type="button";b.disabled=!done;
+      b.onclick=()=>{const nr=makeRound();const warn=nr.rematch;delete nr.rematch;T.rounds.push(nr);viewRound=nr.n;saveT();render();if(warn)setSync("再戦を避けきれなかったため、一部で同じ相手との組み合わせがあります")};
+      act.append(b);
+    }else if(T.topCut){
+      const b=el("button","primary",`予選を終えて決勝トーナメントへ（上位${T.topCut}名）`);b.type="button";b.disabled=!done;
+      b.onclick=()=>{T.bracket={seeds:standings().slice(0,T.topCut).map(s=>s.id),startedAt:now()};T.status="top";saveT();render()};
+      act.append(b);
+    }else{
+      const b=el("button","primary","予選を終えて大会を終了");b.type="button";b.disabled=!done;
+      b.onclick=()=>{T.status="done";saveT();render()};act.append(b);
+    }
+    act.append(el("span","status",done?"全試合の結果が入りました":`結果待ち ${left}試合`));
+    const anyRes=r.pairs.some(m=>M[m.id]&&M[m.id].winner);
+    if(!anyRes){
+      const redo=el("button",null,"このラウンドを組み直す");redo.type="button";
+      redo.onclick=()=>{T.rounds.pop();const nr=makeRound();delete nr.rematch;T.rounds.push(nr);saveT();render()};
+      act.append(redo);
+    }
+  }
+}
+function renderStand(){
+  const rs=T.rounds||[];$("standPanel").hidden=!rs.length;if(!rs.length)return;
+  const st=standings();const host=$("standHost");host.replaceChildren();
+  $("tbNote").textContent=fmtOf("swiss")==="bo3c"?"勝数 → OMW%（対戦相手の勝率）→ GW%（ゲーム勝率）→ OOMW% の順で並べています":"勝数 → OMW%（対戦相手の勝率）→ OOMW% の順で並べています";
+  const box=el("div","tbox");const t=el("table","st");
+  const b3=fmtOf("swiss")==="bo3c";
+  t.innerHTML="<thead><tr><th>順位</th><th>名前</th><th>勝</th><th>敗</th><th>OMW%</th>"+(b3?"<th>ゲーム</th><th>GW%</th>":"")+"<th>OOMW%</th><th>デッキ</th></tr></thead>";
+  const tb=el("tbody");
+  st.forEach((s,i)=>{const p=P(s.id),w=who(p);const tr=el("tr",T.topCut&&i<T.topCut&&T.status!=="setup"?"cut":"");
+    tr.append(el("td","rk",String(i+1)));const n=el("td");const nh=el("span","whoav");nh.style.display="inline-flex";nh.append(avatar(p,22),nameEl(p,w.name));n.append(nh);if(w.handle)n.append(el("span","status","  @"+w.handle));tr.append(n);
+    tr.append(el("td",null,String(s.w)),el("td",null,String(s.l)),el("td",null,s.opps.length?pct(s.omw):"—"));
+    if(b3)tr.append(el("td",null,`${s.gw}-${s.gl}`),el("td",null,s.gw+s.gl?pct(s.gwp):"—"));
+    tr.append(el("td",null,s.opps.length?pct(s.oomw):"—"));
+    const dc=el("td");const ch=el("div","chips");ch.style.justifyContent="flex-end";(p.decks||[]).filter(Boolean).forEach(c=>ch.append(chip(c)));dc.append(ch);tr.append(dc);
+    tb.append(tr)});
+  t.append(tb);box.append(t);host.append(box);
+  if(T.topCut)host.append(el("div","status",`色付きの上位${T.topCut}名が決勝トーナメントに進みます`));
+}
+function renderTop(){
+  const b=bracket();$("topPanel").hidden=!b;if(!b)return;
+  const host=$("bracketHost");host.replaceChildren();const wrap=el("div","bracket");const R=b.length;
+  b.forEach((ms,r)=>{const col=el("div","bcol");col.append(el("h3",null,roundLabel(r,R)));
+    ms.forEach((m,i)=>{
+      if(m.a&&m.b){const lab=`${roundLabel(r,R)}${ms.length>1?" 第"+(i+1)+"試合":""}`+(m.seedA?`（${m.seedA}位 vs ${m.seedB}位）`:"");col.append(matchCard(m,lab))}
+      else col.append(el("div","tbd","前の試合の勝者が入ります"));
+    });
+    wrap.append(col)});
+  host.append(wrap);
+  const fin=b[R-1][0];
+  if(admin&&fin.winner&&T.status==="top"){const btn=el("button","primary","大会を終了して優勝者を表示");btn.type="button";btn.onclick=()=>{T.status="done";saveT();render()};host.append(btn)}
+  if(!fin.winner&&T.status==="done"){T.status="top";saveT()}
+}
+function renderDecks(){
+  const agg={};const add=(c,win)=>{if(!c)return;const a=agg[c]||(agg[c]={w:0,l:0});win?a.w++:a.l++};
+  const all=[];for(const r of T.rounds||[])for(const m of r.pairs)if(m.b)all.push(m);
+  const b=bracket();if(b)for(const ms of b)for(const m of ms)if(m.a&&m.b)all.push(m);
+  for(const m of all){const res=M[m.id];if(!res)continue;
+    if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;add(g.da,g.w==="a");add(g.db,g.w==="b")}continue}
+    if(!res.winner)continue;add(usedDeck(m,res,"a"),res.winner===m.a);add(usedDeck(m,res,"b"),res.winner===m.b)}
+  const host=$("deckHost");host.replaceChildren();const rows=CLASSES.filter(([c])=>agg[c]);
+  $("deckPanel").hidden=!rows.length;if(!rows.length)return;
+  host.append(el("div","status","BO1は1試合、BO3は1ゲームを1回として数えています"));
+  const t=el("table","st");t.innerHTML="<thead><tr><th></th><th>クラス</th><th>使用</th><th>勝</th><th>敗</th><th>勝率</th></tr></thead>";const tb=el("tbody");
+  rows.sort((x,y)=>(agg[y[0]].w+agg[y[0]].l)-(agg[x[0]].w+agg[x[0]].l)).forEach(([c])=>{const a=agg[c];const tr=el("tr");const d=el("td");d.append(chip(c));
+    tr.append(el("td"),d,el("td",null,String(a.w+a.l)),el("td",null,String(a.w)),el("td",null,String(a.l)),el("td",null,pct(a.w/(a.w+a.l))));tb.append(tr)});
+  t.append(tb);const box=el("div","tbox");box.append(t);host.append(box);
+}
+
+
+/* ---------- report (each player) ---------- */
+
+const meKey=()=>"xyz-cup-me-"+pub;
+function getMe(){try{return localStorage.getItem(meKey())||""}catch(e){return memMe[meKey()]||""}}
+const memMe={};
+const regKey=()=>"xyz-cup-reg-"+pub;
+function getReg(){try{return localStorage.getItem(regKey())||""}catch(e){return memMe[regKey()]||""}}
+function setReg(v){memMe[regKey()]=v;try{localStorage.setItem(regKey(),v)}catch(e){}}
+$("meSel").onchange=()=>{const v=$("meSel").value;memMe[meKey()]=v;try{localStorage.setItem(meKey(),v)}catch(e){}
+  if(P(v))setReg(v);render()};
+function myMatch(me){
+  if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(!r)return null;const i=r.pairs.findIndex(m=>m.a===me||m.b===me);if(i<0)return null;const m=r.pairs[i];return{m,label:m.b?`予選 R${r.n}　第${i+1}卓`:`予選 R${r.n}`,bye:!m.b,last:r.n>=T.swissRounds}}
+  if(T.status==="top"||T.status==="done"){const b=bracket();if(!b)return null;const R=b.length;let found=null;
+    b.forEach((ms,r)=>ms.forEach((m,i)=>{if(m.a&&m.b&&(m.a===me||m.b===me))found={m,label:`決勝トーナメント ${roundLabel(r,R)}`}}));
+    return found}
+  return null;
+}
+
+const draftDecks=[null,null];const draftName={n:null,h:null};const draftIcon={v:null};const regErr={t:""};
+// what this device entered last time, to fill the next tournament's registration form
+const PROF_KEY="xyz-cup-profile";
+function loadProfile(){try{return JSON.parse(localStorage.getItem(PROF_KEY)||"null")||null}catch(e){return null}}
+function saveProfile(p){try{const cur=loadProfile()||{};localStorage.setItem(PROF_KEY,JSON.stringify(Object.assign(cur,p)))}catch(e){}}
+function clearProfile(){try{localStorage.removeItem(PROF_KEY)}catch(e){}}
+let prefilled=null;
+function prefill(kind){
+  // fill empty drafts once per tournament/form from the saved profile
+  const key=pub+":"+kind;if(prefilled===key)return false;prefilled=key;
+  const pr=loadProfile();if(!pr)return false;
+  if(kind==="new"){if(draftName.n==null&&pr.name)draftName.n=pr.name;if(draftName.h==null&&pr.handle)draftName.h=pr.handle;if(draftName.u1==null&&pr.uid&&T.kind==="external")draftName.u1=pr.uid}
+  if(!draftDecks[0]&&!draftDecks[1]&&Array.isArray(pr.decks)){draftDecks[0]=pr.decks[0]||null;draftDecks[1]=pr.decks[1]&&pr.decks[1]!==pr.decks[0]?pr.decks[1]:null}
+  if(!draftIcon.v&&pr.icon)draftIcon.v=pr.icon;
+  return true;
+}
+function deckRow(cur,onPick,prefix){
+  const row=el("div","row");
+  for(const k of [0,1]){const s=el("select");s.id=`${prefix}${k}`;s.setAttribute("aria-label",`デッキ${k+1}`);
+    const z=el("option",null,`デッキ${k+1}：未選択`);z.value="";s.append(z);
+    for(const [c,n] of CLASSES){if(cur[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(cur[k]===c)o.selected=true;s.append(o)}
+    s.onchange=()=>{const ae=document.activeElement;if(ae&&ae!==s&&ae.tagName==="INPUT")ae.blur();onPick(k,s.value||null)};row.append(s)}
+  return row;
+}
+// room ID: the upper player of each pairing creates the room and enters its ID; the other only sees it.
+// 5 minutes after the round starts with no room ID -> the room creator loses.
+// 5 minutes after the room ID is posted with no "入室しました" -> the other player loses.
+const LIMIT=5*60*1000;
+const roomDraft={};
+function activeMatches(){
+  const out=[];if(!T)return out;
+  if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(r)r.pairs.forEach(m=>{if(m.b)out.push(Object.assign({start:r.startedAt||null},m))})}
+  if(T.status==="top"){const b=bracket();if(b)b.forEach(ms=>ms.forEach(m=>{if(m.a&&m.b&&!m.winner)out.push(m)}))}
+  return out;
+}
+function deadline(m,res){
+  if(res.winner||res.manual||!m.start)return null;
+  if(unresolvedCall(m.id))return null; // paused while the organizers handle a call
+  if(!res.room)return{at:m.start+LIMIT,loser:m.a,why:"noroom"};
+  if(!res.entered)return{at:(res.roomAt||m.start)+LIMIT,loser:m.b,why:"noentry"};
+  return null;
+}
+const WHY={noroom:"ルーム未作成",noentry:"未入室"};
+function enforceTimeouts(){
+  const tnow=now();
+  for(const m of activeMatches()){
+    const res=M[m.id]||{};const d=deadline(m,res);if(!d||tnow<d.at)continue;
+    const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;
+    M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));
+  }
+}
+const mmss=ms=>{ms=Math.max(0,ms);const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`};
+function cd(at,text){const s=el("span","cd");s.dataset.at=at;s.dataset.text=text;s.textContent=text.replace("{t}",mmss(at-now()));return s}
+setInterval(()=>{document.querySelectorAll(".cd").forEach(s=>{s.textContent=s.dataset.text.replace("{t}",mmss(Number(s.dataset.at)-now()))})},1000);
+setInterval(()=>{if(T&&(T.status==="swiss"||T.status==="top"))enforceTimeouts()},5000);
+function roomBox(m,mine,oppName,res){
+  const wrap=el("div","room");const host=mine==="a";
+  const am=activeMatches().find(x=>x.id===m.id);const d=am?deadline(am,res):null;
+  wrap.append(el("span","k","ルームID"));
+  if(host){
+    const i=el("input");i.type="text";i.id="roomInput";i.maxLength=20;i.inputMode="numeric";i.placeholder="作成したルームのID";i.setAttribute("aria-label","ルームID");
+    i.value=roomDraft[m.id]!=null?roomDraft[m.id]:(res.room||"");i.oninput=()=>{roomDraft[m.id]=i.value};
+    const b=el("button","primary",res.room?"更新":"相手に知らせる");b.type="button";
+    const msg=el("span","status",res.room?(res.entered?`${oppName} さんが入室しました`:`相手に「${res.room}」を表示中`):"あなたがルームを作成して、IDを入力してください");
+    b.onclick=()=>{const v=i.value.trim().replace(/\s+/g,"");if(!/^[A-Za-z0-9-]{1,20}$/.test(v)){msg.textContent="ルームIDを半角英数字で入力してください";i.focus();return}
+      const cur=Object.assign({},M[m.id]||{});const changed=cur.room!==v;cur.room=v;cur.roomBy=m.a;if(changed){cur.roomAt=now();cur.entered=null}M[m.id]=cur;delete roomDraft[m.id];write(matchPath(m.id),cleanRes(cur));i.blur();render()};
+    wrap.append(i,b,msg);
+    if(d&&d.why==="noroom")wrap.append(cd(d.at,"あと {t} 以内に入力しないと、あなたの不戦敗になります"));
+    if(d&&d.why==="noentry")wrap.append(cd(d.at,"相手の入室待ち（あと {t} で相手の不戦敗）"));
+  }else if(res.room){
+    wrap.append(el("span","code",res.room));
+    const c=el("button",null,"コピー");c.type="button";c.onclick=()=>copyText(res.room,"ルームIDをコピーしました");wrap.append(c);
+    if(res.entered)wrap.append(el("span","ok","入室済み"));
+    else{
+      const e=el("button","primary","入室しました");e.type="button";
+      e.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.entered=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+      wrap.append(e,el("span","status",`${oppName} さんのルームに入ったら押してください`));
+      if(d&&d.why==="noentry")wrap.append(cd(d.at,"あと {t} 以内に入室しないと、あなたの不戦敗になります"));
+    }
+  }else{
+    wrap.append(el("span","status",`${oppName} さんがルームを作成中です。IDが入力されるとここに表示されます`));
+    if(d&&d.why==="noroom")wrap.append(cd(d.at,"（あと {t} で入力がなければ相手の不戦敗）"));
+  }
+  return wrap;
+}
+/* ---------- chat with the opponent ---------- */
+const chatDraft={};
+const QUICK=["ルームIDが違うようです。もう一度確認してください","ルームに入れません","今から入室します","少し遅れます"];
+function chatLines(mid){return Object.entries(C).filter(([,c])=>c.m===mid).map(([id,c])=>Object.assign({id},c)).sort((a,b)=>(a.at||0)-(b.at||0))}
+const hhmm=t=>{const d=new Date(t);return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`};
+function sendChat(mid,from,text,extra){text=String(text||"").trim().slice(0,120);if(!text&&!extra)return;const id=uid("c");C[id]=Object.assign({m:mid,from,text,at:now()},extra||{});write(`${cupPath()}/chat/${id}`,C[id]);render()}
+// screenshots are shrunk on the device and kept inside the chat message (no file storage needed)
+async function shrinkImage(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((ok,ng)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ng;i.src=url});
+    let max=1280,q=0.72,out="";
+    for(let n=0;n<8;n++){
+      const sc=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement("canvas");
+      cv.width=Math.round(img.naturalWidth*sc);cv.height=Math.round(img.naturalHeight*sc);const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,0,0,cv.width,cv.height);
+      out=cv.toDataURL("image/jpeg",q);if(out.length<180000)return out;max=Math.round(max*0.8);q=Math.max(0.4,q-0.08);
+    }
+    return out.length<240000?out:null;
+  }finally{URL.revokeObjectURL(url)}
+}
+function unresolvedCall(mid){
+  const ls=chatLines(mid);const closed=new Set(ls.filter(c=>c.resolve&&c.ref).map(c=>c.ref));
+  const legacy=ls.filter(c=>c.resolve&&!c.ref).map(c=>c.at||0);
+  const open=ls.filter(c=>c.call&&!closed.has(c.id)&&!legacy.some(t=>t>=(c.at||0)));
+  return open.length?open[open.length-1]:null;
+}
+function chatLog(mid,me){
+  const log=el("div","chatlog");log.dataset.mid=mid;log.dataset.me=me||"";const ls=chatLines(mid);
+  if(!ls.length)log.append(el("div","status","まだメッセージはありません"));
+  for(const c of ls){
+    const line=el("div","msg"+(c.from===me?" me":"")+(c.from==="admin"?" adm":"")+(c.call?" call":"")+(c.resolve?" res":""));
+    const nm=c.from==="admin"?"運営":c.from===me?"あなた":who(P(c.from)).name;
+    const body=el("span");
+    if(c.call)body.append(el("strong",null,"運営を呼び出しました"),document.createTextNode(c.text?"　"+c.text:""));
+    else if(c.resolve)body.append(el("strong",null,"対応済みにしました"),document.createTextNode(c.text?"　"+c.text:""));
+    else if(c.text)body.append(document.createTextNode(c.text));
+    if(c.img){const im=el("img","shot");im.src=c.img;im.alt="送信されたスクリーンショット";im.title="クリックで拡大／縮小";im.onclick=()=>im.classList.toggle("big");body.append(im)}
+    line.append(el("b",null,nm),body,el("time",null,hhmm(c.at)));log.append(line)}
+  setTimeout(()=>{log.scrollTop=log.scrollHeight},0);
+  return log;
+}
+function chatBox(m,me){
+  const box=el("div","chat");box.append(el("span","k","対戦相手とのチャット"),chatLog(m.id,me));
+  const q=el("div","quick");QUICK.forEach(t=>{const b=el("button",null,t);b.type="button";b.onclick=()=>sendChat(m.id,me,t);q.append(b)});box.append(q);
+  const row=el("div","addrow");const i=el("input");i.type="text";i.id="chatInput";i.maxLength=120;i.placeholder="メッセージを入力";i.setAttribute("aria-label","対戦相手へのメッセージ");
+  i.value=chatDraft[m.id]||"";i.oninput=()=>{chatDraft[m.id]=i.value};
+  const send=()=>{const v=i.value;chatDraft[m.id]="";i.value="";i.blur();sendChat(m.id,me,v)};
+  i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();send()}});
+  const b=el("button","primary","送信");b.type="button";b.onclick=send;row.append(i,b);box.append(row);
+  const tools=el("div","row");
+  const f=el("input");f.type="file";f.accept="image/*";f.id="shotFile";f.hidden=true;
+  const ib=el("button",null,"画像を送る");ib.type="button";ib.onclick=()=>f.click();
+  const st=el("span","status");
+  f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;st.textContent="画像を縮小しています…";
+    try{const d=await shrinkImage(file);if(!d){st.textContent="画像が大きすぎて送れませんでした。範囲を切り取ってから送ってください";return}sendChat(m.id,me,"",{img:d})}catch(e){st.textContent="画像を読み込めませんでした"}};
+  const open=unresolvedCall(m.id);
+  const cb=el("button","danger",open?"運営を呼び出し中":"運営を呼ぶ");cb.type="button";cb.disabled=!!open;
+  cb.onclick=()=>{if(!cb.classList.contains("armed")){cb.classList.add("armed");cb.textContent="もう一度押すと運営を呼びます";setTimeout(()=>{if(cb.isConnected){cb.classList.remove("armed");cb.textContent="運営を呼ぶ"}},3000);return}
+    sendChat(m.id,me,(i.value||"").trim(),{call:true});i.value="";chatDraft[m.id]=""};
+  tools.append(ib,f,cb,st);box.append(tools);
+  box.append(el("div","status",open?"運営に通知しました。運営が確認するまでお待ちください。チャットは運営も見られます":"揉めたときは「運営を呼ぶ」を押してください。スクリーンショットは「画像を送る」から送れます"));
+  return box;
+}
+function adminReply(mid){
+  const row=el("div","addrow");const i=el("input");i.type="text";i.id="adm-"+mid;i.maxLength=120;i.placeholder="運営としてメッセージを送る";i.setAttribute("aria-label","運営からのメッセージ");
+  i.value=chatDraft["adm-"+mid]||"";i.oninput=()=>{chatDraft["adm-"+mid]=i.value};
+  const send=()=>{const v=i.value;chatDraft["adm-"+mid]="";i.value="";i.blur();sendChat(mid,"admin",v)};
+  i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();send()}});
+  const b=el("button",null,"送信");b.type="button";b.onclick=send;row.append(i,b);
+  if(unresolvedCall(mid)){const r=el("button","primary","対応済みにする");r.type="button";
+    r.onclick=()=>{const v=i.value;chatDraft["adm-"+mid]="";i.value="";i.blur();
+      const open=chatLines(mid).filter(c=>c.call);for(const c of open){if(unresolvedCall(mid))sendChat(mid,"admin",c===open[open.length-1]?v:"",{resolve:true,ref:c.id})}render()};row.append(r)}
+  return row;
+}
+function renderCalls(){
+  const box=$("callPanel");if(!admin||!T){box.hidden=true;return}
+  const items=[];
+  for(const r of T.rounds||[])r.pairs.forEach((m,i)=>{if(m.b&&unresolvedCall(m.id))items.push({m,label:`予選 R${r.n} 第${i+1}卓`})});
+  const b=bracket();if(b){const R=b.length;b.forEach((ms,r)=>ms.forEach((m,i)=>{if(m.a&&m.b&&unresolvedCall(m.id))items.push({m,label:`決勝 ${roundLabel(r,R)}${ms.length>1?" 第"+(i+1)+"試合":""}`})}))}
+  box.hidden=!items.length;const host=$("callHost");host.replaceChildren();
+  document.title=items.length?`(${items.length}) 運営呼び出し - XYZ CUP`:"XYZ CUP";
+  for(const it of items){const c=unresolvedCall(it.m.id);const d=el("div","callitem");
+    d.append(el("div","lab",`${it.label}　${who(P(it.m.a)).name} vs ${who(P(it.m.b)).name}　${who(P(c.from)).name} さんが ${hhmm(c.at)} に呼び出し`),chatLog(it.m.id,"admin"),adminReply(it.m.id));host.append(d)}
+}
+/* ---------- BO3 conquest: per-game record ---------- */
+function gameTally(res,mine){let my=0,op=0;for(const g of res.games||[]){if(!g||!g.w)continue;if(g.w===mine)my++;else op++}return{my,op}}
+function wonWith(res,side,before){const out=new Set();(res.games||[]).slice(0,before).forEach(g=>{if(g&&g.w===side&&g["d"+side])out.add(g["d"+side])});return out}
+function gamesEditor(m,mine,mp,op,res){
+  const other=mine==="a"?"b":"a";const games=(res.games||[]).map(g=>Object.assign({},g||{}));
+  const t=gameTally(res,mine);const shown=Math.min(3,Math.max(1,games.filter(g=>g.w).length+(t.my<2&&t.op<2?1:0)));
+  const wrap=el("div","games");
+  const save=()=>{const cur=Object.assign({},M[m.id]||{});cur.games=games.slice(0,3).map(g=>({w:g.w||null,da:g.da||null,db:g.db||null}));
+    // drop games after someone reached 2 wins
+    let a=0,b=0;cur.games=cur.games.filter(g=>{if(a>=2||b>=2)return false;if(g.w==="a")a++;if(g.w==="b")b++;return true});
+    M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+  for(let i=0;i<shown;i++){
+    const g=games[i]||(games[i]={});const row=el("div","game");row.append(el("span","gn",`G${i+1}`));
+    const myUsed=wonWith({games},mine,i),opUsed=wonWith({games},other,i);
+    const mk=(side,src,used,label)=>{const sel=el("select");sel.id=`g${i}-${side}`;sel.setAttribute("aria-label",`第${i+1}ゲーム ${label}`);
+      const z=el("option",null,`${label}：未選択`);z.value="";sel.append(z);
+      (src||[]).filter(Boolean).forEach(c=>{if(used.has(c)&&g["d"+side]!==c)return;const o=el("option",null,`${label}：${CN[c]}`);o.value=c;if(g["d"+side]===c)o.selected=true;sel.append(o)});
+      sel.onchange=()=>{g["d"+side]=sel.value||null;save()};return sel};
+    row.append(mk(mine,mp.decks,myUsed,"自分"),mk(other,op.decks,opUsed,"相手"));
+    const seg=el("div","seg");for(const [side,lab] of [[mine,"勝ち"],[other,"負け"]]){const b=el("button",null,lab);b.type="button";b.setAttribute("aria-pressed",String(g.w===side));
+      b.onclick=()=>{g.w=g.w===side?null:side;save()};seg.append(b)}
+    row.append(seg);wrap.append(row);
+  }
+  wrap.append(el("div","status","コンクエスト：一度勝ったデッキは、そのあとのゲームでは選べません"));
+  return wrap;
+}
+function gamesSummary(m,mine,res){
+  const d=el("div","games");(res.games||[]).forEach((g,i)=>{if(!g)return;const r=el("div","game");r.append(el("span","gn",`G${i+1}`));
+    const my=g["d"+mine],op=g[mine==="a"?"db":"da"];if(my)r.append(chip(my));r.append(el("span","status","vs"));if(op)r.append(chip(op));
+    r.append(el("span",g.w===mine?"ok":"warn",g.w?(g.w===mine?"勝ち":"負け"):"—"));d.append(r)});return d;
+}
+function addBan(b){const id=uid("x");bans[id]={name:(b.name||"").slice(0,40),uid:normUid(b.uid),handle:normX(b.handle),reason:(b.reason||"").slice(0,80),at:now()};write(`${ROOT}/bans/${id}`,bans[id]);syncBans()}
+$("banAdd").onclick=()=>{const u=normUid($("banUid").value),x=normX($("banX").value);if(!u&&!x){$("banMsg").textContent="ユーザーIDかXのIDのどちらかを入れてください";return}
+  addBan({name:$("banName").value.trim(),uid:u,handle:x,reason:$("banReason").value.trim()});for(const k of ["banName","banUid","banX","banReason"])$(k).value="";$("banMsg").textContent="出禁リストに登録しました";render()};
+let hallKind="internal";
+function renderHall(){
+  $("hallPanel").hidden=!admin;if(!admin)return;renderPros();
+  const sw=$("hallKind");if(sw){sw.replaceChildren();for(const [k,l] of [["internal","内戦"],["external","外戦"]]){const b=el("button",hallKind===k?"on":null,l);b.type="button";b.setAttribute("aria-pressed",String(hallKind===k));b.onclick=()=>{hallKind=k;renderHall()};sw.append(b)}}
+  const rows=Object.entries(allRecords()).map(([id,r])=>Object.assign({id,name:r.name},tally(r,hallKind))).filter(r=>r.t).sort((a,b)=>b.w-a.w||b.r-a.r||b.b-a.b||b.t-a.t);
+  $("hallCount").textContent=`${rows.length}人`;const t=$("hallTable");t.replaceChildren();
+  if(!rows.length){t.innerHTML="<tbody><tr><td class='status' style='text-align:left'>まだ記録はありません</td></tr></tbody>";return}
+  t.innerHTML="<thead><tr><th></th><th>名前</th><th>優勝</th><th>準優勝</th><th>3位</th><th>決勝R進出</th><th>識別</th></tr></thead>";const tb=el("tbody");
+  rows.forEach((r,i)=>{const tr=el("tr");tr.append(el("td","rk",String(i+1)),el("td",null,r.name||"—"),el("td",null,String(r.w)),el("td",null,String(r.r)),el("td",null,String(r.b)),el("td",null,String(r.t)),el("td","status",r.id.startsWith("u_")?"ユーザーID "+r.id.slice(2):"名簿"));tb.append(tr)});
+  t.append(tb);
+}
+function renderPros(){
+  const box=$("proList");if(!box)return;box.replaceChildren();
+  const list=Object.entries(teams).filter(([,r])=>r&&TEAM[r.team]).sort((a,b)=>TEAMS.findIndex(t=>t[0]===a[1].team)-TEAMS.findIndex(t=>t[0]===b[1].team)||(b[1].at||0)-(a[1].at||0));
+  if(!list.length){box.append(el("div","status","まだいません"));return}
+  for(const [id,r] of list){const row=el("div","row");const ic=el("span","tm");ic.innerHTML=teamSvg(r.team);row.append(ic,el("span",null,r.name||"—"),el("span","status",id.startsWith("u_")?"ユーザーID "+id.slice(2):"名簿"));
+    const b=el("button",null,"外す");b.type="button";b.onclick=()=>{delete teams[id];write(`${ROOT}/teams/${id}`,null);syncBadges();render()};row.append(b);box.append(row)}
+}
+function renderBans(){
+  $("banPanel").hidden=!admin;if(!admin)return;
+  const list=Object.entries(bans).sort((a,b)=>(b[1].at||0)-(a[1].at||0));$("banCount").textContent=`${list.length}件`;
+  const t=$("banTable");t.replaceChildren();if(!list.length){t.innerHTML="<tbody><tr><td class='status' style='text-align:left'>登録はありません</td></tr></tbody>";return}
+  t.innerHTML="<thead><tr><th></th><th>名前</th><th>ユーザーID</th><th>XのID</th><th>理由</th><th></th></tr></thead>";const tb=el("tbody");
+  for(const [id,b] of list){const tr=el("tr");tr.append(el("td","status",b.at?new Date(b.at).toLocaleDateString("ja-JP"):""),el("td",null,b.name||"—"),el("td",null,b.uid||"—"),el("td",null,b.handle?"@"+b.handle:"—"),el("td",null,b.reason||""));
+    const td=el("td");const del=el("button",null,"解除");del.type="button";del.onclick=()=>{delete bans[id];write(`${ROOT}/bans/${id}`,null);syncBans();render()};td.append(del);tr.append(td);tb.append(tr)}
+  t.append(tb);
+}
+function profileNote(){
+  const r=el("div","row");r.append(el("span","status","この端末に保存された前回の入力内容を入れています。内容を確認してから登録してください"));
+  const c=el("button",null,"前回の内容を消す");c.type="button";
+  c.onclick=()=>{clearProfile();draftName.n=draftName.h=draftName.u1=null;draftDecks[0]=draftDecks[1]=null;draftIcon.v=null;render()};r.append(c);return r;
+}
+// participant-side switch to hide their own team badge (only shown when they have one)
+function teamToggle(me){
+  const p=P(me);const d=p&&decoOf(p);if(!d||!d.rawTeam||!TEAM[d.rawTeam])return null;
+  const lab=el("label","teamhide");const cb=el("input");cb.type="checkbox";cb.id="hideTeam";cb.checked=!!p.hideTeam;
+  const ic=el("span","tm");ic.innerHTML=teamSvg(d.rawTeam);
+  lab.append(cb,document.createTextNode("チームバッジ"),ic,document.createTextNode("を外す"));
+  cb.onchange=()=>{const q=P(me);if(!q)return;q.hideTeam=cb.checked;saveEntry(q);saveProfile({hideTeam:cb.checked});if(MODE==="portal"&&U)write(`${portalPath()}/users/${LOGIN}`,Object.assign({},U,{hideTeam:cb.checked,at:now()}));render()};
+  return lab;
+}
+/* ---------- participant portal: one URL, login with game user ID + password ---------- */
+let PKEY="",LOGIN="",U=null,Uloaded=false,PD=null,EV={},MYST={},isXYZ=false,pview="list",myEntries={},AUTH=null,authReady=false;
+let loginUnsub=[],entryWatch={};const pform={tab:"login",err:"",busy:false};
+const portalPath=()=>`portals/${PKEY}`;
+async function sha(v){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("")}
+async function portalKeyFor(root){return (await sha("xyzcup-portal:"+root)).slice(0,24)}
+const pdigest=v=>sha(`xyzcup-portal:${PKEY}:${v}`);
+const AUTH_DOMAIN="player.xyzcup.app";
+function getOnce(path){return new Promise(res=>{let done=false,u=null;u=A.watchDoc(path,d=>{if(done)return;done=true;res(d);setTimeout(()=>{try{u&&u()}catch(e){}},0)})})}
+function portalUrl(){if(A&&A.kind==="firebase"){const u=new URL(location.href);u.search="?p="+PKEY;u.hash="";return u.toString()}return location.href.split("#")[0]+"#portal-"+PKEY}
+function fbAuth(mod,auth){return{
+  onChange(cb){mod.onAuthStateChanged(auth,u=>cb(u&&u.email?u.email.split("@")[0]:""))},
+  signUp:(id,pw)=>mod.createUserWithEmailAndPassword(auth,`${id}@${AUTH_DOMAIN}`,pw),
+  signIn:(id,pw)=>mod.signInWithEmailAndPassword(auth,`${id}@${AUTH_DOMAIN}`,pw),
+  signOut:()=>mod.signOut(auth)}}
+// trial / local copy: no Firebase login available, so a password hash is kept next to the data (for trying the flow only)
+function trialAuth(){const cbs=[];const K="xyz-cup-login-"+PKEY;let m="";
+  const cur=()=>{try{return localStorage.getItem(K)||""}catch(e){return m}};const set=v=>{m=v;try{localStorage.setItem(K,v)}catch(e){}cbs.forEach(f=>f(v))};
+  const ph=(id,pw)=>sha("xyzcup-pw:"+id+":"+pw);
+  return{onChange(cb){cbs.push(cb);cb(cur())},
+    async signUp(id,pw){if(pw.length<6)throw{code:"auth/weak-password"};const d=await getOnce(`${portalPath()}/trialpw/${id}`);if(d)throw{code:"auth/email-already-in-use"};await A.set(`${portalPath()}/trialpw/${id}`,{h:await ph(id,pw)});set(id)},
+    async signIn(id,pw){const d=await getOnce(`${portalPath()}/trialpw/${id}`);if(!d||d.h!==await ph(id,pw))throw{code:"auth/invalid-credential"};set(id)},
+    async signOut(){set("")}}}
+function authMsg(e){const c=(e&&e.code)||"";
+  if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))return"ユーザーIDかパスワードが違います";
+  if(/email-already-in-use/.test(c))return"このユーザーIDはすでに登録されています。「ログイン」から入ってください";
+  if(/weak-password/.test(c))return"パスワードは6文字以上にしてください";
+  if(/operation-not-allowed|configuration-not-found/.test(c))return"ログイン機能がまだ有効になっていません。運営に連絡してください";
+  if(/too-many-requests/.test(c))return"失敗が続いたため一時的にロックされています。少し待ってから試してください";
+  if(/network/.test(c))return"通信できませんでした。電波を確認してください";
+  return"うまくいきませんでした（"+(c||"不明なエラー")+"）"}
+async function startPortal(key){
+  MODE="portal";admin=false;PKEY=key;$("modeTag").hidden=false;$("modeTag").textContent="参加者";
+  $("backAdmin").hidden=A.kind==="firebase";$("toScore").hidden=true;$("copyLink").hidden=true;
+  if(A.kind==="firebase"){try{const mod=await import(FB+"firebase-auth.js");AUTH=fbAuth(mod,mod.getAuth(fbApp))}catch(e){console.error(e);setBanner("ログイン機能を読み込めませんでした。再読み込みしてください。");return}}
+  else AUTH=trialAuth();
+  A.watchDoc(portalPath(),d=>{PD=d||{};checkXYZ();render()});
+  A.watchColl(portalPath()+"/events",m=>{EV=m;watchMyEntries();render()});
+  AUTH.onChange(id=>{authReady=true;if(id!==LOGIN){LOGIN=id;loginWatch()}render()});
+}
+function loginWatch(){
+  loginUnsub.forEach(f=>{try{f()}catch(e){}});loginUnsub=[];entryWatch={};U=null;Uloaded=false;MYST={};myEntries={};isXYZ=false;pview="list";
+  if(pub)openCup(null);
+  if(!LOGIN)return;
+  loginUnsub.push(A.watchDoc(`${portalPath()}/users/${LOGIN}`,d=>{U=d;Uloaded=true;render()}));
+  loginUnsub.push(A.watchColl(`${portalPath()}/stats/${LOGIN}/events`,m=>{MYST=m;render()}));
+  checkXYZ();watchMyEntries();
+}
+async function checkXYZ(){if(!LOGIN||!PD)return;const h=await pdigest("u:"+LOGIN);const v=(PD.xyz||[]).includes(h);if(v!==isXYZ){isXYZ=v;render()}}
+function watchMyEntries(){if(!LOGIN)return;for(const p of Object.keys(EV)){if(entryWatch[p])continue;const me=LOGIN;
+  entryWatch[p]=A.watchDoc(`cups/${p}/entries/u_${LOGIN}`,d=>{if(LOGIN!==me)return;const v=!!d;if(myEntries[p]!==v){myEntries[p]=v;render()}});loginUnsub.push(entryWatch[p])}}
+const myEntryId=()=>LOGIN?"u_"+LOGIN:"";
+// tell the organizer "this account has X ID ..." so they can approve it as an XYZ member if it matches the roster
+function sendClaim(id,name,handle){if(!handle)return;write(`${portalPath()}/claims/${id}`,{name,handle,at:now()})}
+function hideCupPanels(){for(const id of ["reportPanel","playersPanel","swissPanel","standPanel","topPanel","deckPanel","dangerPanel","callPanel","chatPanel"]){const x=$(id);if(x)x.hidden=true}$("lobbyBox").hidden=true;$("champ").replaceChildren()}
+function openEvent(p){pview="cup";openCup(p,"p");scrollTo({top:0})}
+function goView(v){pview=v;if(pub)openCup(null);render();scrollTo({top:0})}
+function renderPortal(){
+  const panel=$("myPanel");panel.hidden=false;const host=$("myHost");host.replaceChildren();
+  if(!authReady){hideCupPanels();host.append(el("div","empty","読み込み中…"));return true}
+  if(LOGIN&&Uloaded&&U){
+    const nav=el("div","row pnav");const who_=el("div","pwho");who_.append(avatar({icon:U.icon,name:U.name||"?"},30),el("b",null,U.name||"?"),el("span","status","ID "+LOGIN));nav.append(who_,el("span","spacer"));
+    for(const [v,l] of [["list","大会一覧"],["my","マイページ"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pview===v));b.onclick=()=>goView(v);nav.append(b)}
+    const lo=el("button",null,"ログアウト");lo.type="button";lo.onclick=async()=>{try{await AUTH.signOut()}catch(e){}};nav.append(lo);host.append(nav);
+  }
+  if(!LOGIN){hideCupPanels();host.append(loginView());return true}
+  if(!Uloaded){hideCupPanels();host.append(el("div","empty","読み込み中…"));return true}
+  if(!U){hideCupPanels();host.append(profileSetupView());return true}
+  if(pview==="cup"&&pub){const back=el("button",null,"← 大会一覧に戻る");back.type="button";back.onclick=()=>goView("list");host.append(back);return false}
+  hideCupPanels();host.append(pview==="my"?myView():listView());return true;
+}
+function field(id,ph,opt){const i=el("input");i.type=opt&&opt.type||"text";i.id=id;i.placeholder=ph;i.setAttribute("aria-label",ph);if(opt&&opt.max)i.maxLength=opt.max;if(opt&&opt.num)i.inputMode="numeric";if(opt&&opt.ac)i.autocomplete=opt.ac;return i}
+function loginView(){
+  const box=el("div","rep login");
+  const tabs=el("div","row hallkind");for(const [k,l] of [["login","ログイン"],["signup","はじめての方（新規登録）"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pform.tab===k));b.onclick=()=>{pform.tab=k;pform.err="";render()};tabs.append(b)}
+  box.append(tabs);
+  const id=field("pUid","ユーザーID（ゲーム内）",{max:20,num:true,ac:"username"});const pw=field("pPw","パスワード（6文字以上）",{type:"password",max:64,ac:pform.tab==="login"?"current-password":"new-password"});
+  const r1=el("div","addrow");r1.append(id,pw);box.append(r1);
+  let pw2=null,nm=null,hx=null;
+  if(pform.tab==="signup"){pw2=field("pPw2","パスワード（確認）",{type:"password",max:64,ac:"new-password"});const r2=el("div","addrow");r2.append(pw2);
+    nm=field("pName","名前（大会で表示されます）",{max:40});hx=field("pX","XのID（外戦の参加に必要）",{max:30});const r3=el("div","addrow");r3.append(nm,hx);box.append(r2,r3,el("div","warn","※ユーザーIDに誤りがあると賞品を受け取れなくなる場合があります。"))}
+  const err=el("div","warn",pform.err);
+  const go=el("button","primary big",pform.tab==="login"?"ログイン":"登録してはじめる");go.type="button";go.disabled=pform.busy;
+  const fail=t=>{pform.err=t;pform.busy=false;render()};
+  go.onclick=async()=>{
+    const u=normUid(id.value);if(!/^[0-9]{5,15}$/.test(u)||/[^0-9\s-]/.test(id.value)){id.focus();return fail("ユーザーIDは数字で入力してください")}
+    if(pw.value.length<6){pw.focus();return fail("パスワードは6文字以上にしてください")}
+    if(pform.tab==="signup"){
+      if(pw.value!==pw2.value){pw2.focus();return fail("確認用のパスワードが一致しません")}
+      const name=nm.value.trim().slice(0,40);if(!name){nm.focus();return fail("名前を入力してください")}
+      const handle=hx.value.trim().replace(/^@+/,"").slice(0,30);if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){hx.focus();return fail("XのIDは半角英数字と _ の15文字以内で入力してください")}
+      pform.busy=true;pform.err="";
+      try{await AUTH.signUp(u,pw.value);await A.set(`${portalPath()}/users/${u}`,{name,handle,icon:null,hideTeam:false,at:now()});sendClaim(u,name,handle);pform.busy=false;pform.tab="login";render()}catch(e){console.error(e);fail(authMsg(e))}
+    }else{pform.busy=true;pform.err="";try{await AUTH.signIn(u,pw.value);pform.busy=false;render()}catch(e){console.error(e);fail(authMsg(e))}}
+  };
+  pw.onkeydown=e=>{if(e.key==="Enter"&&pform.tab==="login")go.click()};
+  box.append(go,err,el("div","status",pform.tab==="login"?"パスワードを忘れたときは運営に連絡してください。アカウントを作り直せます（戦績はユーザーIDにひも付いているので消えません）。":"ユーザーIDはゲーム内のプロフィールに表示されている数字です。登録したユーザーIDは後から変更できません。"));
+  return box;
+}
+function profileSetupView(){
+  const box=el("div","rep");box.append(el("div","lab","プロフィールの登録"),el("div","status","大会で表示される名前を登録してください。"));
+  const nm=field("pName","名前",{max:40});const hx=field("pX","XのID（外戦の参加に必要）",{max:30});const r=el("div","addrow");r.append(nm,hx);box.append(r);
+  const err=el("div","warn",pform.err);const b=el("button","primary","登録する");b.type="button";
+  b.onclick=()=>{const name=nm.value.trim().slice(0,40);if(!name){pform.err="名前を入力してください";render();return}const handle=hx.value.trim().replace(/^@+/,"").slice(0,30);
+    if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){pform.err="XのIDは半角英数字と _ の15文字以内で入力してください";render();return}
+    pform.err="";write(`${portalPath()}/users/${LOGIN}`,{name,handle,icon:null,hideTeam:false,at:now()});sendClaim(LOGIN,name,handle)};
+  box.append(b,err);return box;
+}
+const ST_LABEL={setup:"参加者募集中",swiss:"予選中",top:"決勝トーナメント中",done:"終了"};
+function listView(){
+  const wrap=el("div");
+  const items=Object.entries(EV).map(([p,e])=>Object.assign({pub:p},e)).filter(e=>e.kind!=="internal"||isXYZ);
+  const groups=[["参加者募集中",items.filter(e=>e.status==="setup")],["開催中",items.filter(e=>e.status==="swiss"||e.status==="top")],["終了した大会",items.filter(e=>e.status==="done").sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,10)]];
+  let any=false;
+  for(const [title,list] of groups){if(!list.length)continue;any=true;
+    wrap.append(el("div","lab plab",title));
+    for(const e of list.sort((a,b)=>(b.created||0)-(a.created||0))){
+      const card=el("div","evcard");const info=el("div","evinfo");
+      const nm=el("div","evname",e.name||"（大会名なし）");if(myEntries[e.pub])nm.append(el("span","bdg b-mine","参加登録済み"));
+      info.append(nm,el("div","status",[e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",`${e.n||0}人`,e.created?new Date(e.created).toLocaleDateString("ja-JP"):""].filter(Boolean).join("・")));
+      const b=el("button",e.status==="setup"&&!myEntries[e.pub]?"primary":null,e.status==="setup"&&!myEntries[e.pub]?"参加登録へ":"大会ページを開く");b.type="button";b.onclick=()=>openEvent(e.pub);
+      card.append(info,el("span","evst st-"+(e.status||"setup"),ST_LABEL[e.status]||""),b);wrap.append(card)}}
+  if(!any)wrap.append(el("div","empty","いま表示できる大会はありません。運営が大会を作ると、ここに表示されます。"));
+  if(!isXYZ)wrap.append(el("div","status","内戦（チーム内大会）はXYZメンバーにだけ表示されます。"));
+  return wrap;
+}
+const myDraft={n:null,h:null,icon:undefined};const myMsg={t:"",ok:false};let myTab=null;
+function myView(){
+  const host=el("div");
+  const box=el("div","rep");host.append(box);box.append(el("div","lab","プロフィール"));
+  const curIcon=myDraft.icon!==undefined?myDraft.icon:(U.icon||null);
+  const row=el("div","addrow");const n=field("myName","名前",{max:40});n.value=myDraft.n!=null?myDraft.n:(U.name||"");
+  const h=field("myHandle","XのID",{max:30});const hv=myDraft.h!=null?myDraft.h:(U.handle||"");h.value=hv?"@"+hv.replace(/^@+/,""):"";
+  n.oninput=()=>{myDraft.n=n.value};h.oninput=()=>{myDraft.h=h.value};row.append(n,h);box.append(row);
+  box.append(iconPicker(curIcon,d=>{myDraft.icon=d;n.blur();h.blur();render()},"myicon2"));
+  box.append(el("div","status",`ユーザーID ${LOGIN}（変更はできません）`));
+  const msg=el("div",myMsg.ok?"status":"warn",myMsg.t);
+  const sv=el("button","primary","変更を保存");sv.type="button";
+  sv.onclick=async()=>{
+    const name=n.value.trim().slice(0,40);const handle=h.value.trim().replace(/^@+/,"").slice(0,30);
+    const fail=t=>{myMsg.t=t;myMsg.ok=false;render()};
+    if(!name)return fail("名前を入力してください");
+    if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle))return fail("XのIDは半角英数字と _ の15文字以内で入力してください");
+    const icon=myDraft.icon!==undefined?myDraft.icon:(U.icon||null);
+    write(`${portalPath()}/users/${LOGIN}`,{name,handle,icon,hideTeam:!!U.hideTeam,at:now()});if(!isXYZ&&handle!==(U.handle||""))sendClaim(LOGIN,name,handle);
+    // also update tournaments I'm entered in that haven't finished
+    for(const [p,on] of Object.entries(myEntries)){if(!on||!EV[p]||EV[p].status==="done")continue;
+      const e=await getOnce(`cups/${p}/entries/u_${LOGIN}`);if(!e)continue;const ne=Object.assign({},e,{name,handle,icon});write(`cups/${p}/entries/u_${LOGIN}`,ne)}
+    myDraft.n=myDraft.h=null;myDraft.icon=undefined;myMsg.t="保存しました（参加中の大会の表示も変わります）";myMsg.ok=true;render();
+  };
+  const r2=el("div","row");r2.append(sv);box.append(r2,msg);
+  // --- results (written by the organizer's page when tournaments progress)
+  const all=Object.entries(MYST).map(([k,v])=>Object.assign({pub:k},v)).sort((a,b)=>(b.created||0)-(a.created||0));
+  const rb=el("div","rep");host.append(rb);rb.append(el("div","lab","戦績"));
+  let kind="external";
+  if(isXYZ){if(!myTab)myTab=(all[0]&&all[0].kind)||"internal";kind=myTab;
+    const sw=el("div","row hallkind");sw.setAttribute("role","group");sw.setAttribute("aria-label","内戦・外戦の切り替え");
+    for(const [k,l] of [["internal","内戦"],["external","外戦"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(kind===k));b.onclick=()=>{myTab=k;render()};sw.append(b)}
+    rb.append(sw)}
+  else rb.append(el("div","status","外戦の戦績"));
+  const list=all.filter(x=>x.kind===kind);
+  if(!list.length){rb.append(el("div","status","まだ記録がありません。大会に参加すると、ここに戦績がたまっていきます。"));return host}
+  const tot={w:0,l:0,c:0,r:0,b:0,t:0};for(const x of list){tot.w+=x.w||0;tot.l+=x.l||0;if(x.place==="champion")tot.c++;else if(x.place==="runner")tot.r++;else if(x.place==="third")tot.b++;if(x.place)tot.t++}
+  const sum=el("div","mysum");
+  for(const [k,v] of [["参加",list.length+"大会"],["通算",`${tot.w}勝${tot.l}敗`],["優勝",tot.c+"回"],["準優勝",tot.r+"回"],["3位",tot.b+"回"],["決勝R進出",tot.t+"回"]]){const c=el("div","ms");c.append(el("span","k",k),el("b",null,v));sum.append(c)}
+  rb.append(sum);
+  const PLACE={champion:"優勝",runner:"準優勝",third:"3位",top:"決勝R進出"};
+  for(const x of list){
+    const d=el("details","myt");const sm=el("summary");
+    const ttl=el("span","mt-name",x.name||"（大会名なし）");const meta=el("span","status",[x.created?new Date(x.created).toLocaleDateString("ja-JP"):"",x.status==="done"?"":(ST_LABEL[x.status]||"開催中")].filter(Boolean).join("・"));
+    const res=el("span","mt-res",[x.place?PLACE[x.place]:"",x.rank?`予選${x.rank}位/${x.n}人`:"",`${x.w}勝${x.l}敗`].filter(Boolean).join("　"));
+    if(x.place&&x.place!=="top"){const t=el("span","trophy");t.innerHTML=trophySvg(x.place==="champion"?"gold":x.place==="runner"?"silver":"bronze");ttl.append(t)}
+    sm.append(ttl,meta,res);d.append(sm);
+    const tb=el("table","st mtab");const tbody=el("tbody");const RES={win:"勝ち",lose:"負け",bye:"不戦勝",pending:"結果待ち"};
+    for(const m of x.matches||[]){const tr=el("tr");tr.append(el("td","status",m.label),el("td",null,m.res==="bye"?"—":m.opp||"?"),el("td",m.res==="win"||m.res==="bye"?"w":m.res==="lose"?"l":"status",RES[m.res]+(m.score?` ${m.score}`:"")));tbody.append(tr)}
+    if(!(x.matches||[]).length)tbody.innerHTML="<tr><td class='status'>試合の記録はありません</td></tr>";
+    tb.append(tbody);d.append(tb);rb.append(d)}
+  return host;
+}
+// join form inside a tournament page (portal mode, not yet registered)
+function portalJoin(box){
+  const setup=T.status==="setup";
+  if(!setup){box.append(el("div",null,"この大会には参加していません。対戦表と順位は下で見られます。"));return}
+  if(T.kind!=="external"&&!isXYZ){box.append(el("div",null,"この大会はXYZメンバー限定です。"));return}
+  if(T.kind==="external"&&!U.handle){box.append(el("div",null,"外戦に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
+  box.append(el("div","lab","参加登録"),el("div",null,`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
+  box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"));
+  const ready=draftDecks[0]&&draftDecks[1];const err=el("div","warn",regErr.t);
+  const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
+  b.onclick=async()=>{
+    if((T.banHashes||[]).length){const ks=await banKeys(LOGIN,U.handle);if(ks.some(k=>T.banHashes.includes(k))){regErr.t="この大会には参加登録できません。運営にお問い合わせください";render();return}}
+    if(players().some(p=>p.id!==myEntryId()&&who(p).name===U.name)){regErr.t=`「${U.name}」という名前の参加者がすでにいます。マイページで名前を変えてから登録してください`;render();return}
+    regErr.t="";saveEntry({id:myEntryId(),member:null,name:U.name,handle:U.handle||"",uid:LOGIN,icon:U.icon||null,decks:draftDecks.slice(),hideTeam:!!U.hideTeam,order:now()+Math.random()});
+    draftDecks[0]=draftDecks[1]=null;render()};
+  box.append(b,err);if(!ready)box.append(el("div","status","デッキを2つ選ぶと参加登録できます"));
+}
+// a participant's own record in the open tournament (the organizer's page writes these for everyone with a user ID)
+function summaryFor(me){
+  const matches=[];let w=0,l=0;
+  for(const r of T.rounds||[])for(const m of r.pairs){if(m.a!==me&&m.b!==me)continue;
+    if(!m.b){matches.push({label:`予選R${r.n}`,opp:"",res:"bye",score:""});w++;continue}
+    const opp=m.a===me?m.b:m.a;const res=M[m.id];let st="pending",sc="";
+    if(res&&res.winner){st=res.winner===me?"win":"lose";const [x,y]=scoreOf(res);sc=st==="win"?`${x}-${y}`:`${y}-${x}`;if(st==="win")w++;else l++}
+    matches.push({label:`予選R${r.n}`,opp:who(P(opp)).name,res:st,score:sc})}
+  const b=T.bracket?bracket():null;
+  if(b)b.forEach((ms,r)=>ms.forEach(m=>{if(!(m.a&&m.b)||(m.a!==me&&m.b!==me))return;const opp=m.a===me?m.b:m.a;const res=M[m.id];let st="pending",sc="";
+    if(m.winner){st=m.winner===me?"win":"lose";const [x,y]=scoreOf(res);sc=st==="win"?`${x}-${y}`:`${y}-${x}`;if(st==="win")w++;else l++}
+    matches.push({label:roundLabel(r,b.length),opp:who(P(opp)).name,res:st,score:sc})}));
+  let rank=0;if((T.rounds||[]).length){const st=standings();rank=st.findIndex(x=>x.id===me)+1}
+  const place=T.status==="done"?(placements()[me]||""):"";
+  return{name:T.name||"",kind:T.kind==="external"?"external":"internal",created:T.created||0,status:T.status,me:who(P(me)).name,n:players().length,rank,place,w,l,matches};
+}
+/* ---- organizer side: keep the portal (tournament list, XYZ list, players' results) in step ---- */
+let memberUids={},PDA=null,PDAloaded=false,EVA={},xyzBusy=false,claims={},uidAutoOpen=false;const statSent={};
+function sameObj(a,b,keys){if(!a||!b)return false;return keys.every(k=>JSON.stringify(a[k]??null)===JSON.stringify(b[k]??null))}
+function memberUidSet(){const s=new Set();for(const [mid,r] of Object.entries(memberUids)){if(!members[mid])continue;const u=normUid(r&&r.uid);if(u)s.add(u)}return s}
+async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
+  try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
+    if(JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;PDA={xyz:list};write(portalPath(),{xyz:list,updated:now()})}finally{xyzBusy=false}}
+const EV_KEYS=["name","kind","status","created","format","n"];
+function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length};
+  if(sameObj(EVA[pub],e,EV_KEYS))return;EVA[pub]=e;write(`${portalPath()}/events/${pub}`,e)}
+function syncStats(){if(!PKEY||!T||!pub||T.status==="setup")return;
+  for(const p of players()){const u=normUid(p.uid);if(!u)continue;const s=summaryFor(p.id);const j=JSON.stringify(s);const k=pub+"|"+u;if(statSent[k]===j)continue;statSent[k]=j;write(`${portalPath()}/stats/${u}/events/${pub}`,s)}}
+function adminPortalSync(){if(MODE!=="admin")return;syncXYZ();syncEvent();syncStats()}
+// old internal records were kept per roster member; fold them into the member's user ID once one is set
+function allRecords(){const out=JSON.parse(JSON.stringify(records));for(const [mid,r] of Object.entries(memberUids)){const u=normUid(r&&r.uid);if(!u)continue;const from=out["m_"+mid];if(!from)continue;
+  const to=out["u_"+u]||(out["u_"+u]={name:from.name,events:{}});to.events=Object.assign({},from.events,to.events);delete out["m_"+mid]}return out}
+// accounts whose X ID matches a roster member that has no user ID yet
+function pendingClaims(){const have=memberUidSet();const out=[];
+  for(const [cu,c] of Object.entries(claims)){const u=normUid(cu);const h=normX(c&&c.handle);if(!u||!h||have.has(u))continue;
+    for(const [mid,m] of Object.entries(members)){if(normX(m.handle)!==h)continue;if(normUid(memberUids[mid]&&memberUids[mid].uid))continue;out.push({mid,m,u,c});break}}
+  return out}
+function renderUidPanel(){
+  $("uidPanel").hidden=!admin;if(!admin)return;const host=$("uidHost");host.replaceChildren();
+  const list=Object.entries(members).filter(([,m])=>m.name||m.handle).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+  const pend=pendingClaims();
+  $("uidCount").textContent=`${list.filter(([mid])=>normUid(memberUids[mid]&&memberUids[mid].uid)).length}/${list.length}人 登録済み`+(pend.length?`・承認待ち ${pend.length}件`:"");
+  $("uidCount").classList.toggle("pendhot",!!pend.length);
+  if(pend.length&&!uidAutoOpen){uidAutoOpen=true;$("uidBox").open=true}
+  if(pend.length){const pb=el("div","pendbox");pb.append(el("div","lab","承認待ち　参加者ページで作られたアカウントのうち、XのIDが名簿と一致したものです"));
+    for(const {mid,m,u,c} of pend){const row=el("div","row pendrow");
+      row.append(el("span",null,`名簿：${m.name||"?"}（@${m.handle}）`),el("span","status","←"),el("span",null,`アカウント：${c.name||"?"}（ユーザーID ${u}）`),el("span","spacer"));
+      const ok=el("button","primary","承認");ok.type="button";ok.onclick=()=>{memberUids[mid]={uid:u};write(`${ROOT}/memberUids/${mid}`,{uid:u});write(`${portalPath()}/claims/${u}`,null);delete claims[u];syncXYZ();syncBadges();setSync(`${m.name} さんをXYZメンバーとして登録しました`);render()};
+      const ng=el("button","danger","却下");ng.type="button";ng.onclick=()=>{write(`${portalPath()}/claims/${u}`,null);delete claims[u];render()};
+      row.append(ok,ng);pb.append(row)}
+    pb.append(el("div","status","本人かどうか分からないときは、XのDMなどで確認してから承認してください。却下すると一覧から消えます。"));host.append(pb)}
+  if(!list.length){host.append(el("div","status","名簿にメンバーがいません"));return}
+  for(const [mid,m] of list){const row=el("div","row uidrow");row.append(el("span","nm",m.name||"@"+m.handle));
+    const i=el("input");i.type="text";i.inputMode="numeric";i.maxLength=20;i.id="muid-"+mid;i.placeholder="ユーザーID";i.setAttribute("aria-label",`${m.name}のユーザーID`);i.value=(memberUids[mid]&&memberUids[mid].uid)||"";
+    i.onchange=()=>{const v=normUid(i.value);if(v&&!/^[0-9]{5,15}$/.test(v)){i.setCustomValidity("数字5〜15桁");i.reportValidity();return}i.setCustomValidity("");
+      if(v){memberUids[mid]={uid:v};write(`${ROOT}/memberUids/${mid}`,{uid:v})}else{delete memberUids[mid];write(`${ROOT}/memberUids/${mid}`,null)}syncXYZ();syncBadges();render()};
+    row.append(i);host.append(row)}
+}
+function renderReport(){
+  const panel=$("reportPanel");if(admin||!T||T.status==="done"&&!T.topCut){panel.hidden=true;return}
+  panel.hidden=false;$("reportTitle").textContent=T.status==="setup"?"参加登録":"結果報告";
+  const PL=players();const setup=T.status==="setup";
+  const reg=getReg();const locked=!!(reg&&PL.some(p=>p.id===reg));
+  if(reg&&!locked&&Object.keys(E).length)setReg("");
+  let me=MODE==="portal"?(P(myEntryId())?myEntryId():""):(locked?reg:getMe());
+  $("meSel").closest("label").hidden=MODE==="portal";
+  if(!locked&&!me&&setup){const pr=loadProfile();if(pr){if(T.kind!=="external"&&pr.member&&rosterMap()[pr.member]&&!PL.some(p=>p.member===pr.member))me="m:"+pr.member;else if(pr.name&&!PL.some(p=>who(p).name===pr.name))me="new"}}
+  const sel=$("meSel");sel.replaceChildren();sel.disabled=locked;
+  const o0=el("option",null,"名前を選んでください");o0.value="";sel.append(o0);
+  const g1=el("optgroup");g1.label="参加者";PL.forEach(p=>{const o=el("option",null,who(p).name);o.value=p.id;if(p.id===me)o.selected=true;g1.append(o)});if(PL.length)sel.append(g1);
+  if(setup&&!locked){
+    const inT=new Set(PL.map(p=>p.member).filter(Boolean));
+    const rest=Object.entries(rosterMap()).filter(([mid,m])=>(m.name||m.handle)&&!inT.has(mid)).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+    if(rest.length){const g2=el("optgroup");g2.label="名簿（まだ参加していない人）";rest.forEach(([mid,m])=>{const o=el("option",null,m.name||"@"+m.handle);o.value="m:"+mid;if(me==="m:"+mid)o.selected=true;g2.append(o)});sel.append(g2)}
+    const ext=T.kind==="external";const on=el("option",null,ext?"新しく参加登録する":"名簿にいない（新しく登録する）");on.value="new";if(me==="new")on.selected=true;sel.append(on);
+  }
+  const host=$("reportHost");host.replaceChildren();const box=el("div","rep");host.append(box);
+  const setMe=v=>{memMe[meKey()]=v;try{localStorage.setItem(meKey(),v)}catch(e){}};
+  if(setup&&me.startsWith("m:")&&rosterMap()[me.slice(2)]){
+    const m=rosterMap()[me.slice(2)];const pf=prefill("m");
+    box.append(el("div","lab","参加登録"),el("div",null,`${m.name||"@"+m.handle} さんとして参加します。使うデッキを2つ選んでください。`));
+    if(loadProfile())box.append(profileNote());
+    box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"),iconPicker(draftIcon.v,d=>{draftIcon.v=d;render()},"jicon"));
+    const ready=draftDecks[0]&&draftDecks[1];
+    const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
+    b.onclick=async()=>{if((T.banHashes||[]).length){const ks=await banKeys(null,m.handle);if(ks.some(k=>T.banHashes.includes(k))){box.append(el("div","warn","この大会には参加登録できません。運営にお問い合わせください"));return}}
+      const pid=joinMember(me.slice(2),draftDecks.slice(),draftIcon.v);if(pid){saveProfile({member:me.slice(2),name:m.name||"",handle:m.handle||"",decks:draftDecks.slice(),icon:draftIcon.v||null});setMe(pid);setReg(pid);draftDecks[0]=draftDecks[1]=null;draftIcon.v=null}render()};
+    box.append(b);if(!ready)box.append(el("div","status","デッキを2つ選ぶと参加登録できます"));return;
+  }
+  if(setup&&me==="new"){
+    const pf=prefill("new");
+    box.append(el("div","lab",T.kind==="external"?"参加登録":"名簿に登録して参加"));
+    if(loadProfile())box.append(profileNote());
+    const row=el("div","addrow");const n=el("input");n.type="text";n.id="selfName";n.maxLength=40;n.placeholder="名前";n.setAttribute("aria-label","名前");
+    const h=el("input");h.type="text";h.id="selfHandle";h.maxLength=30;const needX=T.kind==="external";h.placeholder=needX?"XのID（必須）":"XのID（任意）";h.setAttribute("aria-label","XのID");row.append(n,h);
+    if(draftName.n!=null)n.value=draftName.n;if(draftName.h!=null)h.value=draftName.h;
+    n.oninput=()=>{draftName.n=n.value};h.oninput=()=>{draftName.h=h.value};
+    let uRow=null,u1=null,u2=null;
+    if(needX){uRow=el("div","addrow");u1=el("input");u1.type="text";u1.id="selfUid";u1.inputMode="numeric";u1.maxLength=20;u1.placeholder="ユーザーID（ゲーム内・必須）";u1.setAttribute("aria-label","ユーザーID");
+      if(draftName.u1!=null)u1.value=draftName.u1;u1.oninput=()=>{draftName.u1=u1.value};
+      uRow.append(u1)}
+    const dr=el("div");dr.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"ndeck"),iconPicker(draftIcon.v,d=>{draftIcon.v=d;n.blur();h.blur();render()},"nicon"));
+    const ready=draftDecks[0]&&draftDecks[1];
+    const err=el("div","warn",regErr.t);const fail=t=>{regErr.t=t;err.textContent=t;const live=document.querySelector("#reportHost .regerr");if(live&&live!==err)live.textContent=t};err.classList.add("regerr");
+    const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
+    b.onclick=async()=>{const name=n.value.trim().slice(0,40);if(!name){n.focus();fail("名前を入力してください");return}const handle=h.value.trim().replace(/^@+/,"").slice(0,30);
+      let uidv=null;
+      if(needX){uidv=normUid(u1.value);if(!uidv){u1.focus();fail("外戦ではユーザーIDの入力が必要です");return}
+        if(!/^[0-9]{5,15}$/.test(uidv)||/[^0-9\s-]/.test(u1.value)){u1.focus();fail("ユーザーIDは数字で入力してください");return}
+      }
+      if(needX&&!handle){h.focus();fail("外戦ではXのIDの入力が必要です");return}
+      if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){h.focus();fail("XのIDは半角英数字と _ の15文字以内で入力してください");return}
+      const taken=new Set(PL.map(p=>who(p).name).concat(Object.values(rosterMap()).map(m=>m.name)));
+      if(taken.has(name)){n.focus();fail(`「${name}」はすでにいます。名簿から選ぶか、別の名前にしてください`);return}
+      if((T.banHashes||[]).length){const ks=await banKeys(uidv,handle);if(ks.some(k=>T.banHashes.includes(k))){fail("このユーザーIDまたはXのIDでは参加登録できません。運営にお問い合わせください");return}}
+      if(needX&&PL.some(p=>normUid(p.uid)===uidv)){fail("このユーザーIDはすでに登録されています");return}
+      saveProfile({member:null,name,handle,uid:uidv||(loadProfile()||{}).uid||null,decks:draftDecks.slice(),icon:draftIcon.v||null});
+      const pid=uid("p");saveEntry({id:pid,member:null,name,handle,uid:uidv,icon:draftIcon.v,decks:draftDecks.slice(),hideTeam:!!(loadProfile()||{}).hideTeam,order:now()+Math.random()});draftIcon.v=null;regErr.t="";setMe(pid);setReg(pid);draftDecks[0]=draftDecks[1]=null;draftName.n=draftName.h=draftName.u1=draftName.u2=null;n.blur();h.blur();render()};
+    if(uRow)box.append(row,uRow,el("div","warn","※ユーザーIDに誤りがあると賞品を受け取れなくなる場合があります。"));else box.append(row);
+    box.append(dr,b,err,el("div","status",T.kind==="external"?"名前・XのID・ユーザーID（いずれも必須）とデッキ2つを入れて登録してください。":"運営が名簿に登録すると、次の大会からは名簿から選べるようになります。"));return;
+  }
+  const mp=P(me);
+  if(MODE==="portal"&&!mp){portalJoin(box);return}
+  if(!mp){box.append(el("div",null,setup?(T.kind==="external"?"右上の「あなたは」で「新しく参加登録する」を選び、名前を入れて参加してください。":"右上で自分の名前を選んで、この大会に参加してください。名簿にいない人は「名簿にいない（新しく登録する）」を選びます。"):PL.length?"右上で自分の名前を選ぶと、自分の試合と報告ボタンが出ます。この端末では次から自動で選ばれます。":"参加者が登録されると、ここから自分の試合を報告できます。"));return}
+  if(setup){
+    box.append(el("div","lab","参加登録済み　デッキは予選が始まるまで変更できます"));
+    box.append(iconPicker(mp.icon,d=>{const p=P(me);p.icon=d;saveEntry(p);saveProfile({icon:d||null});if(MODE==="portal"&&U)write(`${portalPath()}/users/${LOGIN}`,Object.assign({},U,{icon:d||null,at:now()}));render()},"myicon"));
+    const row=el("div","row");
+    for(const k of [0,1]){const s=el("select");s.id=`mydeck${k}`;s.setAttribute("aria-label",`デッキ${k+1}`);
+      const z=el("option",null,`デッキ${k+1}：未選択`);z.value="";s.append(z);
+      for(const [c,n] of CLASSES){if(mp.decks[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(mp.decks[k]===c)o.selected=true;s.append(o)}
+      s.onchange=()=>{const p=P(me);p.decks=p.decks.slice();p.decks[k]=s.value||null;saveEntry(p);saveProfile({decks:p.decks.slice()});render()};row.append(s)}
+    const q=el("button","danger","参加を取り消す");q.type="button";
+    q.onclick=()=>{if(!q.classList.contains("armed")){q.classList.add("armed");q.textContent="本当に取り消す";setTimeout(()=>{if(q.isConnected){q.classList.remove("armed");q.textContent="参加を取り消す"}},3000);return}
+      removeEntry(me);setReg("");setMe(mp.member?"m:"+mp.member:"");render()};
+    row.append(q);
+    const tt=teamToggle(me);if(tt)box.append(tt);
+    box.append(row,el("div","status",MODE==="portal"?"参加登録済みです。予選が始まると、ここに自分の対戦相手が表示されます。":"この端末は "+who(mp).name+" さんとして登録されています。別の人を登録するには、先に参加を取り消してください。予選が始まると、ここに自分の対戦相手が表示されます。"));return;
+  }
+  const mm=myMatch(me);
+  {const tt=teamToggle(me);if(tt)host.append(tt)}
+  if(T.status==="done"){box.append(el("div",null,"大会は終了しました。おつかれさまでした！"));return}
+  if(!mm){box.append(el("div",null,T.status==="top"?"決勝トーナメントの試合はありません（進出なし、または次の対戦相手が決まるのを待っています）。":"今は試合がありません。"));return}
+  box.append(el("div","lab",mm.label));
+  if(T.lobby&&T.lobby.code&&!mm.bye)box.append(el("div","status",`対戦はプライベートロビー（コード ${T.lobby.code}）で行ってください`));
+  if(mm.bye){box.append(el("div",null,"このラウンドは不戦勝（1勝）です。次のラウンドの組み合わせを待ってください。"));return}
+  const m=mm.m;const mine=m.a===me?"a":"b";const opp=mine==="a"?m.b:m.a;const op=P(opp),ow=who(op);const res=M[m.id]||{};
+  const oppRow=el("div","opp");oppRow.append(el("span","status","対戦相手"),avatar(op,40),nameEl(op,ow.name));if(ow.handle)oppRow.append(el("span","status","@"+ow.handle));
+  const ch=el("div","chips");(op.decks||[]).filter(Boolean).forEach(c=>ch.append(chip(c)));oppRow.append(ch);box.append(oppRow);
+  if(!res.winner)box.append(roomBox(m,mine,ow.name,res));
+  box.append(chatBox(m,me));
+  if(isBo3m(m.id)){
+    box.append(el("div","status","BO3コンクエスト：自分の2つのデッキそれぞれで1勝すると勝利です。"));
+    const act=el("div","row");
+    if(res.forfeit&&res.winner){act.append(el(res.winner===me?"span":"span",res.winner===me?"ok":"warn",res.winner===me?`相手の${WHY[res.forfeit]}により、あなたの不戦勝です`:`${WHY[res.forfeit]}のため、あなたの不戦敗になりました。事情がある場合は運営に連絡してください`))}else if(res.winner===me){act.append(el("span","ok",`あなたの勝ち（${res.score||"2-0"}）で報告済みです`));const undo=el("button",null,"取り消す");undo.type="button";undo.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.winner=null;cur.score=null;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};act.append(undo)}
+    else if(res.winner===opp){act.append(el("span","warn",`相手の勝ち（${res.score||"2-0"}）で報告されています。違う場合は運営に連絡してください。`))}
+    else{
+      box.append(gamesEditor(m,mine,mp,op,res));
+      const g=gameTally(res,mine);
+      if(g.my===2){const sc=`2-${g.op}`;const b=el("button","primary big",`${sc}で勝ちを報告`);b.type="button";
+        b.onclick=()=>{if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="もう一度押すと確定します";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent=`${sc}で勝ちを報告`}},3000);return}
+          const cur=Object.assign({},M[m.id]||{});cur.winner=me;cur.score=sc;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};act.append(b,el("span","status","内容を確認して報告してください"))}
+      else if(g.op===2)act.append(el("span","warn","相手が2勝しています。報告は勝った相手が行います"));
+      else act.append(el("span","status","各ゲームの使用デッキと勝敗を入れると、2勝した人が報告できます"));
+    }
+    if(res.winner&&(res.games||[]).length)box.append(gamesSummary(m,mine,res));
+    box.append(act);return;
+  }
+  // deck input for my side
+  const field=T.ban?(mine==="a"?"ba":"bb"):(mine==="a"?"da":"db");
+  const src=T.ban?(op.decks||[]):(mp.decks||[]);
+  const dr=el("div","row");const ds=el("select");ds.id="myField";
+  const z=el("option",null,T.ban?"相手のデッキからBANするもの：未選択":"使うデッキ：未選択");z.value="";ds.append(z);
+  src.filter(Boolean).forEach(c=>{const o=el("option",null,(T.ban?"BAN：":"使用：")+CN[c]);o.value=c;if(res[field]===c)o.selected=true;ds.append(o)});
+  ds.onchange=()=>{const cur=Object.assign({},M[m.id]||{});cur[field]=ds.value||null;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+  dr.append(ds);
+  // opponent's deck (BO1 without BAN): the reporter fills in both decks
+  let needOpp=false;
+  if(!T.ban){
+    const ofield=mine==="a"?"db":"da";const osrc=(op.decks||[]).filter(Boolean);
+    const os=el("select");os.id="oppField";os.setAttribute("aria-label","相手の使用デッキ");
+    const oz=el("option",null,"相手の使用デッキ：未選択");oz.value="";os.append(oz);
+    osrc.forEach(c=>{const o=el("option",null,"相手："+CN[c]);o.value=c;if(res[ofield]===c)o.selected=true;os.append(o)});
+    os.onchange=()=>{const cur=Object.assign({},M[m.id]||{});cur[ofield]=os.value||null;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+    dr.append(os);
+    needOpp=!!(osrc.length&&!res[ofield]);
+  }
+  const needMine=!T.ban&&src.filter(Boolean).length&&!res[field];
+  if(T.ban){const oppBan=res[mine==="a"?"bb":"ba"];const t=el("span","status");if(oppBan){t.append(document.createTextNode("相手のBAN："),chip(oppBan));const u=usedDeck(m,res,mine);if(u){t.append(document.createTextNode("　→ あなたの使用："),chip(u))}}else t.textContent="相手のBANはまだ入っていません";dr.append(t)}
+  box.append(dr);
+  const act=el("div","row");
+  if(res.winner===me&&res.forfeit){act.append(el("span","ok",`相手の${WHY[res.forfeit]}により、あなたの不戦勝です`))}else if(res.winner===opp&&res.forfeit){act.append(el("span","warn",`${WHY[res.forfeit]}のため、あなたの不戦敗になりました。事情がある場合は運営に連絡してください`))}else if(res.winner===me){
+    act.append(el("span","ok","あなたの勝ちで報告済みです"));
+    const undo=el("button",null,"取り消す");undo.type="button";undo.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.winner=null;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};act.append(undo);
+  }else if(res.winner===opp){
+    act.append(el("span","warn","相手の勝ちで報告されています。違う場合は運営に連絡してください。"));
+  }else{
+    const b=el("button","primary big","勝ちを報告する");b.type="button";b.disabled=!!(needMine||needOpp);
+    b.onclick=()=>{if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="もう一度押すと確定します";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent="勝ちを報告する"}},3000);return}
+      const cur=Object.assign({},M[m.id]||{});cur.winner=me;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+    act.append(b,el("span","status",(needMine||needOpp)?"自分と相手の使用デッキを選ぶと報告できます":"報告は勝った人が行ってください"));
+  }
+  box.append(act);
+}
+/* ---------- tournaments ---------- */
+function newKey(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("")}
+function pubUrl(){
+  if(A&&A.kind==="firebase"){const u=new URL(location.href);u.search="?t="+pub;u.hash="";return u.toString()}
+  return location.href.split("#")[0]+"#join-"+pub;
+}
+function openCup(key,id){
+  unsub.forEach(u=>{try{u()}catch(e){}});unsub=[];tid=id||null;pub=key||null;T=null;M={};E={};C={};viewRound=null;render();
+  if(!pub)return;
+  const mine=pub;
+  unsub.push(A.watchDoc(cupPath(),d=>{if(pub!==mine)return;T=d?Object.assign({players:[],rounds:[]},JSON.parse(JSON.stringify(d))):null;syncRoster();syncBans();syncBadges();render()}));
+  unsub.push(A.watchColl(cupPath()+"/matches",m=>{if(pub!==mine)return;M=JSON.parse(JSON.stringify(m));render()}));
+  unsub.push(A.watchColl(cupPath()+"/entries",m=>{if(pub!==mine)return;E=JSON.parse(JSON.stringify(m));syncBadges();render()}));
+  unsub.push(A.watchColl(cupPath()+"/chat",m=>{if(pub!==mine)return;C=JSON.parse(JSON.stringify(m));
+    if(editing())document.querySelectorAll(".chatlog").forEach(l=>l.replaceWith(chatLog(l.dataset.mid,l.dataset.me||null)));render()}));
+}
+function openTour(id){const t=tours[id];openCup(t&&t.pub,id)}
+$("tourSel").onchange=()=>openTour($("tourSel").value);
+$("newTourBtn").onclick=()=>{$("newTourForm").hidden=false;$("tName").focus()};
+$("cancelTour").onclick=()=>{$("newTourForm").hidden=true};
+$("tCut").addEventListener("change",()=>{$("tFormatTop").disabled=$("tCut").value==="0"});
+$("tLobby").onchange=()=>{const on=$("tLobby").value==="1";$("tLobbyCode").hidden=!on;if(on)$("tLobbyCode").focus()};
+$("createTour").onclick=()=>{
+  const name=$("tName").value.trim();if(!name){$("tName").focus();return}
+  const id=uid("t");const key=newKey(24);
+  const idx={name:name.slice(0,40),created:now(),pub:key};
+  tours[id]=idx;write(idxPath(id),idx);
+  pub=key;
+  const t={name:idx.name,created:idx.created,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
+  T=t;syncRoster();write(cupPath(),T);
+  $("newTourForm").hidden=true;$("tName").value="";$("tLobby").value="0";$("tLobbyCode").value="";$("tLobbyCode").hidden=true;openCup(key,id);
+};
+$("delTour").onclick=()=>{
+  const b=$("delTour");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="本当に削除する";setTimeout(()=>{b.classList.remove("armed");b.textContent="この大会を削除"},3000);return}
+  for(const k of Object.keys(M))write(`${cupPath()}/matches/${k}`,null);for(const k of Object.keys(E))write(`${cupPath()}/entries/${k}`,null);for(const k of Object.keys(C))write(`${cupPath()}/chat/${k}`,null);write(cupPath(),null);write(idxPath(tid),null);if(PKEY){write(`${portalPath()}/events/${pub}`,null);delete EVA[pub]}delete tours[tid];
+  const next=Object.entries(tours).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];openTour(next?next[0]:null);
+};
+$("copyPub").onclick=()=>copyText(portalUrl(),"参加者用URLをコピーしました");
+
+async function copyText(txt,ok){try{await navigator.clipboard.writeText(txt);setSync(ok)}catch(e){setSync("コピーできませんでした")}}
+$("copyLink").onclick=()=>copyText(location.href,"運営用URLをコピーしました。参加者には共有しないでください");
+function setBanner(t){$("banner").textContent=t}
+
+/* ---------- boot ---------- */
+$("backAdmin").onclick=()=>{location.hash="";};
+function hashKey(){const m=location.hash.match(/^#join-([a-z0-9]{16,})$/i);return m?m[1]:""}
+async function startAdmin(){
+  MODE="admin";admin=true;$("modeTag").hidden=false;$("modeTag").textContent="運営";$("backAdmin").hidden=true;
+  if(!startAdmin.done){startAdmin.done=true;
+    PKEY=await portalKeyFor(ROOT);
+    A.watchColl(ROOT+"/memberUids",m=>{memberUids=JSON.parse(JSON.stringify(m));syncXYZ();syncBadges();render()});
+    A.watchDoc(portalPath(),d=>{PDA=d;PDAloaded=true;syncXYZ()});
+    A.watchColl(portalPath()+"/events",m=>{EVA=JSON.parse(JSON.stringify(m));render()});
+    A.watchColl(portalPath()+"/claims",m=>{claims=JSON.parse(JSON.stringify(m));render()});
+    A.watchColl(ROOT+"/members",m=>{members=m;syncRoster();syncBadges();render()});
+    A.watchColl(ROOT+"/bans",m=>{bans=JSON.parse(JSON.stringify(m));syncBans();render()});
+    A.watchColl(ROOT+"/teams",m=>{teams=JSON.parse(JSON.stringify(m));syncBadges();renderHall();render()});
+    A.watchColl(ROOT+"/records",m=>{records=JSON.parse(JSON.stringify(m));syncBadges();renderHall();render()});
+    let first=true;
+    A.watchColl(ROOT+"/tournaments",m=>{tours=m;
+      if(first){first=false;const latest=Object.entries(m).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];if(latest&&!pub)openTour(latest[0])}
+      render()});
+  }else{const cur=Object.entries(tours).find(([,t])=>t.pub===pub);openTour(cur?cur[0]:(Object.keys(tours)[0]||null))}
+}
+function startPlayer(key){
+  MODE="player";admin=false;$("modeTag").hidden=false;$("modeTag").textContent="参加者";
+  $("backAdmin").hidden=A.kind==="firebase";
+  $("toScore").hidden=true;$("copyLink").hidden=true;openCup(key,"p");
+}
+(async()=>{
+  render();
+  await syncClock();
+  let db=null;
+  if(window.claude&&window.claude.use){try{db=await window.claude.use("db")}catch(e){}}
+  const qs=new URLSearchParams(location.search);
+  const bid=(qs.get("b")||"").replace(/[^a-z0-9]/gi,"");
+  const tkey=(qs.get("t")||"").replace(/[^a-z0-9]/gi,"");
+  const pkey=(qs.get("p")||"").replace(/[^a-z0-9]/gi,"");
+  if(db){A=claudeAdapter(db);A.kind="claude";ROOT="sb/main";setBanner("試用版：入力内容はこのページに保存されます。参加者画面は「参加者画面を開く」で確認できます（試用版は自分しか開けません）。");}
+  else if(bid.length>=16||tkey.length>=16||pkey.length>=20){
+    try{const [{initializeApp},fs]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-firestore.js")]);
+      fbApp=initializeApp(FIREBASE_CONFIG);A=firebaseAdapter(fs,fs.getFirestore(fbApp));A.kind="firebase";
+      if(bid.length>=16){ROOT=`scoreboards/${bid}`;$("toScore").href="score.html?b="+bid;$("toScore").hidden=false;$("copyLink").hidden=false;$("copyLink").textContent="運営用URLをコピー"}
+    }catch(e){console.error(e);setBanner("データに接続できませんでした。通信を確認して再読み込みしてください。");return}
+  }else{A=localAdapter();A.kind="local";ROOT="sb/local";setBanner("表のIDが付いていないので、このブラウザだけに保存しています。スコア表のページから開くと、チームで共有されます。");}
+  if(pkey.length>=20&&A.kind==="firebase"){setBanner("");startPortal(pkey);return}
+  if(tkey.length>=16){setBanner("");startPlayer(tkey);return}
+  const route=()=>{const pm=location.hash.match(/^#portal-([a-z0-9]{20,})$/i);if(pm&&A.kind!=="firebase"){if(MODE!=="portal")startPortal(pm[1]);return}
+    if(MODE==="portal"){location.reload();return}
+    const hk=hashKey();if(hk&&A.kind!=="firebase")startPlayer(hk);else if(ROOT)startAdmin()};
+  window.addEventListener("hashchange",route);route();
+})();
+</script>
+</body>
+</html>
