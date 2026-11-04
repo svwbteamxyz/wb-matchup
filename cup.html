@@ -184,6 +184,8 @@ details.inq{padding-bottom:8px}details.inq>*:not(summary){margin-left:12px;margi
 .mutes{gap:6px;margin-top:4px}.mutes button{font-size:.75rem;padding:4px 8px}
 .archedit{margin:-2px 0 10px 36px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;display:flex;flex-direction:column;gap:6px}
 details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}details.archself>*:not(summary){margin:0 12px 10px}
+.prow .who span.waittag{align-self:flex-start;margin-top:2px;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.capok,.capwait{font-size:.9rem;font-weight:700;margin-bottom:8px}.capok{color:#1F8A4C}.capwait{color:var(--gold)}
 .trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .bset .trophy{font-size:1.15rem!important}
 .trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
@@ -386,6 +388,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
       <div class="f">
         <label>予選ラウンド数 <select id="tRounds"><option value="0">人数から自動</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
         <label>決勝トーナメント <select id="tCut"><option value="0">なし（予選のみ）</option><option value="2">上位2名</option><option value="4" selected>上位4名</option><option value="8">上位8名</option></select></label>
+        <label>定員 <select id="tCap"><option value="0">なし</option><option value="16">16人</option><option value="32">32人</option><option value="64">64人</option><option value="128">128人</option></select></label>
         <label>種別 <select id="tKind"><option value="internal">内戦（チームメンバーのみ）</option><option value="external">外戦（外部プレイヤーも参加）</option></select></label>
         <label>予選フォーマット <select id="tFormat"><option value="bo1">2デッキBO1</option><option value="bo3c">BO3コンクエスト</option></select></label>
         <label>決勝フォーマット <select id="tFormatTop"><option value="bo1">2デッキBO1</option><option value="bo3c" selected>BO3コンクエスト</option></select></label>
@@ -865,6 +868,14 @@ function renderAll(){
   if(!has){$("lobbyBox").hidden=true;$("champ").replaceChildren(T===null&&tid?el("div","empty","読み込み中…"):el("div","empty",admin?"「新しい大会を作る」から始めてください。":MODE==="player"?"大会が見つかりません。運営から受け取ったURLをもう一度確認してください。":"読み込み中…"));return}
   renderCalls();renderLobby();renderPlayers();renderSwiss();renderStand();renderTop();renderDecks();renderChamp();
 }
+/* ---------- capacity: first come first served, no-shows replaced from the waiting list ---------- */
+const capOf=()=>(T&&T.cap)||0;
+// players are kept in registration order; within the capacity = confirmed, after it = waiting list
+function capInfo(pid){const cap=capOf();const L=players();const i=L.findIndex(p=>p.id===pid);if(!cap||i<0)return{in:true,pos:i+1};return i<cap?{in:true,pos:i+1}:{in:false,wait:i-cap+1}}
+// who actually plays: if check-in is running, only those who checked in; then the first [capacity] in registration order
+function lineup(){let L=players();const ci=ciUsed()&&ciOpen();if(ci)L=L.filter(p=>p.checkedIn);const cap=capOf();const inL=cap?L.slice(0,cap):L;
+  const ids=new Set(inL.map(p=>p.id));const out=players().filter(p=>!ids.has(p.id));
+  return{inL,noShow:ci?out.filter(p=>!p.checkedIn):[],over:out.filter(p=>!ci||p.checkedIn),promoted:cap?inL.filter(p=>!capInfo(p.id).in):[]}}
 /* ---------- disqualification / drop ---------- */
 const isOut=id=>{const p=P(id);return !!(p&&(p.dq||p.drop))};
 const outLabel=p=>p&&p.dq?"失格":p&&p.drop?"ドロップ":"";
@@ -1049,6 +1060,7 @@ function renderPlayers(){
     if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
     if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
     if(isOut(p.id))nm.append(el("span","outtag",outLabel(p)));
+    if(setup&&capOf()){const ci=capInfo(p.id);if(!ci.in)nm.append(el("span","waittag",`キャンセル待ち ${ci.wait}番`))}
     if(admin&&(p.decks||[]).some(Boolean)){const eb=el("button","linkbtn",archOpen[p.id]?"アーキタイプの編集を閉じる":"アーキタイプを編集");eb.type="button";eb.onclick=()=>{archOpen[p.id]=!archOpen[p.id];render()};nm.append(eb)}
     if(admin&&p.arch&&(p.arch[0]||p.arch[1]))nm.append(el("span","archadm","🔒 "+[0,1].map(k=>p.decks[k]?`${CN[p.decks[k]]}${p.arch[k]?"「"+p.arch[k]+"」":""}`:"").filter(Boolean).join(" / ")));
     if(setup&&ciUsed()){
@@ -1092,13 +1104,16 @@ function renderPlayers(){
     const n=PL.length;const missing=PL.filter(p=>!p.decks[0]||!p.decks[1]).length;
     const rounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(Math.max(2,n))));
     $("startBtn").disabled=n<2||(T.topCut&&n<T.topCut);
+    if(capOf()){const nIn=Math.min(n,capOf());$("pCount").textContent=`${nIn}/${capOf()}人`+(n>capOf()?`＋キャンセル待ち${n-capOf()}人`:"")}
     $("startNote").textContent=n<2?"2人以上で始められます":(T.topCut&&n<T.topCut)?`決勝トーナメント（上位${T.topCut}名）には${T.topCut}人以上必要です`:
       `予選は${rounds}ラウンドの予定です`+(missing?`。デッキ未登録が${missing}人います（あとから登録もできます）`:"")+(ciUsed()&&ciOpen()?`。チェックイン済み ${PL.filter(p=>p.checkedIn).length}/${n}人`:"");
-    const ask=$("startAskBox");ask.replaceChildren();const noShow=ciUsed()&&ciOpen()?PL.filter(p=>!p.checkedIn):[];
-    if(startAsk&&noShow.length){ask.hidden=false;
-      ask.append(el("span","warn",`チェックインしていない人が${noShow.length}人います：${noShow.map(p=>who(p).name).join("、")}`));
-      const a=el("button","primary",`この${noShow.length}人を外して予選を始める`);a.type="button";a.onclick=()=>{startAsk=false;doStart(true)};
-      const b=el("button",null,"全員のまま始める");b.type="button";b.onclick=()=>{startAsk=false;doStart(false)};
+    const ask=$("startAskBox");ask.replaceChildren();const LU=lineup();
+    if(startAsk&&(LU.noShow.length||LU.over.length)){ask.hidden=false;
+      if(LU.noShow.length)ask.append(el("span","warn",`チェックインしていない人（外れます）${LU.noShow.length}人：${LU.noShow.map(p=>who(p).name).join("、")}`));
+      if(LU.promoted.length)ask.append(el("span","ok",`キャンセル待ちから繰り上げ ${LU.promoted.length}人：${LU.promoted.map(p=>who(p).name).join("、")}`));
+      if(LU.over.length)ask.append(el("span","warn",`定員（${capOf()}人）に入らない人 ${LU.over.length}人：${LU.over.map(p=>who(p).name).join("、")}`));
+      const a=el("button","primary",`この内容（${LU.inL.length}人）で予選を始める`);a.type="button";a.onclick=()=>{startAsk=false;doStart(true)};
+      const b=el("button",null,`外さずに全員（${PL.length}人）で始める`);b.type="button";b.onclick=()=>{startAsk=false;doStart(false)};
       const c=el("button",null,"やめる");c.type="button";c.onclick=()=>{startAsk=false;render()};ask.append(a,b,c)}
     else{ask.hidden=true;startAsk=false}
   }
@@ -1122,12 +1137,12 @@ $("regSave").onclick=()=>{
 };
 let startAsk=false;const archOpen={};
 $("startBtn").onclick=()=>{
-  const noShow=ciUsed()&&ciOpen()?players().filter(p=>!p.checkedIn):[];
-  if(noShow.length&&!startAsk){startAsk=true;render();return}
+  const L=lineup();
+  if((L.noShow.length||L.over.length)&&!startAsk){startAsk=true;render();return}
   startAsk=false;doStart(false);
 };
-function doStart(dropNoShow){
-  if(dropNoShow){for(const p of players().filter(p=>!p.checkedIn))removeEntry(p.id)}
+function doStart(apply){
+  if(apply){const L=lineup();T.notAdmitted=L.over.map(p=>({id:p.id,name:who(p).name,uid:p.uid||null}));for(const p of [...L.noShow,...L.over])removeEntry(p.id)}
   const n=players().length;if(n<2){setSync("参加者が2人未満のため始められません");render();return}
   T.swissRounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(n)));
   T.rounds=[];const r=makeRound();delete r.rematch;T.rounds.push(r);T.status="swiss";viewRound=1;saveT();render();
@@ -1858,7 +1873,7 @@ function listView(){
       const card=el("div","evcard");const info=el("div","evinfo");
       const nm=el("div","evname",e.name||"（大会名なし）");if(myEntries[e.pub])nm.append(el("span","bdg b-mine","参加登録済み"));
       const ciNow=e.status==="setup"&&e.startAt&&myEntries[e.pub]&&now()>=e.startAt-CHECKIN_MS;if(ciNow)nm.append(el("span","ci-badge","チェックイン受付中"));
-      info.append(nm,el("div","status",[e.startAt?"開催 "+fmtDT(e.startAt):"",e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",`${e.n||0}人`].filter(Boolean).join("・")));
+      info.append(nm,el("div","status",[e.startAt?"開催 "+fmtDT(e.startAt):"",e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",e.cap?`${Math.min(e.n||0,e.cap)}/${e.cap}人`+((e.n||0)>e.cap?`（キャンセル待ち${e.n-e.cap}人）`:""):`${e.n||0}人`].filter(Boolean).join("・")));
       const b=el("button",e.status==="setup"&&!myEntries[e.pub]?"primary":null,e.status==="setup"&&!myEntries[e.pub]?"参加登録へ":"大会ページを開く");b.type="button";b.onclick=()=>openEvent(e.pub);
       card.append(info,el("span","evst st-"+(e.status||"setup"),ST_LABEL[e.status]||""),b);wrap.append(card)}}
   if(!any)wrap.append(el("div","empty","いま表示できる大会はありません。運営が大会を作ると、ここに表示されます。"));
@@ -1952,13 +1967,14 @@ function portalJoin(box){
   if(!setup){box.append(el("div",null,"この大会には参加していません。対戦表と順位は下で見られます。"));return}
   if(T.kind!=="external"&&!isXYZ){box.append(el("div",null,"この大会はXYZメンバー限定です。"));return}
   if(T.kind==="external"&&!U.handle){box.append(el("div",null,"外戦に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
-  const later=ciUsed();
+  const later=ciUsed();const full=capOf()&&players().length>=capOf();
   box.append(el("div","lab","参加登録"),el("div",null,later?`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキは、開始30分前からのチェックインのときに選びます。`:`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
   {const nb=el("div","status");nb.append(document.createTextNode("表示される名前がゲーム内のプレイヤー名と違うと失格処分となる場合があります。違う場合は、"));const lk=el("button","linkbtn","マイページ");lk.type="button";lk.onclick=()=>goView("my");nb.append(lk,document.createTextNode("で直してから登録してください。"));box.append(nb)}
   if(later)box.append(el("div","status",`開催 ${fmtDT(T.startAt)}　チェックイン ${fmtDT(T.startAt-CHECKIN_MS)} から`));
+  if(full)box.append(el("div","warn",`定員（${capOf()}人）に達しているため、キャンセル待ち（${players().length-capOf()+1}番目）として登録されます。チェックインしない人が出た場合、登録順に繰り上がります。`));
   else box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"),archRow(draftDecks,draftArch,(k,v)=>{draftArch[k]=v},"jarch"),archNote());
   const ready=later||(draftDecks[0]&&draftDecks[1]);const err=el("div","warn",regErr.t);
-  const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
+  const b=el("button","primary big",full?"キャンセル待ちで登録する":"この内容で参加登録する");b.type="button";b.disabled=!ready;
   b.onclick=async()=>{
     if((T.banHashes||[]).length){const ks=await banKeys(LOGIN,U.handle);if(ks.some(k=>T.banHashes.includes(k))){regErr.t="この大会には参加登録できません。運営にお問い合わせください";render();return}}
     if(players().some(p=>p.id!==myEntryId()&&who(p).name===U.name)){regErr.t=`「${U.name}」という名前の参加者がすでにいます。マイページで名前を変えてから登録してください`;render();return}
@@ -1996,8 +2012,8 @@ async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
   try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
     const pubSame=!inboxPub||!!(PDA&&PDA.inboxPub&&PDA.inboxPub.n===inboxPub.n&&PDA.inboxPub.e===inboxPub.e);
     if(pubSame&&JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;const doc={xyz:list,updated:now()};if(inboxPub||(PDA&&PDA.inboxPub))doc.inboxPub=inboxPub||PDA.inboxPub;PDA=doc;write(portalPath(),doc)}finally{xyzBusy=false}}
-const EV_KEYS=["name","kind","status","created","format","n","startAt"];
-function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null};
+const EV_KEYS=["name","kind","status","created","format","n","startAt","cap"];
+function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null,cap:T.cap||0};
   if(sameObj(EVA[pub],e,EV_KEYS))return;EVA[pub]=e;write(`${portalPath()}/events/${pub}`,e)}
 function syncStats(){if(!PKEY||!T||!pub||T.status==="setup")return;
   for(const p of players()){const u=normUid(p.uid);if(!u)continue;const s=summaryFor(p.id);const j=JSON.stringify(s);const k=pub+"|"+u;if(statSent[k]===j)continue;statSent[k]=j;write(`${portalPath()}/stats/${u}/events/${pub}`,s)}}
@@ -2095,9 +2111,11 @@ function renderReport(){
     box.append(dr,b,err,el("div","status",T.kind==="external"?"名前・XのID・ユーザーID（いずれも必須）とデッキ2つを入れて登録してください。":"運営が名簿に登録すると、次の大会からは名簿から選べるようになります。"));return;
   }
   const mp=P(me);
+  if(MODE==="portal"&&!mp&&T.status!=="setup"&&(T.notAdmitted||[]).some(x=>x.id===myEntryId())){box.append(el("div","warn","定員に達していたため、この大会には参加できませんでした（キャンセル待ちからの繰り上げがありませんでした）。またの参加をお待ちしています。"));return}
   if(MODE==="portal"&&!mp){portalJoin(box);return}
   if(!mp){box.append(el("div",null,setup?(T.kind==="external"?"右上の「あなたは」で「新しく参加登録する」を選び、名前を入れて参加してください。":"右上で自分の名前を選んで、この大会に参加してください。名簿にいない人は「名簿にいない（新しく登録する）」を選びます。"):PL.length?"右上で自分の名前を選ぶと、自分の試合と報告ボタンが出ます。この端末では次から自動で選ばれます。":"参加者が登録されると、ここから自分の試合を報告できます。"));return}
   if(setup){
+    if(capOf()){const ci=capInfo(me);box.append(el("div",ci.in?"capok":"capwait",ci.in?`参加枠内（定員${capOf()}人中 ${ci.pos}番目の登録）`:`キャンセル待ち ${ci.wait}番目（定員${capOf()}人）`+(ciUsed()?"。チェックインしておくと、チェックインしない人が出た場合に登録順で繰り上がります":"。参加をやめる人が出ると繰り上がります")))}
     {const ci=checkinBlock(me);if(ci)box.append(ci)}
     box.append(el("div","lab","参加登録済み　デッキは予選が始まるまで変更できます"));
     box.append(iconPicker(mp.icon,d=>{const p=P(me);p.icon=d;saveEntry(p);saveProfile({icon:d||null});if(MODE==="portal"&&U)write(`${portalPath()}/users/${LOGIN}`,Object.assign({},U,{icon:d||null,at:now()}));render()},"myicon"));
@@ -2214,14 +2232,14 @@ function setFormMode(mode){
   tourFormMode=mode;const ed=mode==="edit";$("createTour").textContent=ed?"変更を保存":"作成";
   const st=T&&T.status;const pre=!ed||st==="setup";
   // after the start only some settings can still change
-  for(const id of ["tKind","tFormat","tLobby","tStart"])$(id).disabled=ed&&!pre;
+  for(const id of ["tKind","tFormat","tLobby","tStart","tCap"])$(id).disabled=ed&&!pre;
   $("tRounds").disabled=ed&&!(pre||st==="swiss");$("tCut").disabled=ed&&!(pre||st==="swiss");$("tFormatTop").disabled=ed&&!(pre||st==="swiss"||st==="confirm");
   $("editNote").hidden=!ed||pre;
 }
-$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("newTourForm").hidden=false;$("tName").focus()};
+$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("tCap").value="0";$("newTourForm").hidden=false;$("tName").focus()};
 $("editTourBtn").onclick=()=>{if(!T)return;setFormMode("edit");
   $("tName").value=T.name||"";$("tStart").value=T.startAt?toLocalInput(T.startAt):"";$("tRounds").value=String(T.swissRounds||0);if(!$("tRounds").value)$("tRounds").value="0";
-  $("tCut").value=String(T.topCut||0);$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
+  $("tCut").value=String(T.topCut||0);$("tCap").value=String(T.cap||0);$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
   $("tLobby").value=T.lobby?"1":"0";$("tLobbyCode").value=(T.lobby&&T.lobby.code)||"";$("tLobbyCode").hidden=!T.lobby;
   $("newTourForm").hidden=false;$("tName").focus()};
 $("cancelTour").onclick=()=>{$("newTourForm").hidden=true;setFormMode("new")};
@@ -2230,6 +2248,7 @@ function saveTourEdit(){
   T.name=name;if(tours[tid]){tours[tid]=Object.assign({},tours[tid],{name});write(idxPath(tid),tours[tid])}
   if(!$("tStart").disabled){const v=$("tStart").value?new Date($("tStart").value).getTime():null;T.startAt=Number.isFinite(v)?v:null}
   if(!$("tKind").disabled)T.kind=$("tKind").value;
+  if(!$("tCap").disabled)T.cap=Number($("tCap").value)||0;
   if(!$("tFormat").disabled){T.format=$("tFormat").value;T.formatSwiss=$("tFormat").value}
   if(!$("tLobby").disabled)T.lobby=$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null;
   if(!$("tRounds").disabled){const r=Number($("tRounds").value)||0;T.swissRounds=T.status==="setup"?r:Math.max(r||T.swissRounds,(T.rounds||[]).length)}
@@ -2247,7 +2266,7 @@ $("createTour").onclick=()=>{
   tours[id]=idx;write(idxPath(id),idx);
   pub=key;
   const stv=$("tStart").value;const startAt=stv?new Date(stv).getTime():null;
-  const t={name:idx.name,created:idx.created,startAt:Number.isFinite(startAt)?startAt:null,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
+  const t={cap:Number($("tCap").value)||0,name:idx.name,created:idx.created,startAt:Number.isFinite(startAt)?startAt:null,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
   T=t;syncRoster();write(cupPath(),T);
   $("newTourForm").hidden=true;$("tName").value="";$("tStart").value="";$("tLobby").value="0";$("tLobbyCode").value="";$("tLobbyCode").hidden=true;openCup(key,id);
 };
