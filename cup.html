@@ -136,7 +136,53 @@ table.mtab td.l{color:var(--danger);font-weight:700}
 .evcard .ci-badge{background:var(--accent);color:var(--accent-ink);font-size:.72rem;padding:1px 7px;border-radius:999px;font-weight:700}
 .cidecks{flex:1 1 100%}
 .prow .deckhid{grid-column:span 2;font-size:.78rem}
-.trophy{display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
+.outtag{display:inline-block;margin-left:6px;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--danger);color:#fff}
+.prow .who span.outtag{color:#fff;font-size:.72rem;align-self:flex-start;margin:2px 0 0}
+tr.outrow td{opacity:.55}
+.confirmbox{border:1px solid var(--accent);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-top:10px;background:var(--accent-soft)}
+.confirmbox h3{margin:0;font-size:1rem}
+.ci button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:1px}
+td.ok,.ci .ok{color:#1F8A4C;font-weight:700}
+.dist{display:flex;flex-direction:column;gap:6px}
+.drow{display:grid;grid-template-columns:7.5em 1fr 8em;gap:10px;align-items:center}
+.dbar{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}.dbar span{display:block;height:100%}
+.dnum{font-size:.82rem;font-variant-numeric:tabular-nums;text-align:right}
+table.mx th,table.mx td{text-align:center;white-space:nowrap}
+table.mx td .wl{font-size:.72rem;color:var(--muted)}
+td.rate-hi{background:rgba(46,158,82,.16)}td.rate-lo{background:rgba(184,58,58,.14)}
+td.mirror{color:var(--muted);font-size:.78rem}
+.archrow{gap:8px}.archf{display:flex;flex-direction:column;gap:2px;font-size:.75rem;color:var(--muted);font-weight:700;flex:1 1 200px}
+.archf input{font:inherit;font-size:.9rem;font-weight:500;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.prow .who span.archadm{font-size:.72rem;color:var(--muted)}
+tr.dim td{opacity:.6}
+details.archmerge{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:8px}
+details.archmerge summary{cursor:pointer}
+.amlist{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.amrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.9rem}
+.amto{color:var(--accent);font-weight:700;font-size:.85rem}
+.piewrap{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center}
+.piebox{position:relative;width:200px;height:200px;flex:0 0 200px}
+.pie{width:200px;height:200px;display:block}
+.piectr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px;pointer-events:none}.piectr b{font-size:1.6rem;font-family:var(--f-num)}.piectr span{font-size:.8rem;color:var(--muted)}
+.plegend{display:flex;flex-direction:column;gap:6px;flex:1 1 260px;min-width:0;max-width:440px}
+.plrow{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center}
+.plsw{width:14px;height:14px;border-radius:4px}
+.ulab{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bset{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;margin-left:2px;margin-right:4px}
+.mydecks{margin:6px 0 12px}
+.rpill{padding:2px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+b.rate-hi{background:rgba(46,158,82,.16)}b.rate-lo{background:rgba(184,58,58,.14)}
+.inqlog{display:flex;flex-direction:column;gap:8px;margin:8px 0;max-height:420px;overflow:auto}
+.inqmsg{max-width:85%;border-radius:10px;padding:8px 10px;background:var(--bg);border:1px solid var(--line)}
+.inqmsg.me{align-self:flex-end;background:var(--accent-soft);border-color:transparent}
+.inqwho{font-size:.72rem;color:var(--muted);margin-bottom:2px}.inqtext{white-space:pre-wrap;overflow-wrap:anywhere}
+.inqimg{max-width:220px;max-height:220px;border-radius:6px;margin-top:6px;cursor:zoom-in;display:block}
+.inqform{display:flex;flex-direction:column;gap:6px}.inqform textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.inqprev{height:44px;border-radius:6px}
+details.inq{padding-bottom:8px}details.inq>*:not(summary){margin-left:12px;margin-right:12px}
+.trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
+.bset .trophy{font-size:1.15rem!important}
+.trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
 .trophy .tc{font-size:.68em;font-weight:800;color:#A77A00;margin-left:1px;font-variant-numeric:tabular-nums}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .trophy .tc{color:#F2C94C}}
 :root[data-theme="dark"] .trophy .tc{color:#F2C94C}
@@ -324,6 +370,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
       <select id="tourSel" aria-label="表示する大会"></select>
       <div class="steps" id="steps"></div>
       <span class="spacer"></span>
+      <button type="button" id="editTourBtn" hidden>大会ルールを変更</button>
       <button type="button" class="primary" id="newTourBtn">新しい大会を作る</button>
     </div>
     <div class="pub" id="pubRow" hidden>
@@ -347,6 +394,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
         <label>プライベートロビー <select id="tLobby"><option value="0">使わない</option><option value="1">使う</option></select></label>
         <input type="text" id="tLobbyCode" maxlength="20" placeholder="ロビーコード" aria-label="ロビーコード" hidden style="flex:0 1 200px;font-family:var(--f-num)">
       </div>
+      <div class="status" id="editNote" hidden>大会が始まっているので、変えられない項目は灰色になっています。</div>
       <div class="row"><button type="button" class="primary" id="createTour">作成</button><button type="button" id="cancelTour">やめる</button></div>
     </div>
     <div class="lobby" id="startBox" hidden></div>
@@ -404,8 +452,16 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
   </section>
 
   <section class="panel" id="deckPanel" hidden>
-    <div class="row"><h2>クラス別成績</h2><span class="spacer"></span><span class="status">結果に使用デッキが入っている試合だけを数えています</span></div>
+    <div class="row"><h2 id="deckTitle">クラス別成績</h2><span class="spacer"></span><span class="status">結果に使用デッキが入っている試合だけを数えています</span></div>
     <div id="deckHost"></div>
+  </section>
+
+  <section class="panel" id="inboxPanel" hidden>
+    <details id="inboxBox">
+      <summary class="row" style="cursor:pointer"><h2>問い合わせ</h2><span class="status" id="inboxCount"></span></summary>
+      <div class="status" style="margin:8px 0">参加者がマイページから送った問い合わせです。内容は暗号化して届くので、運営画面以外では読めません。返信は送った本人のマイページにだけ表示されます。</div>
+      <div id="inboxHost"></div>
+    </details>
   </section>
 
   <section class="panel" id="hallPanel" hidden>
@@ -523,7 +579,7 @@ function players(){
   return list;
 }
 const entryPath=pid=>`${cupPath()}/entries/${pid}`;
-function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;if(p.checkedIn)o.checkedIn=p.checkedIn;E[p.id]=o;write(entryPath(p.id),o)}
+function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;if(p.checkedIn)o.checkedIn=p.checkedIn;if(p.dq)o.dq=p.dq;if(p.drop)o.drop=p.drop;if(p.topReply)o.topReply=p.topReply;if(p.arch&&(p.arch[0]||p.arch[1]))o.arch=[String(p.arch[0]||"").slice(0,20),String(p.arch[1]||"").slice(0,20)];E[p.id]=o;write(entryPath(p.id),o)}
 function removeEntry(pid){delete E[pid];write(entryPath(pid),null);if((T.players||[]).some(p=>p.id===pid)){T.players=T.players.filter(p=>p.id!==pid);saveT()}}
 const P=id=>players().find(p=>p.id===id)||null;
 function rosterMap(){if(MODE==="admin")return members;const o={};for(const r of (T&&T.roster)||[])o[r.mid]={name:r.name,handle:r.handle,order:r.order};return o}
@@ -570,7 +626,7 @@ function placements(){
   // {entryId: "champion"|"runner"|"top"} for a finished tournament
   const out={};if(!T||T.status!=="done")return out;
   if(T.topCut){const b=bracket();if(!b)return out;for(const s of T.bracket.seeds)out[s]="top";if(b.length>=2)for(const m of b[b.length-2])if(m.winner&&m.a&&m.b)out[m.winner===m.a?m.b:m.a]="third";const f=b[b.length-1][0];if(f.winner){out[f.winner]="champion";out[f.winner===f.a?f.b:f.a]="runner"}}
-  else{const st=standings();if(st[0])out[st[0].id]="champion";if(st[1])out[st[1].id]="runner";if(st[2])out[st[2].id]="third"}
+  else{const st=standings().filter(s=>!(P(s.id)||{}).dq);if(st[0])out[st[0].id]="champion";if(st[1])out[st[1].id]="runner";if(st[2])out[st[2].id]="third"}
   return out;
 }
 function syncRecords(){
@@ -621,12 +677,11 @@ function nameEl(p,name){
   const wrap=el("span","pn");wrap.append(b);if(!d)return wrap;
   if(d.team&&TEAM[d.team]){const x=el("span","tm");x.innerHTML=teamSvg(d.team);x.setAttribute("role","img");x.setAttribute("aria-label",d.team+"所属");x.title=d.team+"所属";wrap.append(x)}
   // only the highest achievement is shown, with no counts, to keep names tidy
-  let icon=null,label="";
-  if(d.w){icon=trophySvg("gold");label="優勝経験あり"}
-  else if(d.r){icon=trophySvg("silver");label="準優勝経験あり"}
-  else if(d.b){icon=trophySvg("bronze");label="3位経験あり"}
-  else if(d.t){icon=FINALIST;label="決勝R進出経験あり"}
-  if(icon){const t=el("span","trophy");t.innerHTML=icon;t.setAttribute("role","img");t.setAttribute("aria-label",label);wrap.append(t)}
+  // every achievement earned is shown, each with how many times it was earned
+  const bset=el("span","bset");
+  for(const [n,svg,lab] of [[d.w,trophySvg("gold"),"優勝"],[d.r,trophySvg("silver"),"準優勝"],[d.b,trophySvg("bronze"),"3位"],[d.t,FINALIST,"決勝R進出"]]){
+    if(!n)continue;const t=el("span","trophy");t.innerHTML=svg;t.setAttribute("role","img");t.setAttribute("aria-label",`${lab}${n}回`);t.title=`${lab}${n}回`;t.append(el("span","tcnt",String(n)));bset.append(t)}
+  if(bset.childElementCount)wrap.append(bset);
   if(d.t)wrap.title=`これまでの実績：優勝${d.w}回・準優勝${d.r}回・3位${d.b}回・決勝R進出${d.t}回`;
   return wrap;
 }
@@ -685,10 +740,10 @@ function makeRound(){
   const played=new Set();const hadBye=new Set();
   for(const r of T.rounds||[])for(const m of r.pairs){if(m.b)played.add([m.a,m.b].sort().join("|"));else hadBye.add(m.a)}
   let order;
-  if(n===1)order=shuffle(players().map(p=>p.id));
+  if(n===1)order=shuffle(players().filter(p=>!p.dq&&!p.drop).map(p=>p.id));
   else{
     // shuffle inside each win-group so equal records meet randomly, then keep the group order
-    const st=standings();const groups={};for(const s of st)(groups[s.w]=groups[s.w]||[]).push(s.id);
+    const st=standings().filter(s=>!isOut(s.id));const groups={};for(const s of st)(groups[s.w]=groups[s.w]||[]).push(s.id);
     order=Object.keys(groups).map(Number).sort((a,b)=>b-a).flatMap(w=>shuffle(groups[w]));
   }
   const pairs=[];
@@ -783,19 +838,101 @@ function renderAll(){
   renderTourBar();renderStartBox();
   $("tourPanel").hidden=MODE==="portal"&&!(pview==="cup"&&pub);$("tourTitle").textContent=!admin&&T&&T.name?T.name:"大会";
   const has=!!T;
-  $("newTourBtn").hidden=!admin;if(!admin)$("newTourForm").hidden=true;$("tourSel").hidden=!admin;
+  $("newTourBtn").hidden=!admin;$("editTourBtn").hidden=!(admin&&T);if(!admin)$("newTourForm").hidden=true;$("tourSel").hidden=!admin;
   $("pubRow").hidden=!(admin&&PKEY);
   if(admin&&PKEY){const u=portalUrl();if($("pubUrl").value!==u)$("pubUrl").value=u;$("openPub").href=u}
   for(const id of ["playersPanel","swissPanel","standPanel","topPanel","deckPanel"])$(id).hidden=!has;
   $("dangerPanel").hidden=!has||!admin;
   if(MODE==="portal"){if(renderPortal())return}else $("myPanel").hidden=true;
   renderReport();
-  renderBans();renderHall();renderUidPanel();adminPortalSync();
+  renderBans();renderHall();renderUidPanel();renderInbox();adminPortalSync();
   if(!has){$("lobbyBox").hidden=true;$("champ").replaceChildren(T===null&&tid?el("div","empty","読み込み中…"):el("div","empty",admin?"「新しい大会を作る」から始めてください。":MODE==="player"?"大会が見つかりません。運営から受け取ったURLをもう一度確認してください。":"読み込み中…"));return}
   renderCalls();renderLobby();renderPlayers();renderSwiss();renderStand();renderTop();renderDecks();renderChamp();
 }
+/* ---------- disqualification / drop ---------- */
+const isOut=id=>{const p=P(id);return !!(p&&(p.dq||p.drop))};
+const outLabel=p=>p&&p.dq?"失格":p&&p.drop?"ドロップ":"";
+function openMatchesOf(pid){
+  const out=[];const r=(T.rounds||[])[(T.rounds||[]).length-1];
+  if(r&&T.status==="swiss")for(const m of r.pairs)if(m.b&&(m.a===pid||m.b===pid)&&!(M[m.id]&&M[m.id].winner))out.push(m);
+  const b=T.bracket?bracket():null;if(b)b.forEach(ms=>ms.forEach(m=>{if(m.a&&m.b&&(m.a===pid||m.b===pid)&&!m.winner)out.push(m)}));
+  return out;
+}
+function forfeitTo(m,loser,why){const cur=Object.assign({},M[m.id]||{});cur.winner=loser===m.a?m.b:m.a;cur.forfeit=why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur))}
+function disqualify(pid){const p=P(pid);if(!p)return;p.dq=now();saveEntry(p);for(const m of openMatchesOf(pid))forfeitTo(m,pid,"dq");render()}
+// a bracket match that forms later against a disqualified/dropped player is given to the other side
+function autoForfeitOut(){if(MODE!=="admin"||!T||T.status!=="top")return;const b=bracket();if(!b)return;
+  b.forEach(ms=>ms.forEach(m=>{if(!(m.a&&m.b)||m.winner)return;const oa=isOut(m.a),ob=isOut(m.b);if(oa&&!ob)forfeitTo(m,m.a,P(m.a).dq?"dq":"drop");else if(ob&&!oa)forfeitTo(m,m.b,P(m.b).dq?"dq":"drop")}))}
+// can this player no longer reach the top cut whatever happens in the remaining rounds?
+function noTopChance(pid){
+  if(!T||T.status!=="swiss"||!T.topCut)return false;
+  const st=standings();const me=st.find(s=>s.id===pid);if(!me)return false;
+  const left=Math.max(0,(T.swissRounds||0)-(T.rounds||[]).length);const maxW=me.w+left;
+  const ahead=st.filter(s=>s.id!==pid&&!isOut(s.id)&&s.w>maxW).length;
+  return ahead>=T.topCut;
+}
+/* ---------- top-cut confirmation (after the qualifying rounds) ---------- */
+const CONFIRM_MS=5*60*1000;
+function enterConfirm(){
+  const order=standings().filter(s=>!isOut(s.id)).map(s=>s.id);
+  for(const id of order){const p=P(id);if(p&&p.topReply){p.topReply=null;saveEntry(p)}}
+  T.confirm={at:now(),deadline:now()+CONFIRM_MS,invited:order.slice(0,T.topCut),order};T.status="confirm";saveT();render();
+}
+function topLineup(){
+  const C=T.confirm||{invited:[],order:[]};const rep=id=>(P(id)||{}).topReply;
+  const yes=C.invited.filter(id=>rep(id)==="yes"&&!isOut(id));
+  const wait=C.order.filter(id=>!C.invited.includes(id)&&rep(id)==="standby"&&!isOut(id));
+  const fill=wait.slice(0,Math.max(0,T.topCut-yes.length));
+  const lineup=C.order.filter(id=>yes.includes(id)||fill.includes(id));
+  let K=0;for(const k of [8,4,2])if(k<=Math.min(T.topCut,lineup.length)){K=k;break}
+  return{yes,wait,fill,lineup,K,seeds:lineup.slice(0,K)};
+}
+function startTop(){
+  const L=topLineup();
+  if(L.K<2){T.status="done";T.bracket=null;saveT();setSync("決勝トーナメントの出場者が2人に満たないため、大会を終了しました");render();return}
+  T.bracket={seeds:L.seeds,startedAt:now()};T.status="top";T.topCut=L.K;saveT();render();
+}
+function renderConfirmAdmin(host){
+  const C=T.confirm;if(!C)return;const L=topLineup();const rep=id=>(P(id)||{}).topReply;
+  const box=el("div","confirmbox");box.append(el("h3",null,"決勝トーナメントの出場確認"));
+  const late=now()>=C.deadline;
+  box.append(late?el("span","warn","回答期限を過ぎました。未回答の進出者は辞退扱いになります"):cd(C.deadline,"回答期限まで {t}"));
+  const t=el("table","st");const tb=el("tbody");
+  const RL={yes:"出場する",no:"辞退",standby:"繰上げ希望",pass:"繰上げ希望なし"};
+  C.order.forEach((id,i)=>{const p=P(id);if(!p)return;const inv=C.invited.includes(id);const r=rep(id);
+    const tr=el("tr",inv?"cut":"");tr.append(el("td","rk",`${i+1}位`),el("td",null,who(p).name),el("td","status",inv?"決勝進出":"繰上げ候補"),
+      el("td",r==="yes"||r==="standby"?"ok":r?"status":"warn",isOut(id)?outLabel(p):r?RL[r]:"未回答"),
+      el("td","status",L.seeds.includes(id)?"→ 出場":""));tb.append(tr)});
+  t.append(tb);const tbox=el("div","tbox");tbox.append(t);box.append(tbox);
+  const row=el("div","row");
+  const go=el("button","primary",L.K>=2?`決勝トーナメントを始める（${L.K}名）`:"出場者が足りないので大会を終了する");go.type="button";
+  go.onclick=()=>{if(!late&&C.invited.some(id=>!rep(id)&&!isOut(id))&&!go.classList.contains("armed")){go.classList.add("armed");go.textContent="未回答の人がいます。もう一度押すと辞退扱いで始めます";setTimeout(()=>{if(go.isConnected)render()},4000);return}startTop()};
+  const ext=el("button",null,"回答期限を5分延ばす");ext.type="button";ext.onclick=()=>{T.confirm.deadline=Math.max(now(),T.confirm.deadline)+CONFIRM_MS;saveT();render()};
+  row.append(go,ext);box.append(row);
+  if(L.fill.length)box.append(el("div","status",`繰上げ出場：${L.fill.map(id=>who(P(id)).name).join("、")}`));
+  if(L.lineup.length&&L.K<Math.min(T.topCut,L.lineup.length))box.append(el("div","status",`出場者が${L.lineup.length}名のため、${L.K}名のトーナメントになります（下位の人は出場できません）`));
+  host.append(box);
+}
+function confirmBlock(me){
+  const C=T.confirm;const p=P(me);if(!C||!p)return null;
+  const box=el("div","ci");const rank=C.order.indexOf(me)+1;const late=now()>=C.deadline;
+  const ans=(v,lab,cls)=>{const b=el("button",cls||null,lab);b.type="button";b.setAttribute("aria-pressed",String(p.topReply===v));b.onclick=()=>{const q=P(me);q.topReply=v;saveEntry(q);render()};return b};
+  if(isOut(me)){box.append(el("b",null,"予選が終了しました"),el("span","status","お疲れさまでした。"));return box}
+  if(C.invited.includes(me)){
+    box.classList.add("ci-open");box.append(el("b",null,`🎉 決勝ラウンド進出！（予選${rank}位）`),el("span","status","決勝トーナメントに出場しますか？回答がないと辞退扱いになり、繰上げの人が出場します。"));
+    box.append(late?el("span","warn","回答期限を過ぎました"):cd(C.deadline,"回答期限まで {t}"));
+    const r=el("div","row");r.append(ans("yes","出場する","primary big"),ans("no","辞退する"));box.append(r);
+    if(p.topReply)box.append(el("span","ok",p.topReply==="yes"?"「出場する」で回答しました。始まるまでお待ちください":"「辞退する」で回答しました"));
+  }else if(rank){
+    box.append(el("b",null,`繰上げ候補（予選${rank}位）`),el("span","status","決勝トーナメントの出場者に空きが出た場合、繰上げで出場しますか？順位の高い人から繰上げになります。"));
+    box.append(late?el("span","warn","回答期限を過ぎました"):cd(C.deadline,"回答期限まで {t}"));
+    const r=el("div","row");r.append(ans("standby","繰上げを希望する","primary"),ans("pass","希望しない"));box.append(r);
+    if(p.topReply)box.append(el("span","ok",p.topReply==="standby"?"繰上げ希望で回答しました。空きが出たら決勝トーナメントに入ります":"繰上げは希望しないで回答しました"));
+  }else{box.append(el("b",null,"予選が終了しました"),el("span","status","決勝トーナメントの出場者を確認しています。"))}
+  return box;
+}
 /* ---------- start time + check-in ---------- */
-const CHECKIN_MS=30*60*1000;const ciDecks={pid:null,d:[null,null]};
+const CHECKIN_MS=30*60*1000;const ciDecks={pid:null,d:[null,null],a:["",""]};
 const WD="日月火水木金土";
 function fmtDT(ms){const d=new Date(ms);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]}) ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
 function toLocalInput(ms){const d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);return d.toISOString().slice(0,16)}
@@ -825,10 +962,11 @@ function checkinBlock(me){
   if(p.checkedIn){box.append(el("b",null,"✓ チェックイン済み"),el("span","status",`開始 ${fmtDT(T.startAt)}。予選が始まるまでお待ちください`));return box}
   if(!ciOpen()){box.append(el("b",null,"チェックイン前"),el("span","status",`${fmtDT(T.startAt-CHECKIN_MS)} からチェックインできます（開始 ${fmtDT(T.startAt)}）。チェックインしないと参加できません`));return box}
   box.append(el("b",null,"チェックイン受付中"),el("span","status",`開始 ${fmtDT(T.startAt)}。使うデッキを2つ選んでチェックインしてください。チェックインしていない人は、大会開始時に参加取り消しになります`));
-  if(ciDecks.pid!==me){ciDecks.pid=me;ciDecks.d=[p.decks[0]||null,p.decks[1]||null]}
+  if(ciDecks.pid!==me){ciDecks.pid=me;ciDecks.d=[p.decks[0]||null,p.decks[1]||null];ciDecks.a=[(p.arch||[])[0]||"",(p.arch||[])[1]||""]}
   const dr=deckRow(ciDecks.d,(k,v)=>{ciDecks.d[k]=v;render()},"cideck");dr.classList.add("cidecks");box.append(dr);
+  const ar=archRow(ciDecks.d,ciDecks.a,(k,v)=>{ciDecks.a[k]=v},"ciarch");ar.classList.add("cidecks");box.append(ar,archNote());
   const ok=ciDecks.d[0]&&ciDecks.d[1];
-  const b=el("button","primary big","チェックインする");b.type="button";b.disabled=!ok;b.onclick=()=>{const q=P(me);if(!q||!(ciDecks.d[0]&&ciDecks.d[1]))return;q.decks=ciDecks.d.slice();q.checkedIn=now();saveEntry(q);render()};box.append(b);
+  const b=el("button","primary big","チェックインする");b.type="button";b.disabled=!ok;b.onclick=()=>{const q=P(me);if(!q||!(ciDecks.d[0]&&ciDecks.d[1]))return;q.decks=ciDecks.d.slice();q.arch=ciDecks.a.map(x=>String(x||"").trim().slice(0,20));q.checkedIn=now();saveEntry(q);render()};box.append(b);
   if(!ok)box.append(el("span","status","デッキを2つ選ぶとチェックインできます"));
   return box;
 }
@@ -858,7 +996,7 @@ function renderTourBar(){
     const add=(t,state)=>{const s=el("span",state,t);st.append(s)};
     add("参加登録",T.status==="setup"?"on":"done");
     for(let i=1;i<=Math.max(nR,cur);i++)add(`予選R${i}`,T.status==="setup"?"":i<cur||(i===cur&&T.status!=="swiss")?"done":i===cur?"on":"");
-    if(T.topCut)add("決勝",T.status==="top"?"on":T.status==="done"?"done":"");
+    if(T.topCut){add("出場確認",T.status==="confirm"?"on":T.status==="top"||T.status==="done"?"done":"");add("決勝",T.status==="top"?"on":T.status==="done"?"done":"")}
     add("終了",T.status==="done"?"on":"");
   }
 }
@@ -894,6 +1032,8 @@ function renderPlayers(){
     const nm=el("div","who");const nmh=el("div","whoav");nmh.append(avatar(p,26),nameEl(p,w.name));nm.append(nmh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
     if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
     if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
+    if(isOut(p.id))nm.append(el("span","outtag",outLabel(p)));
+    if(admin&&p.arch&&(p.arch[0]||p.arch[1]))nm.append(el("span","archadm","🔒 "+[0,1].map(k=>p.decks[k]?`${CN[p.decks[k]]}${p.arch[k]?"「"+p.arch[k]+"」":""}`:"").filter(Boolean).join(" / ")));
     if(setup&&ciUsed()){
       if(p.checkedIn)nm.append(el("span","ci-ok","✓ チェックイン済み"));else if(ciOpen())nm.append(el("span","ci-ng","未チェックイン"));
       if(admin&&ciOpen()){const cb=el("button","linkbtn",p.checkedIn?"チェックインを取り消す":"運営がチェックインする");cb.type="button";cb.onclick=()=>{const q=P(p.id);q.checkedIn=q.checkedIn?null:now();saveEntry(q);render()};nm.append(cb)}
@@ -917,6 +1057,11 @@ function renderPlayers(){
       if(!id){ts.disabled=true;ts.title="ユーザーIDか名簿登録がある人だけ付けられます"}else ts.title="名前の横にチームアイコンを付けます（次の大会以降も引き継がれます）";
       ts.onchange=()=>{if(!id)return;if(!ts.value){delete teams[id];write(`${ROOT}/teams/${id}`,null)}else{teams[id]={name:w.name||"",team:ts.value,at:now()};write(`${ROOT}/teams/${id}`,teams[id])}syncBadges();render()};
       row.append(ts)}
+    if(admin&&!setup){
+      if(p.dq){const u=el("button",null,"失格を取り消す");u.type="button";u.title="失格を取り消します（すでに不戦敗になった試合は戻りません）";u.onclick=()=>{const q=P(p.id);q.dq=null;saveEntry(q);render()};row.append(u)}
+      else{const dq=el("button","danger","失格");dq.type="button";dq.title="失格にします。進行中の試合は相手の不戦勝になり、以後の組み合わせに入りません";
+        dq.onclick=()=>{if(!dq.classList.contains("armed")){dq.classList.add("armed");dq.textContent="本当に失格にする";setTimeout(()=>{if(dq.isConnected){dq.classList.remove("armed");dq.textContent="失格"}},3000);return}disqualify(p.id)};row.append(dq)}
+    }
     if(admin){const bb=el("button","danger","出禁");bb.type="button";bb.title="出禁リストに登録して、この大会からも外します";
       bb.onclick=()=>{if(!bb.classList.contains("armed")){bb.classList.add("armed");bb.textContent="本当に出禁にする";setTimeout(()=>{if(bb.isConnected){bb.classList.remove("armed");bb.textContent="出禁"}},3000);return}
         addBan({name:w.name,uid:p.uid||"",handle:w.handle||"",reason:""});if(setup)removeEntry(p.id);render()};row.append(bb)}
@@ -989,8 +1134,8 @@ function renderSwiss(){
       b.onclick=()=>{const nr=makeRound();const warn=nr.rematch;delete nr.rematch;T.rounds.push(nr);viewRound=nr.n;saveT();render();if(warn)setSync("再戦を避けきれなかったため、一部で同じ相手との組み合わせがあります")};
       act.append(b);
     }else if(T.topCut){
-      const b=el("button","primary",`予選を終えて決勝トーナメントへ（上位${T.topCut}名）`);b.type="button";b.disabled=!done;
-      b.onclick=()=>{T.bracket={seeds:standings().slice(0,T.topCut).map(s=>s.id),startedAt:now()};T.status="top";saveT();render()};
+      const b=el("button","primary",`予選を終えて結果発表・決勝の出場確認へ（上位${T.topCut}名）`);b.type="button";b.disabled=!done;
+      b.onclick=()=>enterConfirm();
       act.append(b);
     }else{
       const b=el("button","primary","予選を終えて大会を終了");b.type="button";b.disabled=!done;
@@ -1013,15 +1158,17 @@ function renderStand(){
   const b3=fmtOf("swiss")==="bo3c";
   t.innerHTML="<thead><tr><th>順位</th><th>名前</th><th>勝</th><th>敗</th><th>OMW%</th>"+(b3?"<th>ゲーム</th><th>GW%</th>":"")+"<th>OOMW%</th><th>デッキ</th></tr></thead>";
   const tb=el("tbody");
-  st.forEach((s,i)=>{const p=P(s.id),w=who(p);const tr=el("tr",T.topCut&&i<T.topCut&&T.status!=="setup"?"cut":"");
-    tr.append(el("td","rk",String(i+1)));const n=el("td");const nh=el("span","whoav");nh.style.display="inline-flex";nh.append(avatar(p,22),nameEl(p,w.name));n.append(nh);if(w.handle)n.append(el("span","status","  @"+w.handle));tr.append(n);
+  const elig=st.filter(x=>!isOut(x.id)).map(x=>x.id);const inCut=id=>T.confirm&&T.status!=="swiss"?T.confirm.invited.includes(id):elig.indexOf(id)>=0&&elig.indexOf(id)<T.topCut;
+  st.forEach((s,i)=>{const p=P(s.id),w=who(p);const tr=el("tr",isOut(s.id)?"outrow":T.topCut&&inCut(s.id)&&T.status!=="setup"?"cut":"");
+    tr.append(el("td","rk",String(i+1)));const n=el("td");const nh=el("span","whoav");nh.style.display="inline-flex";nh.append(avatar(p,22),nameEl(p,w.name));n.append(nh);if(isOut(s.id))n.append(el("span","outtag",outLabel(p)));if(w.handle)n.append(el("span","status","  @"+w.handle));tr.append(n);
     tr.append(el("td",null,String(s.w)),el("td",null,String(s.l)),el("td",null,s.opps.length?pct(s.omw):"—"));
     if(b3)tr.append(el("td",null,`${s.gw}-${s.gl}`),el("td",null,s.gw+s.gl?pct(s.gwp):"—"));
     tr.append(el("td",null,s.opps.length?pct(s.oomw):"—"));
     const dc=el("td");const ch=el("div","chips");ch.style.justifyContent="flex-end";(p.decks||[]).filter(Boolean).forEach(c=>ch.append(chip(c)));dc.append(ch);tr.append(dc);
     tb.append(tr)});
   t.append(tb);box.append(t);host.append(box);
-  if(T.topCut)host.append(el("div","status",`色付きの上位${T.topCut}名が決勝トーナメントに進みます`));
+  if(T.topCut&&T.status!=="confirm")host.append(el("div","status",`色付きの上位${T.topCut}名が決勝トーナメントに進みます（失格・ドロップした人は除きます）`));
+  if(T.status==="confirm"&&admin)renderConfirmAdmin(host);
 }
 function renderTop(){
   const b=bracket();$("topPanel").hidden=!b;if(!b)return;
@@ -1037,22 +1184,174 @@ function renderTop(){
   if(admin&&fin.winner&&T.status==="top"){const btn=el("button","primary","大会を終了して優勝者を表示");btn.type="button";btn.onclick=()=>{T.status="done";saveT();render()};host.append(btn)}
   if(!fin.winner&&T.status==="done"){T.status="top";saveT()}
 }
+// meta report: distribution (pie), results and matchups, by class or by archetype. Organizer always; everyone after the event
+let metaUnit="class";
+const CLS_HEX={elf:"#5DAA4E",royal:"#D9AE1E",witch:"#4A6FD6",dragon:"#C9741F",nightmare:"#B4232F",bishop:"#B9BEC9",nemesis:"#2EA3B8"};
+function mixHex(h,t,w){const p=x=>[1,3,5].map(i=>parseInt(x.slice(i,i+2),16));const a=p(h),b=p(t);return"#"+a.map((v,i)=>Math.round(v+(b[i]-v)*w).toString(16).padStart(2,"0")).join("")}
+function unitLabel(key){const [c,a]=key.split("|");const w=el("span","ulab");w.append(chip(c));if(a!=null)w.append(el("span",a==="（未入力）"?"status":null,a));return w}
+function pieSvg(slices,total){
+  // donut with a 2px surface gap between slices; each slice has its own hover title
+  const R=90,r=52,C=100;const NS="http://www.w3.org/2000/svg";const svg=document.createElementNS(NS,"svg");svg.setAttribute("viewBox","0 0 200 200");svg.setAttribute("class","pie");svg.setAttribute("role","img");svg.setAttribute("aria-label","分布の円グラフ");
+  let ang=-Math.PI/2;
+  if(slices.length===1){const c1=document.createElementNS(NS,"circle");c1.setAttribute("cx",C);c1.setAttribute("cy",C);c1.setAttribute("r",(R+r)/2);c1.setAttribute("fill","none");c1.setAttribute("stroke",slices[0].color);c1.setAttribute("stroke-width",R-r);svg.append(c1);return svg}
+  for(const sl of slices){const da=sl.n/total*Math.PI*2;const a0=ang,a1=ang+da;ang=a1;
+    const pt=(rad,t)=>[C+rad*Math.cos(t),C+rad*Math.sin(t)];const big=da>Math.PI?1:0;
+    const [x0,y0]=pt(R,a0),[x1,y1]=pt(R,a1),[x2,y2]=pt(r,a1),[x3,y3]=pt(r,a0);
+    const path=document.createElementNS(NS,"path");path.setAttribute("d",`M${x0},${y0}A${R},${R} 0 ${big} 1 ${x1},${y1}L${x2},${y2}A${r},${r} 0 ${big} 0 ${x3},${y3}Z`);
+    path.setAttribute("fill",sl.color);path.setAttribute("stroke","var(--panel)");path.setAttribute("stroke-width","2");path.setAttribute("stroke-linejoin","round");
+    const t=document.createElementNS(NS,"title");t.textContent=`${sl.text}：${sl.n}（${Math.round(sl.n/total*100)}%）`;path.append(t);svg.append(path)}
+  return svg;
+}
 function renderDecks(){
-  const agg={};const add=(c,win)=>{if(!c)return;const a=agg[c]||(agg[c]={w:0,l:0});win?a.w++:a.l++};
+  const show=admin||T.status==="done";
+  if(!show){$("deckPanel").hidden=true;return}
+  const PL=players().filter(p=>!p.dq);const arch=metaUnit==="arch";
+  const unitKey=(c,a)=>arch?c+"|"+(a||"（未入力）"):c;
+  const slotKey=(p,k)=>{const c=(p.decks||[])[k];if(!c)return null;return unitKey(c,p.arch?archLabel(c,p.arch[k]):"")};
+  const keyOf=(pid,c)=>{const p=P(pid);if(!p||!c)return null;const k=(p.decks||[]).indexOf(c);return unitKey(c,k>=0&&p.arch?archLabel(c,p.arch[k]):"")};
+  // games
+  const agg={},vs={};
+  const add=(k,win)=>{if(!k)return;const a=agg[k]||(agg[k]={w:0,l:0});win?a.w++:a.l++};
+  const pair=(k,o,win)=>{if(!k||!o)return;const x=vs[k+"\u0001"+o]||(vs[k+"\u0001"+o]={w:0,l:0});win?x.w++:x.l++};
+  const game=(ka,kb,aWin)=>{add(ka,aWin);add(kb,!aWin);pair(ka,kb,aWin);pair(kb,ka,!aWin)};
   const all=[];for(const r of T.rounds||[])for(const m of r.pairs)if(m.b)all.push(m);
   const b=bracket();if(b)for(const ms of b)for(const m of ms)if(m.a&&m.b)all.push(m);
-  for(const m of all){const res=M[m.id];if(!res)continue;
-    if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;add(g.da,g.w==="a");add(g.db,g.w==="b")}continue}
-    if(!res.winner)continue;add(usedDeck(m,res,"a"),res.winner===m.a);add(usedDeck(m,res,"b"),res.winner===m.b)}
-  const host=$("deckHost");host.replaceChildren();const rows=CLASSES.filter(([c])=>agg[c]);
-  $("deckPanel").hidden=!rows.length;if(!rows.length)return;
-  host.append(el("div","status","BO1は1試合、BO3は1ゲームを1回として数えています"));
-  const t=el("table","st");t.innerHTML="<thead><tr><th></th><th>クラス</th><th>使用</th><th>勝</th><th>敗</th><th>勝率</th></tr></thead>";const tb=el("tbody");
-  rows.sort((x,y)=>(agg[y[0]].w+agg[y[0]].l)-(agg[x[0]].w+agg[x[0]].l)).forEach(([c])=>{const a=agg[c];const tr=el("tr");const d=el("td");d.append(chip(c));
-    tr.append(el("td"),d,el("td",null,String(a.w+a.l)),el("td",null,String(a.w)),el("td",null,String(a.l)),el("td",null,pct(a.w/(a.w+a.l))));tb.append(tr)});
+  for(const m of all){const res=M[m.id];if(!res||res.forfeit)continue;
+    if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;game(keyOf(m.a,g.da),keyOf(m.b,g.db),g.w==="a")}continue}
+    if(!res.winner)continue;game(keyOf(m.a,usedDeck(m,res,"a")),keyOf(m.b,usedDeck(m,res,"b")),res.winner===m.a)}
+  // distribution of registered decks
+  const dist={};let nd=0;for(const p of PL)for(const k of [0,1]){const key=slotKey(p,k);if(!key)continue;dist[key]=(dist[key]||0)+1;nd++}
+  const host=$("deckHost");host.replaceChildren();
+  if(!nd&&!Object.keys(agg).length){$("deckPanel").hidden=true;return}
+  $("deckPanel").hidden=false;$("deckTitle").textContent="メタレポート";
+  const order=k=>CLASSES.findIndex(c=>c[0]===k.split("|")[0]);
+  // unit switch
+  const sw=el("div","row hallkind");sw.setAttribute("role","group");sw.setAttribute("aria-label","集計の単位");
+  for(const [u,l] of [["class","クラス単位"],["arch","アーキタイプ単位"]]){const bt=el("button",null,l);bt.type="button";bt.setAttribute("aria-pressed",String(metaUnit===u));bt.onclick=()=>{metaUnit=u;render()};sw.append(bt)}
+  host.append(sw);
+  // 1) distribution pie
+  if(nd){host.append(el("div","lab",arch?"アーキタイプ分布（登録デッキ）":"クラス分布（登録デッキ）"));
+    const keys=Object.keys(dist).sort((x,y)=>order(x)-order(y)||dist[y]-dist[x]);
+    const perClass={};const slices=keys.map(k=>{const c=k.split("|")[0];const i=perClass[c]=(perClass[c]??-1)+1;const base=CLS_HEX[c]||"#888";
+      const color=k.endsWith("|（未入力）")?mixHex(base,"#FFFFFF",.7):i===0?base:mixHex(base,i%2?"#000000":"#FFFFFF",Math.min(.5,.18*Math.ceil(i/2)+.04));
+      return{k,n:dist[k],color,text:arch?`${CN[c]} ${k.split("|")[1]}`:CN[c]}});
+    const wrap=el("div","piewrap");const pw=el("div","piebox");pw.append(pieSvg(slices,nd));const ctr=el("div","piectr");ctr.append(el("b",null,String(PL.length)),el("span",null,"人"));pw.append(ctr);wrap.append(pw);
+    const lg=el("div","plegend");for(const sl of slices.slice().sort((x,y)=>y.n-x.n)){const r=el("div","plrow");const sw2=el("span","plsw");sw2.style.background=sl.color;r.append(sw2,unitLabel(sl.k),el("span","dnum",`${sl.n}（${Math.round(sl.n/nd*100)}%）`));lg.append(r)}
+    wrap.append(lg);host.append(wrap,el("div","status",`参加者${PL.length}人が登録した2デッキ（計${nd}デッキ）の内訳です`))}
+  const keys=Object.keys(agg).sort((x,y)=>order(x)-order(y)||(agg[y].w+agg[y].l)-(agg[x].w+agg[x].l));
+  if(!keys.length){host.append(el("div","status","結果にデッキが入った試合がまだありません"));if(admin)renderArchMerge(host,PL);return}
+  // 2) results
+  host.append(el("div","lab",arch?"アーキタイプ別成績":"クラス別成績"));
+  const t=el("table","st");t.innerHTML=`<thead><tr><th>${arch?"アーキタイプ":"クラス"}</th><th>使用人数</th><th>試合</th><th>勝</th><th>敗</th><th>勝率</th></tr></thead>`;const tb=el("tbody");
+  keys.slice().sort((x,y)=>(agg[y].w+agg[y].l)-(agg[x].w+agg[x].l)||order(x)-order(y)).forEach(k=>{const a=agg[k];const g=a.w+a.l;const tr=el("tr",k.endsWith("|（未入力）")?"dim":"");const d=el("td");d.append(unitLabel(k));
+    tr.append(d,el("td",null,String(dist[k]||0)),el("td",null,String(g)),el("td",null,String(a.w)),el("td",null,String(a.l)),el("td",rateCls(a.w,a.l),pct(a.w/g)));tb.append(tr)});
   t.append(tb);const box=el("div","tbox");box.append(t);host.append(box);
+  // 3) matchups
+  host.append(el("div","lab",arch?"アーキタイプ別相性（縦から見た勝率）":"クラス別相性（縦のクラスから見た勝率）"));
+  const mt=el("table","st mx");const th=el("thead");const hr=el("tr");hr.append(el("th",null,"自分＼相手"));
+  for(const k of keys){const x=el("th");x.append(unitLabel(k));hr.append(x)}th.append(hr);mt.append(th);
+  const mb=el("tbody");
+  for(const k of keys){const tr=el("tr");const h=el("th");h.append(unitLabel(k));tr.append(h);
+    for(const o of keys){const v=vs[k+"\u0001"+o];
+      if(k===o){tr.append(el("td","mirror",v?`ミラー ${v.w+v.l}`:"—"));continue}
+      if(!v){tr.append(el("td","status","—"));continue}
+      const td=el("td",rateCls(v.w,v.l));td.title=`${v.w}勝${v.l}敗`;td.append(el("b",null,pct(v.w/(v.w+v.l))),el("span","wl",` ${v.w}-${v.l}`));tr.append(td)}
+    mb.append(tr)}
+  mt.append(mb);const mbox=el("div","tbox");mbox.append(mt);host.append(mbox);
+  host.append(el("div","status","BO1は1試合、BO3は1ゲームを1回として数えています。不戦（ルーム未作成・失格など）は数えません。"+(arch?"アーキタイプが空欄のデッキは「（未入力）」にまとめています。":"")));
+  if(admin)renderArchMerge(host,PL);
+  if(admin&&arch)renderMxSync(host,vs,keys);
+  else if(admin&&MXID){const n=el("div","status","WB相性表への反映は「アーキタイプ単位」に切り替えると出てきます。");host.append(n)}
 }
-
+/* ---------- archetype names: tidy + organizer merges ---------- */
+// "秘術ウィッチ" / " 秘術 " / "ﾋｼﾞｭﾂ" style differences are folded automatically; the rest is merged by the organizer
+function normArch(c,s){let t=String(s||"").normalize("NFKC").replace(/\s+/g," ").trim();const cn=CN[c]||"";if(cn){const u=t.split(cn).join("").trim();if(u)t=u}return t}
+const archKey=(c,s)=>c+"|"+normArch(c,s).toLowerCase();
+function archLabel(c,raw){const n=normArch(c,raw);if(!n)return"";const map=(T&&T.archMap)||{};let to=map[c+"|"+n.toLowerCase()];if(to){const t2=map[c+"|"+String(to).toLowerCase()];if(t2)to=t2}return to||n}
+let archAliases={};
+function syncArchMap(){if(MODE!=="admin"||!T||!pub)return;const map={};for(const a of Object.values(archAliases)){if(a&&a.c&&a.from&&a.to)map[a.c+"|"+String(a.from).toLowerCase()]=a.to}
+  if(JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.archMap||{}).sort()))return;T.archMap=map;saveT()}
+const archSel={};const archDraft={to:""};
+function renderArchMerge(host,PL){
+  // distinct names (after automatic tidy) per class, with how many players wrote them
+  const R={};for(const p of PL)(p.decks||[]).forEach((c,k)=>{if(!c)return;const n=normArch(c,p.arch&&p.arch[k]);if(!n)return;const key=c+"|"+n.toLowerCase();const v=R[key]||(R[key]={c,n,cnt:0});v.cnt++});
+  const list=Object.values(R).sort((x,y)=>CLASSES.findIndex(c=>c[0]===x.c)-CLASSES.findIndex(c=>c[0]===y.c)||x.n.localeCompare(y.n,"ja"));
+  const box=el("details","archmerge");const sm=el("summary");sm.append(el("b",null,"アーキタイプの統合（運営のみ）"));box.append(sm);
+  box.append(el("div","status","同じものだと思う名前にチェックを入れ、統合後の名前を入れて「統合」を押します（同じクラスの中だけ）。1つだけ選んで名前を入れると名前の変更になります。統合はこの先の大会にも自動で使われます。「秘術ウィッチ」と「秘術」のようにクラス名の有無・空白・全角半角の違いは自動でそろえています。"));
+  if(!list.length){box.append(el("div","status","まだアーキタイプの入力がありません"));host.append(box);return}
+  const tb=el("div","amlist");
+  for(const v of list){const key=v.c+"|"+v.n.toLowerCase();const row=el("label","amrow");const cb=el("input");cb.type="checkbox";cb.checked=!!archSel[key];cb.onchange=()=>{if(cb.checked)archSel[key]=v;else delete archSel[key];render()};
+    const to=archLabel(v.c,v.n);row.append(cb,chip(v.c),el("span",null,v.n),el("span","status",`${v.cnt}件`));if(to!==v.n)row.append(el("span","amto","→ "+to));tb.append(row)}
+  box.append(tb);
+  const sel=Object.values(archSel).filter(v=>R[v.c+"|"+v.n.toLowerCase()]);const cls=[...new Set(sel.map(v=>v.c))];
+  const row=el("div","addrow");const i=el("input");i.type="text";i.id="archTo";i.maxLength=20;i.placeholder="統合後の名前（例：秘術）";i.value=archDraft.to||(sel[0]?archLabel(sel[0].c,sel[0].n):"");i.oninput=()=>{archDraft.to=i.value};
+  const go=el("button","primary","統合");go.type="button";go.disabled=!sel.length||cls.length>1;
+  go.onclick=()=>{const to=normArch(cls[0],i.value);if(!to){i.focus();return}
+    for(const v of sel){const id=("a_"+v.c+"_"+v.n.toLowerCase()).replace(/[^\p{L}\p{N}_]/gu,"_").slice(0,120);
+      if(v.n.toLowerCase()===to.toLowerCase()){if(archAliases[id]){delete archAliases[id];write(`${ROOT}/archAlias/${id}`,null)}continue}
+      archAliases[id]={c:v.c,from:v.n,to};write(`${ROOT}/archAlias/${id}`,archAliases[id])}
+    for(const k of Object.keys(archSel))delete archSel[k];archDraft.to="";syncArchMap();setSync("アーキタイプを統合しました");render()};
+  row.append(i,go);box.append(row);
+  if(cls.length>1)box.append(el("div","warn","違うクラスのアーキタイプは統合できません"));
+  const al=Object.entries(archAliases).filter(([,a])=>a&&a.c);
+  if(al.length){box.append(el("div","lab","登録済みの統合"));
+    for(const [id,a] of al.sort((x,y)=>CLASSES.findIndex(c=>c[0]===x[1].c)-CLASSES.findIndex(c=>c[0]===y[1].c))){const r=el("div","row amrow");r.append(chip(a.c),el("span",null,`${a.from} → ${a.to}`));
+      const u=el("button",null,"解除");u.type="button";u.onclick=()=>{delete archAliases[id];write(`${ROOT}/archAlias/${id}`,null);syncArchMap();render()};r.append(u);box.append(r)}}
+  if(Object.keys(archSel).length||archDraft.to)box.open=true;
+  host.append(box);
+}
+/* ---------- push archetype matchups into the team's WB matchup chart (boards/<id>) ---------- */
+let MXID="",mxDecks=[],mxCells={},mxLoaded=false;const mxPick={};
+const mxPath=()=>`boards/${MXID}`;
+function mxNewId(){return"d"+Math.random().toString(36).slice(2,9)}
+function mxCellBody(r,c,v){return{row:r,col:c,r:typeof v.r==="number"?v.r:null,w:Math.max(0,v.w||0),l:Math.max(0,v.l||0),note:v.note||""}}
+function mxApplyCounts(next){
+  // adds only the difference from what this tournament already sent, so pressing again never double-counts
+  const sent=T.mxSent||{};const keys=new Set([...Object.keys(sent),...Object.keys(next)]);let changed=0;
+  for(const k of keys){const a=next[k]||{w:0,l:0},b=sent[k]||{w:0,l:0};const dw=a.w-b.w,dl=a.l-b.l;if(!dw&&!dl)continue;
+    const [r,c]=k.split("__");const cur=Object.assign({w:0,l:0,note:""},mxCells[k]||{});cur.w=(cur.w||0)+dw;cur.l=(cur.l||0)+dl;
+    const body=mxCellBody(r,c,cur);const empty=typeof body.r!=="number"&&!body.w&&!body.l&&!body.note;mxCells[k]=empty?undefined:body;write(`${mxPath()}/cells/${k}`,empty?null:body);changed++}
+  T.mxSent=next;return changed;
+}
+function renderMxSync(host,vs,keys){
+  if(!admin||!MXID)return;
+  const ak=keys.filter(k=>k.includes("|")&&!k.endsWith("|（未入力）"));
+  const box=el("details","archmerge");const sm=el("summary");sm.append(el("b",null,"WB相性表に反映（運営のみ）"));box.append(sm);
+  box.append(el("div","status","この大会のアーキタイプ別の対戦結果を、チームのWB相性表の「戦績（勝ち・負け）」に足し込みます。相性表のデッキと結び付けて「反映する」を押してください。もう一度押しても二重には数えず、差分だけが反映されます。"));
+  if(!mxLoaded){box.append(el("div","status","相性表を読み込み中…"));host.append(box);return}
+  if(!ak.length){box.append(el("div","status","アーキタイプ入りの対戦結果がまだありません"));host.append(box);return}
+  const saved=T.mxMap||{};const rows=el("div","amlist");
+  for(const k of ak){const [c,a]=k.split("|");
+    const cand=mxDecks.filter(d=>d.cls===c);const auto=cand.find(d=>normArch(c,d.name).toLowerCase()===a.toLowerCase());
+    const cur=mxPick[k]??saved[k]??(auto?auto.id:"new");
+    const r=el("div","amrow");r.append(unitLabel(k),el("span","status","→"));
+    const sel=el("select");sel.setAttribute("aria-label",`${CN[c]} ${a} を結び付ける相性表のデッキ`);
+    for(const d of cand){const o=el("option",null,`${d.name||"（名前なし）"}（${CN[c]}）`);o.value=d.id;if(cur===d.id)o.selected=true;sel.append(o)}
+    const on=el("option",null,`新しく追加：${a}`);on.value="new";if(cur==="new")on.selected=true;sel.append(on);
+    const os=el("option",null,"反映しない");os.value="skip";if(cur==="skip")os.selected=true;sel.append(os);
+    sel.onchange=()=>{mxPick[k]=sel.value;render()};r.append(sel);rows.append(r)}
+  box.append(rows);
+  const msg=el("div","status");
+  const go=el("button","primary","相性表に反映する");go.type="button";
+  go.onclick=()=>{
+    const map={};const list=mxDecks.map(d=>Object.assign({},d));let added=0;
+    for(const k of ak){const [c,a]=k.split("|");const cand=list.filter(d=>d.cls===c);const auto=cand.find(d=>normArch(c,d.name).toLowerCase()===a.toLowerCase());
+      let v=mxPick[k]??saved[k]??(auto?auto.id:"new");if(v==="skip"){map[k]="skip";continue}
+      if(v==="new"){const ex=list.find(d=>d.cls===c&&normArch(c,d.name).toLowerCase()===a.toLowerCase());if(ex)v=ex.id;else{if(list.length>=30){msg.textContent="相性表のデッキが30個までのため、これ以上追加できません。相性表で整理してから反映してください";msg.className="warn";box.append(msg);return}const d={id:mxNewId(),cls:c,name:a,share:0};list.push(d);v=d.id;added++}}
+      map[k]=v}
+    const next={};
+    for(const k of ak)for(const o of ak){if(k===o)continue;const v=vs[k+"\u0001"+o];if(!v)continue;const dk=map[k],dO=map[o];if(!dk||!dO||dk==="skip"||dO==="skip"||dk===dO)continue;
+      const ck=dk+"__"+dO;const x=next[ck]||(next[ck]={w:0,l:0});x.w+=v.w;x.l+=v.l}
+    if(added){mxDecks=list;write(mxPath(),{list:list.map(d=>({id:d.id,cls:d.cls,name:d.name||"",share:Number(d.share)||0}))})}
+    const n=mxApplyCounts(next);T.mxMap=map;saveT();for(const k of Object.keys(mxPick))delete mxPick[k];
+    setSync(`相性表に反映しました（${n}マス更新${added?`・デッキ${added}個追加`:""}）`);render()};
+  const link=el("a","btnlink","相性表を開く");link.href=A&&A.kind==="firebase"?`./?b=${MXID}`:"./";link.target="_blank";link.rel="noopener";
+  const row=el("div","row");row.append(go,link);box.append(row);
+  if(T.mxSent&&Object.keys(T.mxSent).length)box.append(el("div","status",`この大会からは ${Object.keys(T.mxSent).length}マス分を反映済みです。大会を削除すると、相性表からも差し引かれます。`));
+  if(Object.keys(mxPick).length)box.open=true;
+  host.append(box);
+}
+const rateCls=(w,l)=>{const n=w+l;if(n<1)return"";const r=w/n;return r>=0.6?"rate-hi":r<=0.4?"rate-lo":""};
 
 /* ---------- report (each player) ---------- */
 
@@ -1072,7 +1371,7 @@ function myMatch(me){
   return null;
 }
 
-const draftDecks=[null,null];const draftName={n:null,h:null};const draftIcon={v:null};const regErr={t:""};
+const draftDecks=[null,null];const draftArch=["",""];const draftName={n:null,h:null};const draftIcon={v:null};const regErr={t:""};
 // what this device entered last time, to fill the next tournament's registration form
 const PROF_KEY="xyz-cup-profile";
 function loadProfile(){try{return JSON.parse(localStorage.getItem(PROF_KEY)||"null")||null}catch(e){return null}}
@@ -1096,6 +1395,15 @@ function deckRow(cur,onPick,prefix){
     s.onchange=()=>{const ae=document.activeElement;if(ae&&ae!==s&&ae.tagName==="INPUT")ae.blur();onPick(k,s.value||null)};row.append(s)}
   return row;
 }
+// archetype (e.g. ウィッチ「秘術」): private, only used in the post-event meta report
+function archRow(decks,arch,onSet,prefix){
+  const row=el("div","row archrow");
+  for(const k of [0,1]){const w=el("label","archf");w.append(el("span",null,decks[k]?`${CN[decks[k]]}のアーキタイプ`:`デッキ${k+1}のアーキタイプ`));
+    const i=el("input");i.type="text";i.id=`${prefix}${k}`;i.maxLength=20;i.placeholder=decks[k]==="witch"?"例：秘術、スペルキマイラ（任意）":"例：連携、ランプ など（任意）";i.value=arch[k]||"";
+    i.oninput=()=>onSet(k,i.value,false);i.onchange=()=>onSet(k,i.value.trim().slice(0,20),true);w.append(i);row.append(w)}
+  return row;
+}
+const archNote=()=>el("div","status","🔒 アーキタイプは大会中、ほかの参加者には表示されません。大会終了後、参加者全員が見られるメタレポート（クラス・アーキタイプ別の使用率と勝率）に集計されます。正確な集計のため、入力にご協力ください。");
 // room ID: the upper player of each pairing creates the room and enters its ID; the other only sees it.
 // 5 minutes after the round starts with no room ID -> the room creator loses.
 // 5 minutes after the room ID is posted with no "入室しました" -> the other player loses.
@@ -1114,7 +1422,7 @@ function deadline(m,res){
   if(!res.entered)return{at:(res.roomAt||m.start)+LIMIT,loser:m.b,why:"noentry"};
   return null;
 }
-const WHY={noroom:"ルーム未作成",noentry:"未入室"};
+const WHY={noroom:"ルーム未作成",noentry:"未入室",dq:"失格",drop:"ドロップ"};
 function enforceTimeouts(){
   const tnow=now();
   for(const m of activeMatches()){
@@ -1316,7 +1624,71 @@ function teamToggle(me){
   cb.onchange=()=>{const q=P(me);if(!q)return;q.hideTeam=cb.checked;saveEntry(q);saveProfile({hideTeam:cb.checked});if(MODE==="portal"&&U)write(`${portalPath()}/users/${LOGIN}`,Object.assign({},U,{hideTeam:cb.checked,at:now()}));render()};
   return lab;
 }
+/* ---------- inquiries: participant -> organizer, sealed with the organizer's public key ---------- */
+function b64e(buf){const u=new Uint8Array(buf);let t="";for(let i=0;i<u.length;i+=0x8000)t+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(t)}
+const b64d=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function sealFor(pubJwk,obj){
+  const pubk=await crypto.subtle.importKey("jwk",pubJwk,{name:"RSA-OAEP",hash:"SHA-256"},false,["encrypt"]);
+  const aes=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt"]);const iv=crypto.getRandomValues(new Uint8Array(12));
+  const d=await crypto.subtle.encrypt({name:"AES-GCM",iv},aes,new TextEncoder().encode(JSON.stringify(obj)));
+  const k=await crypto.subtle.encrypt({name:"RSA-OAEP"},pubk,await crypto.subtle.exportKey("raw",aes));
+  return{k:b64e(k),iv:b64e(iv),d:b64e(d)};
+}
+async function openSealed(privKey,doc){
+  const raw=await crypto.subtle.decrypt({name:"RSA-OAEP"},privKey,b64d(doc.k));const aes=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(doc.iv)},aes,b64d(doc.d))));
+}
+// organizer side
+let inboxPriv=null,inboxPub=null,inboxRaw={},inboxMsgs={},inboxDone={},inboxReplies={},inboxKeyBusy=false;const inboxDraft={};
+async function ensureInboxKey(sec){
+  if(sec&&sec.priv&&sec.pub){inboxPub=sec.pub;inboxPriv=await crypto.subtle.importKey("jwk",sec.priv,{name:"RSA-OAEP",hash:"SHA-256"},false,["decrypt"]);decryptInbox();syncXYZ();return}
+  if(inboxKeyBusy)return;inboxKeyBusy=true;
+  const kp=await crypto.subtle.generateKey({name:"RSA-OAEP",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"},true,["encrypt","decrypt"]);
+  const pubJ=await crypto.subtle.exportKey("jwk",kp.publicKey),privJ=await crypto.subtle.exportKey("jwk",kp.privateKey);
+  write(`${ROOT}/secrets/inbox`,{pub:pubJ,priv:privJ});
+}
+async function decryptInbox(){if(!inboxPriv)return;let ch=false;
+  for(const [id,d] of Object.entries(inboxRaw)){if(inboxMsgs[id])continue;try{inboxMsgs[id]=await openSealed(inboxPriv,d);ch=true}catch(e){inboxMsgs[id]={uid:"?",name:"（読めませんでした）",text:"",at:d.at||0};ch=true}}
+  if(ch)render()}
+function renderInbox(){
+  $("inboxPanel").hidden=!admin||!PKEY;if(!admin||!PKEY)return;const host=$("inboxHost");host.replaceChildren();
+  const th={};for(const [id,m] of Object.entries(inboxMsgs)){const t=th[m.uid]||(th[m.uid]={uid:m.uid,name:m.name,items:[]});t.name=m.name||t.name;t.items.push(Object.assign({id,from:"user"},m))}
+  for(const [id,r] of Object.entries(inboxReplies)){if(!r||!r.uid)continue;const t=th[r.uid]||(th[r.uid]={uid:r.uid,name:"",items:[]});t.items.push(Object.assign({id,from:"admin"},r))}
+  const list=Object.values(th).map(t=>{t.items.sort((a,b)=>(a.at||0)-(b.at||0));t.last=t.items.length?t.items[t.items.length-1].at||0:0;t.open=t.items.filter(i=>i.from==="user"&&!inboxDone[i.id]).length;return t}).sort((a,b)=>(b.open>0)-(a.open>0)||b.last-a.last);
+  const open=list.reduce((a,t)=>a+t.open,0);$("inboxCount").textContent=open?`未対応 ${open}件`:list.length?"未対応なし":"まだありません";$("inboxCount").classList.toggle("pendhot",!!open);
+  if(!inboxPriv&&Object.keys(inboxRaw).length)host.append(el("div","status","読み込み中…"));
+  for(const t of list){const d=el("details","myt inq");if(t.open||inboxDraft[t.uid])d.open=true;const sm=el("summary");
+    sm.append(el("span","mt-name",`${t.name||"?"}（ユーザーID ${t.uid}）`),el("span",t.open?"warn":"status",t.open?`未対応 ${t.open}件`:"対応済み"),el("span","status",t.last?new Date(t.last).toLocaleString("ja-JP"):""));d.append(sm);
+    d.append(inqThread(t.items,"admin"));
+    const f=inqForm(t.uid,inboxDraft,async(text,img)=>{const id=uid("r");const at=now();write(`${portalPath()}/inq/${t.uid}/msgs/${id}`,{from:"admin",text,img:img||null,at});inboxReplies[id]={uid:t.uid,text,img:img||null,at};write(`${ROOT}/replies/${id}`,inboxReplies[id]);
+      for(const i of t.items)if(i.from==="user"&&!inboxDone[i.id]){inboxDone[i.id]={at};write(`${ROOT}/inboxDone/${i.id}`,{at})}render()},"返信を送る（送ると対応済みになります）");
+    d.append(f);
+    if(t.open){const ok=el("button",null,"返信せずに対応済みにする");ok.type="button";ok.onclick=()=>{const at=now();for(const i of t.items)if(i.from==="user"&&!inboxDone[i.id]){inboxDone[i.id]={at};write(`${ROOT}/inboxDone/${i.id}`,{at})}render()};d.append(ok)}
+    host.append(d)}
+}
+// shared pieces
+function inqThread(items,view){
+  const log=el("div","inqlog");if(!items.length){log.append(el("div","status","まだやりとりはありません"));return log}
+  for(const m of items){const mine=view==="admin"?m.from==="admin":m.from==="user";const b=el("div","inqmsg "+(mine?"me":"them"));
+    b.append(el("div","inqwho",`${m.from==="admin"?"運営":view==="admin"?"参加者":"あなた"}　${m.at?new Date(m.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):""}`));
+    if(m.text)b.append(el("div","inqtext",m.text));
+    if(m.img){const im=el("img");im.src=m.img;im.alt="添付画像";im.className="inqimg";im.onclick=()=>window.open(m.img,"_blank");b.append(im)}
+    log.append(b)}
+  return log;
+}
+function inqForm(key,store,onSend,label){
+  const box=el("div","inqform");const st=store[key]||(store[key]={text:"",img:null,busy:false,err:""});
+  const ta=el("textarea");ta.id="inq-"+key;ta.maxLength=1000;ta.rows=3;ta.placeholder="メッセージを入力";ta.setAttribute("aria-label","メッセージ");ta.value=st.text;ta.oninput=()=>{st.text=ta.value};
+  const f=el("input");f.type="file";f.accept="image/*";f.hidden=true;f.id="inqf-"+key;
+  f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;try{st.img=await shrinkImage(file);st.err=""}catch(e){st.err="画像を読み込めませんでした"}render()};
+  const row=el("div","row");const at=el("button",null,st.img?"画像を変更":"画像を添付");at.type="button";at.onclick=()=>f.click();row.append(at);
+  if(st.img){const pv=el("img");pv.src=st.img;pv.className="inqprev";pv.alt="添付する画像";const rm=el("button",null,"画像を外す");rm.type="button";rm.onclick=()=>{st.img=null;render()};row.append(pv,rm)}
+  const go=el("button","primary",label||"送信");go.type="button";go.disabled=st.busy;
+  go.onclick=async()=>{const text=ta.value.trim().slice(0,1000);if(!text&&!st.img){ta.focus();return}st.busy=true;st.err="";try{await onSend(text,st.img);st.text="";st.img=null}catch(e){console.error(e);st.err="送信できませんでした。時間をおいて試してください"}st.busy=false;render()};
+  row.append(el("span","spacer"),go);box.append(ta,f,row);if(st.err)box.append(el("div","warn",st.err));return box;
+}
 /* ---------- participant portal: one URL, login with game user ID + password ---------- */
+let MYINQ={};const myInqDraft={};
 let PKEY="",LOGIN="",U=null,Uloaded=false,PD=null,EV={},MYST={},isXYZ=false,pview="list",myEntries={},AUTH=null,authReady=false;
 let loginUnsub=[],entryWatch={};const pform={tab:"login",err:"",busy:false};
 const portalPath=()=>`portals/${PKEY}`;
@@ -1357,11 +1729,12 @@ async function startPortal(key){
   AUTH.onChange(id=>{authReady=true;if(id!==LOGIN){LOGIN=id;loginWatch()}render()});
 }
 function loginWatch(){
-  loginUnsub.forEach(f=>{try{f()}catch(e){}});loginUnsub=[];entryWatch={};U=null;Uloaded=false;MYST={};myEntries={};isXYZ=false;pview="list";
+  loginUnsub.forEach(f=>{try{f()}catch(e){}});loginUnsub=[];entryWatch={};U=null;Uloaded=false;MYST={};MYINQ={};myEntries={};isXYZ=false;pview="list";
   if(pub)openCup(null);
   if(!LOGIN)return;
   loginUnsub.push(A.watchDoc(`${portalPath()}/users/${LOGIN}`,d=>{U=d;Uloaded=true;render()}));
   loginUnsub.push(A.watchColl(`${portalPath()}/stats/${LOGIN}/events`,m=>{MYST=m;render()}));
+  loginUnsub.push(A.watchColl(`${portalPath()}/inq/${LOGIN}/msgs`,m=>{MYINQ=m;render()}));
   checkXYZ();watchMyEntries();
 }
 async function checkXYZ(){if(!LOGIN||!PD)return;const h=await pdigest("u:"+LOGIN);const v=(PD.xyz||[]).includes(h);if(v!==isXYZ){isXYZ=v;render()}}
@@ -1378,7 +1751,8 @@ function renderPortal(){
   if(!authReady){hideCupPanels();host.append(el("div","empty","読み込み中…"));return true}
   if(LOGIN&&Uloaded&&U){
     const nav=el("div","row pnav");const who_=el("div","pwho");who_.append(avatar({icon:U.icon,name:U.name||"?"},30),el("b",null,U.name||"?"),el("span","status","ID "+LOGIN));nav.append(who_,el("span","spacer"));
-    for(const [v,l] of [["list","大会一覧"],["my","マイページ"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pview===v));b.onclick=()=>goView(v);nav.append(b)}
+    let unread=0;try{const seen=Number(localStorage.getItem("xyz-cup-inqseen-"+LOGIN))||0;unread=Object.values(MYINQ).filter(m=>m.from==="admin"&&(m.at||0)>seen).length}catch(e){}
+    for(const [v,l] of [["list","大会一覧"],["my",unread&&pview!=="my"?`マイページ（運営から返信 ${unread}）`:"マイページ"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pview===v));b.onclick=()=>goView(v);nav.append(b)}
     const lo=el("button",null,"ログアウト");lo.type="button";lo.onclick=async()=>{try{await AUTH.signOut()}catch(e){}};nav.append(lo);host.append(nav);
   }
   if(!LOGIN){hideCupPanels();host.append(loginView());return true}
@@ -1396,7 +1770,7 @@ function loginView(){
   const r1=el("div","addrow");r1.append(id,pw);box.append(r1);
   let pw2=null,nm=null,hx=null;
   if(pform.tab==="signup"){pw2=field("pPw2","パスワード（確認）",{type:"password",max:64,ac:"new-password"});const r2=el("div","addrow");r2.append(pw2);
-    nm=field("pName","名前（大会で表示されます）",{max:40});hx=field("pX","XのID（外戦の参加に必要）",{max:30});const r3=el("div","addrow");r3.append(nm,hx);box.append(r2,r3,el("div","warn","※ユーザーIDに誤りがあると賞品を受け取れなくなる場合があります。"))}
+    nm=field("pName","プレイヤー名（ゲーム内と同じ名前）",{max:40});hx=field("pX","XのID",{max:30});const r3=el("div","addrow");r3.append(nm,hx);box.append(r2,r3,el("div","warn","※名前はゲーム内のプレイヤー名と同じにしてください。ゲーム内の名前と異なる場合、失格処分となる場合があります。"),el("div","warn","※ユーザーIDに誤りがあると賞品を受け取れなくなる場合があります。"))}
   const err=el("div","warn",pform.err);
   const go=el("button","primary big",pform.tab==="login"?"ログイン":"登録してはじめる");go.type="button";go.disabled=pform.busy;
   const fail=t=>{pform.err=t;pform.busy=false;render()};
@@ -1405,7 +1779,7 @@ function loginView(){
     if(pw.value.length<6){pw.focus();return fail("パスワードは6文字以上にしてください")}
     if(pform.tab==="signup"){
       if(pw.value!==pw2.value){pw2.focus();return fail("確認用のパスワードが一致しません")}
-      const name=nm.value.trim().slice(0,40);if(!name){nm.focus();return fail("名前を入力してください")}
+      const name=nm.value.trim().slice(0,40);if(!name){nm.focus();return fail("プレイヤー名を入力してください")}
       const handle=hx.value.trim().replace(/^@+/,"").slice(0,30);if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){hx.focus();return fail("XのIDは半角英数字と _ の15文字以内で入力してください")}
       pform.busy=true;pform.err="";
       try{await AUTH.signUp(u,pw.value);await A.set(`${portalPath()}/users/${u}`,{name,handle,icon:null,hideTeam:false,at:now()});sendClaim(u,name,handle);pform.busy=false;pform.tab="login";render()}catch(e){console.error(e);fail(authMsg(e))}
@@ -1416,19 +1790,19 @@ function loginView(){
   return box;
 }
 function profileSetupView(){
-  const box=el("div","rep");box.append(el("div","lab","プロフィールの登録"),el("div","status","大会で表示される名前を登録してください。"));
-  const nm=field("pName","名前",{max:40});const hx=field("pX","XのID（外戦の参加に必要）",{max:30});const r=el("div","addrow");r.append(nm,hx);box.append(r);
+  const box=el("div","rep");box.append(el("div","lab","プロフィールの登録"),el("div","warn","※名前はゲーム内のプレイヤー名と同じにしてください。ゲーム内の名前と異なる場合、失格処分となる場合があります。"));
+  const nm=field("pName","プレイヤー名（ゲーム内と同じ名前）",{max:40});const hx=field("pX","XのID",{max:30});const r=el("div","addrow");r.append(nm,hx);box.append(r);
   const err=el("div","warn",pform.err);const b=el("button","primary","登録する");b.type="button";
   b.onclick=()=>{const name=nm.value.trim().slice(0,40);if(!name){pform.err="名前を入力してください";render();return}const handle=hx.value.trim().replace(/^@+/,"").slice(0,30);
     if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){pform.err="XのIDは半角英数字と _ の15文字以内で入力してください";render();return}
     pform.err="";write(`${portalPath()}/users/${LOGIN}`,{name,handle,icon:null,hideTeam:false,at:now()});sendClaim(LOGIN,name,handle)};
   box.append(b,err);return box;
 }
-const ST_LABEL={setup:"参加者募集中",swiss:"予選中",top:"決勝トーナメント中",done:"終了"};
+const ST_LABEL={setup:"参加者募集中",swiss:"予選中",confirm:"決勝出場確認中",top:"決勝トーナメント中",done:"終了"};
 function listView(){
   const wrap=el("div");
   const items=Object.entries(EV).map(([p,e])=>Object.assign({pub:p},e)).filter(e=>e.kind!=="internal"||isXYZ);
-  const groups=[["参加者募集中",items.filter(e=>e.status==="setup")],["開催中",items.filter(e=>e.status==="swiss"||e.status==="top")],["終了した大会",items.filter(e=>e.status==="done").sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,10)]];
+  const groups=[["参加者募集中",items.filter(e=>e.status==="setup")],["開催中",items.filter(e=>e.status==="swiss"||e.status==="confirm"||e.status==="top")],["終了した大会",items.filter(e=>e.status==="done").sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,10)]];
   let any=false;
   for(const [title,list] of groups){if(!list.length)continue;any=true;
     wrap.append(el("div","lab plab",title));
@@ -1440,7 +1814,6 @@ function listView(){
       const b=el("button",e.status==="setup"&&!myEntries[e.pub]?"primary":null,e.status==="setup"&&!myEntries[e.pub]?"参加登録へ":"大会ページを開く");b.type="button";b.onclick=()=>openEvent(e.pub);
       card.append(info,el("span","evst st-"+(e.status||"setup"),ST_LABEL[e.status]||""),b);wrap.append(card)}}
   if(!any)wrap.append(el("div","empty","いま表示できる大会はありません。運営が大会を作ると、ここに表示されます。"));
-  if(!isXYZ)wrap.append(el("div","status","内戦（チーム内大会）はXYZメンバーにだけ表示されます。"));
   return wrap;
 }
 const myDraft={n:null,h:null,icon:undefined};const myMsg={t:"",ok:false};let myTab=null;
@@ -1448,7 +1821,8 @@ function myView(){
   const host=el("div");
   const box=el("div","rep");host.append(box);box.append(el("div","lab","プロフィール"));
   const curIcon=myDraft.icon!==undefined?myDraft.icon:(U.icon||null);
-  const row=el("div","addrow");const n=field("myName","名前",{max:40});n.value=myDraft.n!=null?myDraft.n:(U.name||"");
+  box.append(el("div","status","名前はゲーム内のプレイヤー名と同じにしてください。ゲーム内の名前と異なる場合、失格処分となる場合があります。ゲーム内の名前を変えたときは、ここも合わせて変更してください。"));
+  const row=el("div","addrow");const n=field("myName","プレイヤー名（ゲーム内と同じ名前）",{max:40});n.value=myDraft.n!=null?myDraft.n:(U.name||"");
   const h=field("myHandle","XのID",{max:30});const hv=myDraft.h!=null?myDraft.h:(U.handle||"");h.value=hv?"@"+hv.replace(/^@+/,""):"";
   n.oninput=()=>{myDraft.n=n.value};h.oninput=()=>{myDraft.h=h.value};row.append(n,h);box.append(row);
   box.append(iconPicker(curIcon,d=>{myDraft.icon=d;n.blur();h.blur();render()},"myicon2"));
@@ -1468,6 +1842,16 @@ function myView(){
     myDraft.n=myDraft.h=null;myDraft.icon=undefined;myMsg.t="保存しました（参加中の大会の表示も変わります）";myMsg.ok=true;render();
   };
   const r2=el("div","row");r2.append(sv);box.append(r2,msg);
+  // --- inquiry to the organizers
+  {const ib=el("div","rep");ib.id="myInq";ib.append(el("div","lab","運営への問い合わせ"),el("div","status","運営にメッセージを送れます（画像も添付できます）。内容は運営だけが読めます。"));
+   const items=Object.entries(MYINQ).map(([id,m])=>Object.assign({id},m)).sort((a,b)=>(a.at||0)-(b.at||0));ib.append(inqThread(items,"user"));
+   if(!(PD&&PD.inboxPub))ib.append(el("div","status","運営の受付準備ができていません。しばらくしてからお試しください。"));
+   else ib.append(inqForm("me",myInqDraft,async(text,img)=>{const id=uid("q");const at=now();
+     const sealed=await sealFor(PD.inboxPub,{uid:LOGIN,name:U.name||"",text,img:img||null,at});
+     await A.set(`${portalPath()}/inbox/${id}`,Object.assign(sealed,{at}));
+     write(`${portalPath()}/inq/${LOGIN}/msgs/${id}`,{from:"user",text,img:img||null,at});try{localStorage.setItem("xyz-cup-inqseen-"+LOGIN,String(at))}catch(e){}},"運営に送る"));
+   host.append(ib);
+   try{const last=items.filter(m=>m.from==="admin").reduce((a,m)=>Math.max(a,m.at||0),0);if(last)localStorage.setItem("xyz-cup-inqseen-"+LOGIN,String(Math.max(last,Number(localStorage.getItem("xyz-cup-inqseen-"+LOGIN))||0)))}catch(e){}}
   // --- results (written by the organizer's page when tournaments progress)
   const all=Object.entries(MYST).filter(([k])=>EV[k]).map(([k,v])=>Object.assign({pub:k},v)).sort((a,b)=>(b.created||0)-(a.created||0));
   const rb=el("div","rep");host.append(rb);rb.append(el("div","lab","戦績"));
@@ -1483,11 +1867,12 @@ function myView(){
   const sum=el("div","mysum");
   for(const [k,v] of [["参加",list.length+"大会"],["通算",`${tot.w}勝${tot.l}敗`],["優勝",tot.c+"回"],["準優勝",tot.r+"回"],["3位",tot.b+"回"],["決勝R進出",tot.t+"回"]]){const c=el("div","ms");c.append(el("span","k",k),el("b",null,v));sum.append(c)}
   rb.append(sum);
+  rb.append(myDeckStats(list));
   const PLACE={champion:"優勝",runner:"準優勝",third:"3位",top:"決勝R進出"};
   for(const x of list){
     const d=el("details","myt");const sm=el("summary");
     const ttl=el("span","mt-name",x.name||"（大会名なし）");const meta=el("span","status",[x.created?new Date(x.created).toLocaleDateString("ja-JP"):"",x.status==="done"?"":(ST_LABEL[x.status]||"開催中")].filter(Boolean).join("・"));
-    const res=el("span","mt-res",[x.place?PLACE[x.place]:"",x.rank?`予選${x.rank}位/${x.n}人`:"",`${x.w}勝${x.l}敗`].filter(Boolean).join("　"));
+    const res=el("span","mt-res",[x.out==="dq"?"失格":x.out==="drop"?"ドロップ":"",x.place?PLACE[x.place]:"",x.rank?`予選${x.rank}位/${x.n}人`:"",`${x.w}勝${x.l}敗`].filter(Boolean).join("　"));
     if(x.place&&x.place!=="top"){const t=el("span","trophy");t.innerHTML=trophySvg(x.place==="champion"?"gold":x.place==="runner"?"silver":"bronze");ttl.append(t)}
     sm.append(ttl,meta,res);d.append(sm);
     const tb=el("table","st mtab");const tbody=el("tbody");const RES={win:"勝ち",lose:"負け",bye:"不戦勝",pending:"結果待ち"};
@@ -1495,6 +1880,23 @@ function myView(){
     if(!(x.matches||[]).length)tbody.innerHTML="<tr><td class='status'>試合の記録はありません</td></tr>";
     tb.append(tbody);d.append(tb);rb.append(d)}
   return host;
+}
+// my results per deck I used (class + my archetype), with a breakdown by opponent class
+function myDeckStats(list){
+  const D={};for(const x of list)for(const m of x.matches||[])for(const [md,od,win] of m.g||[]){const a=(x.myArch&&x.myArch[md])||"";const k=md+"|"+a;
+    const d=D[k]||(D[k]={c:md,a,w:0,l:0,vs:{}});win?d.w++:d.l++;const v=d.vs[od]||(d.vs[od]={w:0,l:0});win?v.w++:v.l++}
+  const box=el("div","mydecks");box.append(el("div","lab","使用デッキ別の成績"));
+  const rows=Object.values(D).sort((x,y)=>(y.w+y.l)-(x.w+x.l));
+  if(!rows.length){box.append(el("div","status","使用デッキが記録された試合がまだありません"));return box}
+  for(const d of rows){const g=d.w+d.l;const det=el("details","myt");const sm=el("summary");
+    const nm=el("span","mt-name");nm.append(chip(d.c));if(d.a)nm.append(el("span",null,d.a));
+    sm.append(nm,el("span","mt-res",`${g}試合　${d.w}勝${d.l}敗　`),el("b",rateCls(d.w,d.l)+" rpill",pct(d.w/g)));det.append(sm);
+    const t=el("table","st mtab");const tb=el("tbody");
+    for(const [o,v] of Object.entries(d.vs).sort((x,y)=>(y[1].w+y[1].l)-(x[1].w+x[1].l))){const tr=el("tr");const c=el("td");c.append(el("span","status","vs "),chip(o));const n=v.w+v.l;
+      tr.append(c,el("td",null,`${v.w}勝${v.l}敗`),el("td",rateCls(v.w,v.l),pct(v.w/n)));tb.append(tr)}
+    t.append(tb);det.append(t);box.append(det)}
+  box.append(el("div","status","BO1は1試合、BO3は1ゲームを1回として数えています。不戦は数えません。"));
+  return box;
 }
 // join form inside a tournament page (portal mode, not yet registered)
 function portalJoin(box){
@@ -1504,32 +1906,39 @@ function portalJoin(box){
   if(T.kind==="external"&&!U.handle){box.append(el("div",null,"外戦に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
   const later=ciUsed();
   box.append(el("div","lab","参加登録"),el("div",null,later?`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキは、開始30分前からのチェックインのときに選びます。`:`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
+  {const nb=el("div","status");nb.append(document.createTextNode("表示される名前がゲーム内のプレイヤー名と違うと失格処分となる場合があります。違う場合は、"));const lk=el("button","linkbtn","マイページ");lk.type="button";lk.onclick=()=>goView("my");nb.append(lk,document.createTextNode("で直してから登録してください。"));box.append(nb)}
   if(later)box.append(el("div","status",`開催 ${fmtDT(T.startAt)}　チェックイン ${fmtDT(T.startAt-CHECKIN_MS)} から`));
-  else box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"));
+  else box.append(deckRow(draftDecks,(k,v)=>{draftDecks[k]=v;render()},"jdeck"),archRow(draftDecks,draftArch,(k,v)=>{draftArch[k]=v},"jarch"),archNote());
   const ready=later||(draftDecks[0]&&draftDecks[1]);const err=el("div","warn",regErr.t);
   const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
   b.onclick=async()=>{
     if((T.banHashes||[]).length){const ks=await banKeys(LOGIN,U.handle);if(ks.some(k=>T.banHashes.includes(k))){regErr.t="この大会には参加登録できません。運営にお問い合わせください";render();return}}
     if(players().some(p=>p.id!==myEntryId()&&who(p).name===U.name)){regErr.t=`「${U.name}」という名前の参加者がすでにいます。マイページで名前を変えてから登録してください`;render();return}
-    regErr.t="";saveEntry({id:myEntryId(),member:null,name:U.name,handle:U.handle||"",uid:LOGIN,icon:U.icon||null,decks:later?[null,null]:draftDecks.slice(),hideTeam:!!U.hideTeam,order:now()+Math.random()});
-    draftDecks[0]=draftDecks[1]=null;render()};
+    regErr.t="";saveEntry({id:myEntryId(),member:null,name:U.name,handle:U.handle||"",uid:LOGIN,icon:U.icon||null,decks:later?[null,null]:draftDecks.slice(),arch:later?null:draftArch.map(x=>String(x||"").trim().slice(0,20)),hideTeam:!!U.hideTeam,order:now()+Math.random()});
+    draftDecks[0]=draftDecks[1]=null;draftArch[0]=draftArch[1]="";render()};
   box.append(b,err);if(!ready)box.append(el("div","status","デッキを2つ選ぶと参加登録できます"));
 }
 // a participant's own record in the open tournament (the organizer's page writes these for everyone with a user ID)
+// [my class, opponent class, 1 = won] for each game of a match that has decks recorded
+function gamesFor(m,me){const res=M[m.id];if(!res||res.forfeit)return[];const mine=m.a===me?"a":"b",ot=mine==="a"?"b":"a";const out=[];
+  if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;const md=g["d"+mine],od=g["d"+ot];if(md&&od)out.push([md,od,g.w===mine?1:0])}return out}
+  if(!res.winner)return out;const md=usedDeck(m,res,mine),od=usedDeck(m,res,ot);if(md&&od)out.push([md,od,res.winner===me?1:0]);return out}
 function summaryFor(me){
   const matches=[];let w=0,l=0;
   for(const r of T.rounds||[])for(const m of r.pairs){if(m.a!==me&&m.b!==me)continue;
     if(!m.b){matches.push({label:`予選R${r.n}`,opp:"",res:"bye",score:""});w++;continue}
     const opp=m.a===me?m.b:m.a;const res=M[m.id];let st="pending",sc="";
     if(res&&res.winner){st=res.winner===me?"win":"lose";const [x,y]=scoreOf(res);sc=st==="win"?`${x}-${y}`:`${y}-${x}`;if(st==="win")w++;else l++}
-    matches.push({label:`予選R${r.n}`,opp:who(P(opp)).name,res:st,score:sc})}
+    matches.push({label:`予選R${r.n}`,opp:who(P(opp)).name,res:st,score:sc,g:gamesFor(m,me)})}
   const b=T.bracket?bracket():null;
   if(b)b.forEach((ms,r)=>ms.forEach(m=>{if(!(m.a&&m.b)||(m.a!==me&&m.b!==me))return;const opp=m.a===me?m.b:m.a;const res=M[m.id];let st="pending",sc="";
     if(m.winner){st=m.winner===me?"win":"lose";const [x,y]=scoreOf(res);sc=st==="win"?`${x}-${y}`:`${y}-${x}`;if(st==="win")w++;else l++}
-    matches.push({label:roundLabel(r,b.length),opp:who(P(opp)).name,res:st,score:sc})}));
+    matches.push({label:roundLabel(r,b.length),opp:who(P(opp)).name,res:st,score:sc,g:gamesFor(m,me)})}));
   let rank=0;if((T.rounds||[]).length){const st=standings();rank=st.findIndex(x=>x.id===me)+1}
   const place=T.status==="done"?(placements()[me]||""):"";
-  return{name:T.name||"",kind:T.kind==="external"?"external":"internal",created:T.created||0,status:T.status,me:who(P(me)).name,n:players().length,rank,place,w,l,matches};
+  const pp=P(me);const place2=pp&&pp.dq?"":place;
+  const myArch={};if(pp&&pp.arch)(pp.decks||[]).forEach((c,k)=>{if(c){const a=archLabel(c,pp.arch[k]);if(a)myArch[c]=a}});
+  return{myArch,name:T.name||"",kind:T.kind==="external"?"external":"internal",created:T.created||0,status:T.status,me:who(pp).name,n:players().length,rank,place:place2,w,l,matches,out:pp&&pp.dq?"dq":pp&&pp.drop?"drop":""};
 }
 /* ---- organizer side: keep the portal (tournament list, XYZ list, players' results) in step ---- */
 let memberUids={},PDA=null,PDAloaded=false,EVA={},xyzBusy=false,claims={},uidAutoOpen=false;const statSent={};
@@ -1537,13 +1946,14 @@ function sameObj(a,b,keys){if(!a||!b)return false;return keys.every(k=>JSON.stri
 function memberUidSet(){const s=new Set();for(const [mid,r] of Object.entries(memberUids)){if(!members[mid])continue;const u=normUid(r&&r.uid);if(u)s.add(u)}return s}
 async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
   try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
-    if(JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;PDA={xyz:list};write(portalPath(),{xyz:list,updated:now()})}finally{xyzBusy=false}}
+    const pubSame=!inboxPub||JSON.stringify(inboxPub)===JSON.stringify(PDA&&PDA.inboxPub);
+    if(pubSame&&JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;const doc={xyz:list,updated:now()};if(inboxPub||(PDA&&PDA.inboxPub))doc.inboxPub=inboxPub||PDA.inboxPub;PDA=doc;write(portalPath(),doc)}finally{xyzBusy=false}}
 const EV_KEYS=["name","kind","status","created","format","n","startAt"];
 function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null};
   if(sameObj(EVA[pub],e,EV_KEYS))return;EVA[pub]=e;write(`${portalPath()}/events/${pub}`,e)}
 function syncStats(){if(!PKEY||!T||!pub||T.status==="setup")return;
   for(const p of players()){const u=normUid(p.uid);if(!u)continue;const s=summaryFor(p.id);const j=JSON.stringify(s);const k=pub+"|"+u;if(statSent[k]===j)continue;statSent[k]=j;write(`${portalPath()}/stats/${u}/events/${pub}`,s)}}
-function adminPortalSync(){if(MODE!=="admin")return;syncXYZ();syncEvent();syncStats()}
+function adminPortalSync(){if(MODE!=="admin")return;autoForfeitOut();syncArchMap();syncXYZ();syncEvent();syncStats()}
 // old internal records were kept per roster member; fold them into the member's user ID once one is set
 function allRecords(){const out=JSON.parse(JSON.stringify(records));for(const [mid,r] of Object.entries(memberUids)){const u=normUid(r&&r.uid);if(!u)continue;const from=out["m_"+mid];if(!from)continue;
   const to=out["u_"+u]||(out["u_"+u]={name:from.name,events:{}});to.events=Object.assign({},from.events,to.events);delete out["m_"+mid]}return out}
@@ -1649,15 +2059,24 @@ function renderReport(){
       const z=el("option",null,`デッキ${k+1}：未選択`);z.value="";s.append(z);
       for(const [c,n] of CLASSES){if(mp.decks[1-k]===c)continue;const o=el("option",null,`デッキ${k+1}：${n}`);o.value=c;if(mp.decks[k]===c)o.selected=true;s.append(o)}
       s.onchange=()=>{const p=P(me);p.decks=p.decks.slice();p.decks[k]=s.value||null;saveEntry(p);saveProfile({decks:p.decks.slice()});render()};row.append(s)}
+    const archEdit=deckLater?null:archRow(mp.decks,mp.arch||["",""],(k,v,fin)=>{if(!fin)return;const p=P(me);p.arch=[(p.arch||[])[0]||"",(p.arch||[])[1]||""];p.arch[k]=v;saveEntry(p)},"myarch");
     const q=el("button","danger","参加を取り消す");q.type="button";
     q.onclick=()=>{if(!q.classList.contains("armed")){q.classList.add("armed");q.textContent="本当に取り消す";setTimeout(()=>{if(q.isConnected){q.classList.remove("armed");q.textContent="参加を取り消す"}},3000);return}
       removeEntry(me);setReg("");setMe(mp.member?"m:"+mp.member:"");render()};
     row.append(q);
     const tt=teamToggle(me);if(tt)box.append(tt);
-    box.append(row,el("div","status",MODE==="portal"?"参加登録済みです。予選が始まると、ここに自分の対戦相手が表示されます。":"この端末は "+who(mp).name+" さんとして登録されています。別の人を登録するには、先に参加を取り消してください。予選が始まると、ここに自分の対戦相手が表示されます。"));return;
+    box.append(row,...(archEdit?[archEdit,archNote()]:[]),el("div","status",MODE==="portal"?"参加登録済みです。予選が始まると、ここに自分の対戦相手が表示されます。":"この端末は "+who(mp).name+" さんとして登録されています。別の人を登録するには、先に参加を取り消してください。予選が始まると、ここに自分の対戦相手が表示されます。"));return;
   }
   const mm=myMatch(me);
   {const tt=teamToggle(me);if(tt)host.append(tt)}
+  if(mp.dq){box.append(el("div","warn","運営の判断により失格となりました。詳しくは運営にお問い合わせください。"));return}
+  if(mp.drop){box.append(el("div",null,"この大会はドロップしました。お疲れさまでした。"));return}
+  if(T.status==="confirm"){const cb=confirmBlock(me);if(cb)box.append(cb);return}
+  if(T.status==="swiss"&&noTopChance(me)&&!openMatchesOf(me).length){
+    const d=el("div","ci");d.append(el("b",null,"決勝ラウンド進出の可能性がなくなりました"),el("span","status","残りのラウンドを続けることも、ここで大会をドロップ（途中棄権）することもできます。ドロップすると次のラウンドから組み合わせに入りません。"));
+    const b=el("button","danger","大会をドロップする");b.type="button";
+    b.onclick=()=>{if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="本当にドロップする";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent="大会をドロップする"}},3000);return}const q=P(me);q.drop=now();saveEntry(q);render()};
+    d.append(b);host.append(d)}
   if(T.status==="done"){box.append(el("div",null,"大会は終了しました。おつかれさまでした！"));return}
   if(!mm){box.append(el("div",null,T.status==="top"?"決勝トーナメントの試合はありません（進出なし、または次の対戦相手が決まるのを待っています）。":"今は試合がありません。"));return}
   box.append(el("div","lab",mm.label));
@@ -1739,11 +2158,38 @@ function openCup(key,id){
 }
 function openTour(id){const t=tours[id];openCup(t&&t.pub,id)}
 $("tourSel").onchange=()=>openTour($("tourSel").value);
-$("newTourBtn").onclick=()=>{$("newTourForm").hidden=false;$("tName").focus()};
-$("cancelTour").onclick=()=>{$("newTourForm").hidden=true};
+let tourFormMode="new";
+function setFormMode(mode){
+  tourFormMode=mode;const ed=mode==="edit";$("createTour").textContent=ed?"変更を保存":"作成";
+  const st=T&&T.status;const pre=!ed||st==="setup";
+  // after the start only some settings can still change
+  for(const id of ["tKind","tFormat","tLobby","tStart"])$(id).disabled=ed&&!pre;
+  $("tRounds").disabled=ed&&!(pre||st==="swiss");$("tCut").disabled=ed&&!(pre||st==="swiss");$("tFormatTop").disabled=ed&&!(pre||st==="swiss"||st==="confirm");
+  $("editNote").hidden=!ed||pre;
+}
+$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("newTourForm").hidden=false;$("tName").focus()};
+$("editTourBtn").onclick=()=>{if(!T)return;setFormMode("edit");
+  $("tName").value=T.name||"";$("tStart").value=T.startAt?toLocalInput(T.startAt):"";$("tRounds").value=String(T.swissRounds||0);if(!$("tRounds").value)$("tRounds").value="0";
+  $("tCut").value=String(T.topCut||0);$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
+  $("tLobby").value=T.lobby?"1":"0";$("tLobbyCode").value=(T.lobby&&T.lobby.code)||"";$("tLobbyCode").hidden=!T.lobby;
+  $("newTourForm").hidden=false;$("tName").focus()};
+$("cancelTour").onclick=()=>{$("newTourForm").hidden=true;setFormMode("new")};
+function saveTourEdit(){
+  const name=$("tName").value.trim().slice(0,40);if(!name){$("tName").focus();return}
+  T.name=name;if(tours[tid]){tours[tid]=Object.assign({},tours[tid],{name});write(idxPath(tid),tours[tid])}
+  if(!$("tStart").disabled){const v=$("tStart").value?new Date($("tStart").value).getTime():null;T.startAt=Number.isFinite(v)?v:null}
+  if(!$("tKind").disabled)T.kind=$("tKind").value;
+  if(!$("tFormat").disabled){T.format=$("tFormat").value;T.formatSwiss=$("tFormat").value}
+  if(!$("tLobby").disabled)T.lobby=$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null;
+  if(!$("tRounds").disabled){const r=Number($("tRounds").value)||0;T.swissRounds=T.status==="setup"?r:Math.max(r||T.swissRounds,(T.rounds||[]).length)}
+  if(!$("tCut").disabled)T.topCut=Number($("tCut").value)||0;
+  if(!$("tFormatTop").disabled)T.formatTop=$("tFormatTop").value;
+  syncRoster();saveT();$("newTourForm").hidden=true;setFormMode("new");setSync("大会ルールを変更しました");render();
+}
 $("tCut").addEventListener("change",()=>{$("tFormatTop").disabled=$("tCut").value==="0"});
 $("tLobby").onchange=()=>{const on=$("tLobby").value==="1";$("tLobbyCode").hidden=!on;if(on)$("tLobbyCode").focus()};
 $("createTour").onclick=()=>{
+  if(tourFormMode==="edit"){saveTourEdit();return}
   const name=$("tName").value.trim();if(!name){$("tName").focus();return}
   const id=uid("t");const key=newKey(24);
   const idx={name:name.slice(0,40),created:now(),pub:key};
@@ -1759,6 +2205,7 @@ $("delTour").onclick=()=>{
   for(const k of Object.keys(M))write(`${cupPath()}/matches/${k}`,null);for(const k of Object.keys(E))write(`${cupPath()}/entries/${k}`,null);for(const k of Object.keys(C))write(`${cupPath()}/chat/${k}`,null);write(cupPath(),null);write(idxPath(tid),null);
   if(PKEY){for(const p of players()){const u=normUid(p.uid);if(u)write(`${portalPath()}/stats/${u}/events/${pub}`,null)}write(`${portalPath()}/events/${pub}`,null);delete EVA[pub]}
   for(const [rid,rec] of Object.entries(records)){if(rec&&rec.events&&rec.events[pub]){const ev=Object.assign({},rec.events);delete ev[pub];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}}
+  if(T&&T.mxSent&&MXID)mxApplyCounts({});
   delete tours[tid];
   const next=Object.entries(tours).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];openTour(next?next[0]:null);
 };
@@ -1775,6 +2222,14 @@ async function startAdmin(){
   MODE="admin";admin=true;$("modeTag").hidden=false;$("modeTag").textContent="運営";$("backAdmin").hidden=true;
   if(!startAdmin.done){startAdmin.done=true;
     PKEY=await portalKeyFor(ROOT);
+    MXID=A.kind==="firebase"?ROOT.split("/")[1]:(ROOT==="sb/main"?"main":"local");
+    A.watchDoc(`boards/${MXID}`,d=>{mxDecks=Array.isArray(d&&d.list)?d.list.map(x=>Object.assign({},x)):[];mxLoaded=true;render()});
+    A.watchColl(`boards/${MXID}/cells`,m=>{mxCells=JSON.parse(JSON.stringify(m));render()});
+    let secFirst=true;A.watchDoc(`${ROOT}/secrets/inbox`,d=>{if(d&&d.priv){ensureInboxKey(d)}else if(secFirst){ensureInboxKey(null)}secFirst=false});
+    A.watchColl(portalPath()+"/inbox",m=>{inboxRaw=m;decryptInbox();render()});
+    A.watchColl(ROOT+"/inboxDone",m=>{inboxDone=JSON.parse(JSON.stringify(m));render()});
+    A.watchColl(ROOT+"/replies",m=>{inboxReplies=JSON.parse(JSON.stringify(m));render()});
+    A.watchColl(ROOT+"/archAlias",m=>{archAliases=JSON.parse(JSON.stringify(m));syncArchMap();render()});
     A.watchColl(ROOT+"/memberUids",m=>{memberUids=JSON.parse(JSON.stringify(m));syncXYZ();syncBadges();render()});
     A.watchDoc(portalPath(),d=>{PDA=d;PDAloaded=true;syncXYZ()});
     A.watchColl(portalPath()+"/events",m=>{EVA=JSON.parse(JSON.stringify(m));render()});
