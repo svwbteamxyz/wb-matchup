@@ -224,10 +224,13 @@ service cloud.firestore {
         allow read, delete: if cup.size() >= 20;
         allow create: if cup.size() >= 20
           && request.resource.data.keys().hasOnly(['winner', 'score', 'da', 'db', 'ba', 'bb', 'at', 'room', 'roomBy', 'roomAt', 'entered', 'forfeit', 'manual', 'games']);
-        // 運営が手動で入れた結果は、時間切れの自動不戦敗で上書きされない
+        // 運営が手動で入れた結果と、参加者が報告した勝敗は、時間切れの自動不戦敗で上書きされない
         allow update: if cup.size() >= 20
           && request.resource.data.keys().hasOnly(['winner', 'score', 'da', 'db', 'ba', 'bb', 'at', 'room', 'roomBy', 'roomAt', 'entered', 'forfeit', 'manual', 'games'])
-          && !(resource.data.get('manual', false) == true && request.resource.data.get('manual', false) != true);
+          && !(resource.data.get('manual', false) == true && request.resource.data.get('manual', false) != true)
+          && !(request.resource.data.get('forfeit', null) in ['noroom', 'noentry']
+               && resource.data.get('winner', null) != null
+               && resource.data.get('forfeit', null) == null);
       }
     }
   }
