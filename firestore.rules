@@ -132,7 +132,7 @@ service cloud.firestore {
       match /events/{ev} {
         allow read, delete: if key.size() >= 20;
         allow create, update: if key.size() >= 20
-          && request.resource.data.keys().hasOnly(['name', 'kind', 'status', 'created', 'format', 'n', 'startAt']);
+          && request.resource.data.keys().hasOnly(['name', 'kind', 'status', 'created', 'format', 'n', 'startAt', 'cap']);
       }
 
       // 参加者のプロフィール：ログインした本人だけが読み書きできる
@@ -192,7 +192,7 @@ service cloud.firestore {
     match /cups/{cup} {
       allow get, delete: if cup.size() >= 20;
       allow create, update: if cup.size() >= 20
-        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt', 'confirm', 'archMap', 'mxSent', 'mxMap', 'muted'])
+        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt', 'confirm', 'archMap', 'mxSent', 'mxMap', 'muted', 'cap', 'notAdmitted'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 40;
       allow list: if false;
