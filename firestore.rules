@@ -84,6 +84,26 @@ service cloud.firestore {
           && request.resource.data.team.size() <= 8;
       }
 
+      // アーキタイプ名の統合（運営が設定）
+      match /archAlias/{a} {
+        allow read, delete: if board.size() >= 16;
+        allow create, update: if board.size() >= 16
+          && request.resource.data.keys().hasOnly(['c', 'from', 'to'])
+          && request.resource.data.to is string
+          && request.resource.data.to.size() <= 20;
+      }
+
+      // 問い合わせ用の鍵・対応済み・返信の控え（運営用URLを知っている人だけ）
+      match /secrets/{x} {
+        allow read, write: if board.size() >= 16;
+      }
+      match /inboxDone/{x} {
+        allow read, write: if board.size() >= 16;
+      }
+      match /replies/{x} {
+        allow read, write: if board.size() >= 16;
+      }
+
       // 環境ごとのスコア表
       match /seasons/{season} {
         allow get: if board.size() >= 16;
@@ -105,7 +125,7 @@ service cloud.firestore {
     match /portals/{key} {
       allow get: if key.size() >= 20;
       allow create, update: if key.size() >= 20
-        && request.resource.data.keys().hasOnly(['xyz', 'updated']);
+        && request.resource.data.keys().hasOnly(['xyz', 'updated', 'inboxPub']);
       allow list, delete: if false;
 
       // 大会一覧（運営画面が書き込む）
@@ -128,6 +148,27 @@ service cloud.firestore {
         allow list, delete: if false;
       }
 
+      // 問い合わせ（運営の公開鍵で暗号化された本文。運営画面だけが読める）
+      match /inbox/{m} {
+        allow read, delete: if key.size() >= 20;
+        allow create: if key.size() >= 20
+          && request.resource.data.keys().hasOnly(['k', 'iv', 'd', 'at'])
+          && request.resource.data.d is string
+          && request.resource.data.d.size() <= 700000;
+      }
+
+      // 問い合わせのやりとり（本人だけが読める。運営画面からの返信も入る）
+      match /inq/{u}/msgs/{m} {
+        allow read: if request.auth != null && request.auth.token.email == u + '@player.xyzcup.app';
+        allow create: if key.size() >= 20
+          && request.resource.data.keys().hasOnly(['from', 'text', 'img', 'at'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 1000
+          && (request.resource.data.img == null || (request.resource.data.img is string && request.resource.data.img.size() <= 400000))
+          && ((request.auth != null && request.auth.token.email == u + '@player.xyzcup.app' && request.resource.data.from == 'user')
+              || request.resource.data.from == 'admin');
+      }
+
       // XYZメンバー申請：アカウントを作った本人が書き、運営画面が読んで承認・却下する
       match /claims/{u} {
         allow read, delete: if key.size() >= 20;
@@ -142,7 +183,7 @@ service cloud.firestore {
       match /stats/{u}/events/{ev} {
         allow read: if request.auth != null && request.auth.token.email == u + '@player.xyzcup.app';
         allow create, update: if key.size() >= 20
-          && request.resource.data.keys().hasOnly(['name', 'kind', 'created', 'status', 'me', 'n', 'rank', 'place', 'w', 'l', 'matches']);
+          && request.resource.data.keys().hasOnly(['name', 'kind', 'created', 'status', 'me', 'n', 'rank', 'place', 'w', 'l', 'matches', 'out', 'myArch']);
         allow delete: if key.size() >= 20;
       }
     }
@@ -151,7 +192,7 @@ service cloud.firestore {
     match /cups/{cup} {
       allow get, delete: if cup.size() >= 20;
       allow create, update: if cup.size() >= 20
-        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt'])
+        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt', 'confirm', 'archMap', 'mxSent', 'mxMap'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 40;
       allow list: if false;
@@ -159,7 +200,7 @@ service cloud.firestore {
       match /entries/{entry} {
         allow read, delete: if cup.size() >= 20;
         allow create, update: if cup.size() >= 20
-          && request.resource.data.keys().hasOnly(['member', 'name', 'handle', 'uid', 'icon', 'decks', 'order', 'hideTeam', 'checkedIn'])
+          && request.resource.data.keys().hasOnly(['member', 'name', 'handle', 'uid', 'icon', 'decks', 'order', 'hideTeam', 'checkedIn', 'dq', 'drop', 'topReply', 'arch'])
           && (!('icon' in request.resource.data) || request.resource.data.icon == null || (request.resource.data.icon is string && request.resource.data.icon.size() <= 40000))
           && request.resource.data.name is string
           && request.resource.data.name.size() <= 40;
