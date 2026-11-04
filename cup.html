@@ -180,6 +180,8 @@ b.rate-hi{background:rgba(46,158,82,.16)}b.rate-lo{background:rgba(184,58,58,.14
 .inqform{display:flex;flex-direction:column;gap:6px}.inqform textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
 .inqprev{height:44px;border-radius:6px}
 details.inq{padding-bottom:8px}details.inq>*:not(summary){margin-left:12px;margin-right:12px}
+.msgdel{margin-left:6px;padding:1px 6px;font-size:.7rem;font-weight:500;color:var(--danger)}
+.mutes{gap:6px;margin-top:4px}.mutes button{font-size:.75rem;padding:4px 8px}
 .trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .bset .trophy{font-size:1.15rem!important}
 .trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
@@ -611,7 +613,8 @@ function iconPicker(cur,onPick,id){
 // The list itself stays on the organizer side. Each tournament only gets salted SHA-256 digests,
 // so the participant page can refuse a banned user ID / X ID without seeing anyone's IDs.
 let bans={};
-const normUid=v=>String(v||"").replace(/[^0-9]/g,"");
+// full-width digits (e.g. typed with the Japanese keyboard on) count as normal digits
+const normUid=v=>String(v||"").normalize("NFKC").replace(/[^0-9]/g,"");
 const normX=v=>String(v||"").trim().replace(/^@+/,"").toLowerCase();
 async function digest(v){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(`xyzcup:${pub}:${v}`));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("").slice(0,32)}
 async function banKeys(uidv,handle){const out=[];const u=normUid(uidv),x=normX(handle);if(u)out.push(await digest("u:"+u));if(x)out.push(await digest("x:"+x));return out}
@@ -706,11 +709,19 @@ function who(p){if(!p)return{name:"?",handle:""};const m=p.member&&rosterMap()[p
 const CHIP_INK={elf:"#0E2A0A",royal:"#3A2B00",dragon:"#2E1600",bishop:"#22262F",nemesis:"#062A30",witch:"#FFFFFF",nightmare:"#FFFFFF"};
 function chip(c){const s=el("span","chip",CN[c]||c);s.style.background=`var(--c-${c})`;s.style.color=CHIP_INK[c]||"#fff";return s}
 // don't rebuild the page while someone is typing or has a dropdown open (on phones a rebuild closes the picker and the choice is lost)
-const editing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="TEXTAREA"||a.tagName==="SELECT"||(a.tagName==="INPUT"&&/^(text|number|search|datetime-local)$/.test(a.type)))&&a.closest(".wrap")&&!a.closest("#regForm,#newTourForm"))};
+const editing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="TEXTAREA"||a.tagName==="SELECT"||(a.tagName==="INPUT"&&/^(text|number|search|datetime-local|password|tel|email)$/.test(a.type)))&&a.closest(".wrap")&&!a.closest("#regForm,#newTourForm"))};
 // once a choice is made the dropdown lets go of focus, so the page can update right away
 document.addEventListener("change",e=>{if(e.target&&e.target.tagName==="SELECT")e.target.blur()},true);
-function render(){if(editing()){deferred=true;return}deferred=false;renderAll()}
-document.addEventListener("focusout",()=>setTimeout(()=>{if(deferred&&!editing())render()},0));
+function render(){if(editing()||pointerDown){deferred=true;return}deferred=false;renderAll()}
+// when a field loses focus because a button was pressed, wait for that press to finish before rebuilding the page
+// (otherwise the pressed button is replaced mid-tap and the tap does nothing, which happened on phones)
+let pointerDown=false;
+let pointerTimer=null;
+const pointerEnd=()=>{clearTimeout(pointerTimer);pointerTimer=setTimeout(()=>{pointerDown=false;if(deferred&&!editing())render()},60)};
+// a press always ends: on release, on cancel, on the click itself, or at the latest after 1.5 seconds
+document.addEventListener("pointerdown",()=>{pointerDown=true;clearTimeout(pointerTimer);pointerTimer=setTimeout(pointerEnd,1500)},true);
+for(const ev of ["pointerup","pointercancel","click","touchend","mouseup"])document.addEventListener(ev,pointerEnd,true);
+document.addEventListener("focusout",()=>setTimeout(()=>{if(deferred&&!editing()&&!pointerDown)render()},0));
 
 const fmtOf=stage=>(T&&(stage==="top"?T.formatTop:T.formatSwiss))||(T&&T.format)||"bo1";
 const isBo3m=mid=>fmtOf(String(mid||"").startsWith("b")?"top":"swiss")==="bo3c";
@@ -813,10 +824,10 @@ function matchCard(m,label){
     src.filter(Boolean).forEach(c=>{const o=el("option",null,(ban?"BAN：":"使用：")+CN[c]);o.value=c;if(res[field]===c)o.selected=true;sel.append(o)});
     sel.onchange=()=>{const cur=Object.assign({},M[m.id]||{});cur[field]=sel.value||null;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
     const wb=el("button","wbtn",done&&res.winner===pid?"勝ち ✓":"勝ち");wb.type="button";
-    wb.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.winner=cur.winner===pid?null:pid;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
+    wb.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.winner=cur.winner===pid&&!cur.forfeit?null:pid;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
     if(isBo3m(m.id)){
       for(const sc of ["2-0","2-1"]){const b=el("button","wbtn",`${sc}で勝ち`);b.type="button";if(done&&res.winner===pid&&(res.score||"2-0")===sc){b.textContent=`${sc}で勝ち ✓`;b.classList.add("on")}
-        b.onclick=()=>{const cur=Object.assign({},M[m.id]||{});const same=cur.winner===pid&&(cur.score||"2-0")===sc;cur.winner=same?null:pid;cur.score=same?null:sc;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};ctl.append(b)}
+        b.onclick=()=>{const cur=Object.assign({},M[m.id]||{});const same=cur.winner===pid&&(cur.score||"2-0")===sc&&!cur.forfeit;cur.winner=same?null:pid;cur.score=same?null:sc;cur.forfeit=null;cur.manual=true;cur.at=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};ctl.append(b)}
     }else ctl.append(sel,wb);
     if(admin)s.append(nm,ctl);
     else{const ro=el("div","ro");if(ban&&res[field])ro.append(document.createTextNode("BAN "),chip(res[field]));if(done&&res.winner===pid)ro.append(el("div","ok",isBo3m(m.id)?`勝ち ${res.score||"2-0"}`:"勝ち"));s.append(nm,ro)}
@@ -1096,7 +1107,7 @@ $("regSave").onclick=()=>{
   const name=$("regName").value.trim().slice(0,40);if(!name){$("regName").focus();return}
   const handle=$("regHandle").value.trim().replace(/^@+/,"").slice(0,30);
   const raw=$("regUid").value;const mu=normUid(raw);$("regMsg").textContent="";
-  if(raw.trim()&&(!/^[0-9]{5,15}$/.test(mu)||/[^0-9\s-]/.test(raw))){$("regMsg").textContent="ユーザーIDは数字で入力してください";$("regUid").focus();return}
+  if(raw.trim()&&(!/^[0-9]{5,15}$/.test(mu)||/[^0-9\s-]/.test(raw.normalize("NFKC")))){$("regMsg").textContent="ユーザーIDは数字で入力してください";$("regUid").focus();return}
   if(mu){const dup=Object.entries(memberUids).find(([m2,r])=>members[m2]&&normUid(r&&r.uid)===mu);if(dup){$("regMsg").textContent=`このユーザーIDは ${members[dup[0]].name} さんに登録済みです`;$("regUid").focus();return}}
   const mid=uid("m");const order=Object.values(members).reduce((a,m)=>Math.max(a,m.order||0),0)+1;
   members[mid]={name,handle,order};write(`${ROOT}/members/${mid}`,members[mid]);
@@ -1429,7 +1440,7 @@ const WHY={noroom:"ルーム未作成",noentry:"未入室",dq:"失格",drop:"ド
 function enforceTimeouts(){
   const tnow=now();
   for(const m of activeMatches()){
-    const res=M[m.id]||{};const d=deadline(m,res);if(!d||tnow<d.at)continue;
+    const res=M[m.id]||{};if(res.manual)continue;const d=deadline(m,res);if(!d||tnow<d.at)continue;
     const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;
     M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));
   }
@@ -1473,7 +1484,22 @@ const chatDraft={};
 const QUICK=["ルームIDが違うようです。もう一度確認してください","ルームに入れません","今から入室します","少し遅れます"];
 function chatLines(mid){return Object.entries(C).filter(([,c])=>c.m===mid).map(([id,c])=>Object.assign({id},c)).sort((a,b)=>(a.at||0)-(b.at||0))}
 const hhmm=t=>{const d=new Date(t);return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`};
-function sendChat(mid,from,text,extra){text=String(text||"").trim().slice(0,120);if(!text&&!extra)return;const id=uid("c");C[id]=Object.assign({m:mid,from,text,at:now()},extra||{});write(`${cupPath()}/chat/${id}`,C[id]);render()}
+// anti-spam for players: counted from the shared chat itself, so reloading the page doesn't reset it
+const CHAT_GAP=3000,CHAT_PER_MIN=6,IMG_GAP=30000,IMG_MAX=5;const chatWarn={};
+function chatBlock(mid,from,text,extra){
+  if(from==="admin")return"";
+  if(isMuted(from))return"運営によりチャットが止められています";
+  const mine=chatLines(mid).filter(c=>c.from===from);const t=now();
+  if(extra&&extra.call)return"";
+  const last=mine[mine.length-1];if(last&&t-(last.at||0)<CHAT_GAP)return"送信の間隔が短すぎます。少し待ってから送ってください";
+  if(mine.filter(c=>t-(c.at||0)<60000).length>=CHAT_PER_MIN)return"短時間に送りすぎです。1分ほど待ってから送ってください";
+  if(text&&mine.some(c=>c.text===text&&t-(c.at||0)<60000))return"同じメッセージは続けて送れません";
+  if(extra&&extra.img){const imgs=mine.filter(c=>c.img);if(imgs.length>=IMG_MAX)return`画像はこの試合で${IMG_MAX}枚までです`;const li=imgs[imgs.length-1];if(li&&t-(li.at||0)<IMG_GAP)return"画像は30秒に1枚までです"}
+  return"";
+}
+const isMuted=pid=>!!(T&&(T.muted||[]).includes(pid));
+function sendChat(mid,from,text,extra){text=String(text||"").trim().slice(0,120);if(!text&&!extra)return false;
+  const why=chatBlock(mid,from,text,extra);if(why){chatWarn[mid]={t:why,at:now()};document.querySelectorAll(".chatwarn").forEach(w=>{if(w.dataset.mid===mid)w.textContent=why});render();return false}chatWarn[mid]=null;const id=uid("c");C[id]=Object.assign({m:mid,from,text,at:now()},extra||{});write(`${cupPath()}/chat/${id}`,C[id]);render();return true}
 // screenshots are shrunk on the device and kept inside the chat message (no file storage needed)
 async function shrinkImage(file){
   const url=URL.createObjectURL(file);
@@ -1505,7 +1531,9 @@ function chatLog(mid,me){
     else if(c.resolve)body.append(el("strong",null,"対応済みにしました"),document.createTextNode(c.text?"　"+c.text:""));
     else if(c.text)body.append(document.createTextNode(c.text));
     if(c.img){const im=el("img","shot");im.src=c.img;im.alt="送信されたスクリーンショット";im.title="クリックで拡大／縮小";im.onclick=()=>im.classList.toggle("big");body.append(im)}
-    line.append(el("b",null,nm),body,el("time",null,hhmm(c.at)));log.append(line)}
+    line.append(el("b",null,nm),body,el("time",null,hhmm(c.at)));
+    if(admin&&me==="admin"&&!c.call&&!c.resolve){const x=el("button","msgdel","削除");x.type="button";x.title="このメッセージを消します";x.onclick=()=>{delete C[c.id];write(`${cupPath()}/chat/${c.id}`,null);render()};line.append(x)}
+    log.append(line)}
   setTimeout(()=>{log.scrollTop=log.scrollHeight},0);
   return log;
 }
@@ -1514,15 +1542,17 @@ function chatBox(m,me){
   const q=el("div","quick");QUICK.forEach(t=>{const b=el("button",null,t);b.type="button";b.onclick=()=>sendChat(m.id,me,t);q.append(b)});box.append(q);
   const row=el("div","addrow");const i=el("input");i.type="text";i.id="chatInput";i.maxLength=120;i.placeholder="メッセージを入力";i.setAttribute("aria-label","対戦相手へのメッセージ");
   i.value=chatDraft[m.id]||"";i.oninput=()=>{chatDraft[m.id]=i.value};
-  const send=()=>{const v=i.value;chatDraft[m.id]="";i.value="";i.blur();sendChat(m.id,me,v)};
+  const send=()=>{const v=i.value;if(sendChat(m.id,me,v)){chatDraft[m.id]="";i.value="";i.blur()}};
   i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();send()}});
   const b=el("button","primary","送信");b.type="button";b.onclick=send;row.append(i,b);box.append(row);
+  if(isMuted(me)){i.disabled=true;b.disabled=true;q.querySelectorAll("button").forEach(x=>x.disabled=true);box.append(el("div","warn","運営によりチャットが止められています。運営を呼ぶことはできます"))}
+  else{const w=chatWarn[m.id];const wd=el("div","warn chatwarn",w&&now()-w.at<15000?w.t:"");wd.dataset.mid=m.id;box.append(wd)}
   const tools=el("div","row");
   const f=el("input");f.type="file";f.accept="image/*";f.id="shotFile";f.hidden=true;
-  const ib=el("button",null,"画像を送る");ib.type="button";ib.onclick=()=>f.click();
+  const ib=el("button",null,"画像を送る");ib.type="button";ib.onclick=()=>f.click();ib.disabled=isMuted(me);
   const st=el("span","status");
   f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;st.textContent="画像を縮小しています…";
-    try{const d=await shrinkImage(file);if(!d){st.textContent="画像が大きすぎて送れませんでした。範囲を切り取ってから送ってください";return}sendChat(m.id,me,"",{img:d})}catch(e){st.textContent="画像を読み込めませんでした"}};
+    try{const pre=chatBlock(m.id,me,"",{img:true});if(pre){st.textContent=pre;return}const d=await shrinkImage(file);if(!d){st.textContent="画像が大きすぎて送れませんでした。範囲を切り取ってから送ってください";return}sendChat(m.id,me,"",{img:d})}catch(e){st.textContent="画像を読み込めませんでした"}};
   const open=unresolvedCall(m.id);
   const cb=el("button","danger",open?"運営を呼び出し中":"運営を呼ぶ");cb.type="button";cb.disabled=!!open;
   cb.onclick=()=>{if(!cb.classList.contains("armed")){cb.classList.add("armed");cb.textContent="もう一度押すと運営を呼びます";setTimeout(()=>{if(cb.isConnected){cb.classList.remove("armed");cb.textContent="運営を呼ぶ"}},3000);return}
@@ -1530,6 +1560,14 @@ function chatBox(m,me){
   tools.append(ib,f,cb,st);box.append(tools);
   box.append(el("div","status",open?"運営に通知しました。運営が確認するまでお待ちください。チャットは運営も見られます":"揉めたときは「運営を呼ぶ」を押してください。スクリーンショットは「画像を送る」から送れます"));
   return box;
+}
+function muteRow(mid){
+  const m=[...((T.rounds||[]).flatMap(r=>r.pairs)),...((bracket()||[]).flat())].find(x=>x.id===mid);if(!m||!m.b)return null;
+  const row=el("div","row mutes");row.append(el("span","status","チャット："));
+  for(const pid of [m.a,m.b]){const on=isMuted(pid);const b=el("button",on?"danger":null,on?`${who(P(pid)).name} の停止を解除`:`${who(P(pid)).name} を停止`);b.type="button";
+    b.title=on?"この人がまたチャットを送れるようにします":"この人はこの大会のチャットを送れなくなります（運営呼び出しはできます）";
+    b.onclick=()=>{const L=new Set(T.muted||[]);if(L.has(pid))L.delete(pid);else L.add(pid);T.muted=[...L];saveT();render()};row.append(b)}
+  return row;
 }
 function adminReply(mid){
   const row=el("div","addrow");const i=el("input");i.type="text";i.id="adm-"+mid;i.maxLength=120;i.placeholder="運営としてメッセージを送る";i.setAttribute("aria-label","運営からのメッセージ");
@@ -1540,6 +1578,7 @@ function adminReply(mid){
   if(unresolvedCall(mid)){const r=el("button","primary","対応済みにする");r.type="button";
     r.onclick=()=>{const v=i.value;chatDraft["adm-"+mid]="";i.value="";i.blur();
       const open=chatLines(mid).filter(c=>c.call);for(const c of open){if(unresolvedCall(mid))sendChat(mid,"admin",c===open[open.length-1]?v:"",{resolve:true,ref:c.id})}render()};row.append(r)}
+  const mr=admin?muteRow(mid):null;if(mr){const w=el("div","admchat");w.append(row,mr);return w}
   return row;
 }
 function renderCalls(){
@@ -1693,7 +1732,7 @@ function inqForm(key,store,onSend,label){
 /* ---------- participant portal: one URL, login with game user ID + password ---------- */
 let MYINQ={};const myInqDraft={};
 let PKEY="",LOGIN="",U=null,Uloaded=false,PD=null,EV={},MYST={},isXYZ=false,pview="list",myEntries={},AUTH=null,authReady=false;
-let loginUnsub=[],entryWatch={};const pform={tab:"login",err:"",busy:false};
+let loginUnsub=[],entryWatch={};const pform={tab:"login",err:"",busy:false,v:{}};
 const portalPath=()=>`portals/${PKEY}`;
 async function sha(v){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("")}
 async function portalKeyFor(root){return (await sha("xyzcup-portal:"+root)).slice(0,24)}
@@ -1764,7 +1803,7 @@ function renderPortal(){
   if(pview==="cup"&&pub){const back=el("button",null,"← 大会一覧に戻る");back.type="button";back.onclick=()=>goView("list");host.append(back);return false}
   hideCupPanels();host.append(pview==="my"?myView():listView());return true;
 }
-function field(id,ph,opt){const i=el("input");i.type=opt&&opt.type||"text";i.id=id;i.placeholder=ph;i.setAttribute("aria-label",ph);if(opt&&opt.max)i.maxLength=opt.max;if(opt&&opt.num)i.inputMode="numeric";if(opt&&opt.ac)i.autocomplete=opt.ac;return i}
+function field(id,ph,opt){const i=el("input");i.type=opt&&opt.type||"text";i.id=id;if(pform.v[id]!=null)i.value=pform.v[id];i.addEventListener("input",()=>{pform.v[id]=i.value});i.placeholder=ph;i.setAttribute("aria-label",ph);if(opt&&opt.max)i.maxLength=opt.max;if(opt&&opt.num)i.inputMode="numeric";if(opt&&opt.ac)i.autocomplete=opt.ac;return i}
 function loginView(){
   const box=el("div","rep login");
   const tabs=el("div","row hallkind");for(const [k,l] of [["login","ログイン"],["signup","はじめての方（新規登録）"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pform.tab===k));b.onclick=()=>{pform.tab=k;pform.err="";render()};tabs.append(b)}
@@ -1778,7 +1817,7 @@ function loginView(){
   const go=el("button","primary big",pform.tab==="login"?"ログイン":"登録してはじめる");go.type="button";go.disabled=pform.busy;
   const fail=t=>{pform.err=t;pform.busy=false;render()};
   go.onclick=async()=>{
-    const u=normUid(id.value);if(!/^[0-9]{5,15}$/.test(u)||/[^0-9\s-]/.test(id.value)){id.focus();return fail("ユーザーIDは数字で入力してください")}
+    const u=normUid(id.value);if(!/^[0-9]{5,15}$/.test(u)||/[^0-9\s-]/.test(id.value.normalize("NFKC"))){id.focus();return fail("ユーザーIDは数字で入力してください")}
     if(pw.value.length<6){pw.focus();return fail("パスワードは6文字以上にしてください")}
     if(pform.tab==="signup"){
       if(pw.value!==pw2.value){pw2.focus();return fail("確認用のパスワードが一致しません")}
@@ -1949,7 +1988,7 @@ function sameObj(a,b,keys){if(!a||!b)return false;return keys.every(k=>JSON.stri
 function memberUidSet(){const s=new Set();for(const [mid,r] of Object.entries(memberUids)){if(!members[mid])continue;const u=normUid(r&&r.uid);if(u)s.add(u)}return s}
 async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
   try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
-    const pubSame=!inboxPub||JSON.stringify(inboxPub)===JSON.stringify(PDA&&PDA.inboxPub);
+    const pubSame=!inboxPub||!!(PDA&&PDA.inboxPub&&PDA.inboxPub.n===inboxPub.n&&PDA.inboxPub.e===inboxPub.e);
     if(pubSame&&JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;const doc={xyz:list,updated:now()};if(inboxPub||(PDA&&PDA.inboxPub))doc.inboxPub=inboxPub||PDA.inboxPub;PDA=doc;write(portalPath(),doc)}finally{xyzBusy=false}}
 const EV_KEYS=["name","kind","status","created","format","n","startAt"];
 function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null};
@@ -1982,7 +2021,7 @@ function renderUidPanel(){
   if(!list.length){host.append(el("div","status","名簿にメンバーがいません"));return}
   for(const [mid,m] of list){const row=el("div","row uidrow");row.append(el("span","nm",m.name||"@"+m.handle));
     const i=el("input");i.type="text";i.inputMode="numeric";i.maxLength=20;i.id="muid-"+mid;i.placeholder="ユーザーID";i.setAttribute("aria-label",`${m.name}のユーザーID`);i.value=(memberUids[mid]&&memberUids[mid].uid)||"";
-    i.onchange=()=>{const v=normUid(i.value);if(v&&!/^[0-9]{5,15}$/.test(v)){i.setCustomValidity("数字5〜15桁");i.reportValidity();return}i.setCustomValidity("");
+    i.onchange=()=>{const v=normUid(i.value);if((i.value.trim()&&!v)||(v&&!/^[0-9]{5,15}$/.test(v))){i.setCustomValidity("ユーザーIDは数字5〜15桁で入力してください");i.reportValidity();return}i.setCustomValidity("");i.value=v;
       if(v){memberUids[mid]={uid:v};write(`${ROOT}/memberUids/${mid}`,{uid:v})}else{delete memberUids[mid];write(`${ROOT}/memberUids/${mid}`,null)}syncXYZ();syncBadges();render()};
     row.append(i);host.append(row)}
 }
@@ -2036,7 +2075,7 @@ function renderReport(){
     b.onclick=async()=>{const name=n.value.trim().slice(0,40);if(!name){n.focus();fail("名前を入力してください");return}const handle=h.value.trim().replace(/^@+/,"").slice(0,30);
       let uidv=null;
       if(needX){uidv=normUid(u1.value);if(!uidv){u1.focus();fail("外戦ではユーザーIDの入力が必要です");return}
-        if(!/^[0-9]{5,15}$/.test(uidv)||/[^0-9\s-]/.test(u1.value)){u1.focus();fail("ユーザーIDは数字で入力してください");return}
+        if(!/^[0-9]{5,15}$/.test(uidv)||/[^0-9\s-]/.test(u1.value.normalize("NFKC"))){u1.focus();fail("ユーザーIDは数字で入力してください");return}
       }
       if(needX&&!handle){h.focus();fail("外戦ではXのIDの入力が必要です");return}
       if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){h.focus();fail("XのIDは半角英数字と _ の15文字以内で入力してください");return}
