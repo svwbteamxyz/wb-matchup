@@ -182,6 +182,8 @@ b.rate-hi{background:rgba(46,158,82,.16)}b.rate-lo{background:rgba(184,58,58,.14
 details.inq{padding-bottom:8px}details.inq>*:not(summary){margin-left:12px;margin-right:12px}
 .msgdel{margin-left:6px;padding:1px 6px;font-size:.7rem;font-weight:500;color:var(--danger)}
 .mutes{gap:6px;margin-top:4px}.mutes button{font-size:.75rem;padding:4px 8px}
+.archedit{margin:-2px 0 10px 36px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;display:flex;flex-direction:column;gap:6px}
+details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}details.archself>*:not(summary){margin:0 12px 10px}
 .trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .bset .trophy{font-size:1.15rem!important}
 .trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
@@ -1047,6 +1049,7 @@ function renderPlayers(){
     if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
     if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
     if(isOut(p.id))nm.append(el("span","outtag",outLabel(p)));
+    if(admin&&(p.decks||[]).some(Boolean)){const eb=el("button","linkbtn",archOpen[p.id]?"アーキタイプの編集を閉じる":"アーキタイプを編集");eb.type="button";eb.onclick=()=>{archOpen[p.id]=!archOpen[p.id];render()};nm.append(eb)}
     if(admin&&p.arch&&(p.arch[0]||p.arch[1]))nm.append(el("span","archadm","🔒 "+[0,1].map(k=>p.decks[k]?`${CN[p.decks[k]]}${p.arch[k]?"「"+p.arch[k]+"」":""}`:"").filter(Boolean).join(" / ")));
     if(setup&&ciUsed()){
       if(p.checkedIn)nm.append(el("span","ci-ok","✓ チェックイン済み"));else if(ciOpen())nm.append(el("span","ci-ng","未チェックイン"));
@@ -1082,6 +1085,8 @@ function renderPlayers(){
     const del=el("button","danger","外す");del.type="button";del.hidden=!setup||!admin;
     del.onclick=()=>{removeEntry(p.id);render()};
     row.append(del);list.append(row);
+    if(admin&&archOpen[p.id]&&(p.decks||[]).some(Boolean)){const ed=el("div","archedit");ed.append(el("span","status",`${w.name} のアーキタイプ（運営が入力・変更できます。いつでも変更できます）`),
+      archRow(p.decks,p.arch||["",""],(k,v,fin)=>{if(!fin)return;const q=P(p.id);q.arch=[(q.arch||[])[0]||"",(q.arch||[])[1]||""];q.arch[k]=v;saveEntry(q);setSync("アーキタイプを保存しました")},"aarch-"+p.id+"-"));list.append(ed)}
   });
   if(setup){
     const n=PL.length;const missing=PL.filter(p=>!p.decks[0]||!p.decks[1]).length;
@@ -1115,7 +1120,7 @@ $("regSave").onclick=()=>{
   if($("regJoin").checked&&T&&T.status==="setup"){joinMember(mid)}
   $("regName").value="";$("regHandle").value="";$("regUid").value="";$("regName").focus();setSync(`${name} を名簿に登録しました`);render();
 };
-let startAsk=false;
+let startAsk=false;const archOpen={};
 $("startBtn").onclick=()=>{
   const noShow=ciUsed()&&ciOpen()?players().filter(p=>!p.checkedIn):[];
   if(noShow.length&&!startAsk){startAsk=true;render();return}
@@ -1417,6 +1422,7 @@ function archRow(decks,arch,onSet,prefix){
     i.oninput=()=>onSet(k,i.value,false);i.onchange=()=>onSet(k,i.value.trim().slice(0,20),true);w.append(i);row.append(w)}
   return row;
 }
+const archSelfOpen={v:false};
 const archNote=()=>el("div","status","🔒 アーキタイプは大会中、ほかの参加者には表示されません。大会終了後、参加者全員が見られるメタレポート（クラス・アーキタイプ別の使用率と勝率）に集計されます。正確な集計のため、入力にご協力ください。");
 // room ID: the upper player of each pairing creates the room and enters its ID; the other only sees it.
 // 5 minutes after the round starts with no room ID -> the room creator loses.
@@ -2026,7 +2032,7 @@ function renderUidPanel(){
     row.append(i);host.append(row)}
 }
 function renderReport(){
-  const panel=$("reportPanel");if(admin||!T||T.status==="done"&&!T.topCut){panel.hidden=true;return}
+  const panel=$("reportPanel");if(admin||!T||T.status==="done"&&!T.topCut&&!(MODE==="portal"&&P(myEntryId()))){panel.hidden=true;return}
   panel.hidden=false;$("reportTitle").textContent=T.status==="setup"?"参加登録":"結果報告";
   const PL=players();const setup=T.status==="setup";
   const reg=getReg();const locked=!!(reg&&PL.some(p=>p.id===reg));
@@ -2111,6 +2117,9 @@ function renderReport(){
   }
   const mm=myMatch(me);
   {const tt=teamToggle(me);if(tt)host.append(tt)}
+  if(!mp.dq&&(mp.decks||[]).some(Boolean)){const d=el("details","myt archself");if(archSelfOpen.v)d.open=true;d.ontoggle=()=>{archSelfOpen.v=d.open};
+    const sm=el("summary");sm.append(el("b",null,"自分のアーキタイプ"),el("span","status",[0,1].map(k=>mp.decks[k]?`${CN[mp.decks[k]]}${mp.arch&&mp.arch[k]?"「"+mp.arch[k]+"」":"（未入力）"}`:"").filter(Boolean).join(" / ")));d.append(sm);
+    d.append(archRow(mp.decks,mp.arch||["",""],(k,v,fin)=>{if(!fin)return;const q=P(me);q.arch=[(q.arch||[])[0]||"",(q.arch||[])[1]||""];q.arch[k]=v;saveEntry(q)},"selfarch"),archNote());host.append(d)}
   if(mp.dq){box.append(el("div","warn","運営の判断により失格となりました。詳しくは運営にお問い合わせください。"));return}
   if(mp.drop){box.append(el("div",null,"この大会はドロップしました。お疲れさまでした。"));return}
   if(T.status==="confirm"){const cb=confirmBlock(me);if(cb)box.append(cb);return}
