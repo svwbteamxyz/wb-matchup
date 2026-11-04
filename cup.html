@@ -731,6 +731,7 @@ document.addEventListener("focusout",()=>setTimeout(()=>{if(deferred&&!editing()
 const fmtOf=stage=>(T&&(stage==="top"?T.formatTop:T.formatSwiss))||(T&&T.format)||"bo1";
 const isBo3m=mid=>fmtOf(String(mid||"").startsWith("b")?"top":"swiss")==="bo3c";
 const FMT={bo1:"2デッキBO1",bo3c:"BO3コンクエスト"};
+const showKind=()=>MODE!=="portal"||isXYZ;
 function fmtLabel(){const k=T&&T.kind==="external"?"外戦・":"内戦・";const a=fmtOf("swiss"),b=fmtOf("top");
   if(!T||!T.topCut||a===b)return k+(T&&T.ban&&a==="bo1"?"2デッキBO1（BANあり）":FMT[a]);return `${k}予選：${FMT[a]}／決勝：${FMT[b]}`}
 const scoreOf=res=>res&&res.score==="2-1"?[2,1]:[2,0];
@@ -1041,7 +1042,7 @@ function renderChamp(){
 function renderPlayers(){
   const setup=T.status==="setup";
   const PL=players();$("pCount").textContent=`${PL.length}人`;
-  $("formatNote").textContent=fmtLabel();
+  $("formatNote").textContent=showKind()?fmtLabel():fmtLabel().replace(/^(内戦|外戦)・/,"");
   // roster picker
   $("pickRow").hidden=!setup||!admin;$("startRow").hidden=!setup||!admin;if(!setup)$("regForm").hidden=true;
   if(setup){
@@ -1873,7 +1874,7 @@ function listView(){
       const card=el("div","evcard");const info=el("div","evinfo");
       const nm=el("div","evname",e.name||"（大会名なし）");if(myEntries[e.pub])nm.append(el("span","bdg b-mine","参加登録済み"));
       const ciNow=e.status==="setup"&&e.startAt&&myEntries[e.pub]&&now()>=e.startAt-CHECKIN_MS;if(ciNow)nm.append(el("span","ci-badge","チェックイン受付中"));
-      info.append(nm,el("div","status",[e.startAt?"開催 "+fmtDT(e.startAt):"",e.kind==="external"?"外戦":"内戦",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",e.cap?`${Math.min(e.n||0,e.cap)}/${e.cap}人`+((e.n||0)>e.cap?`（キャンセル待ち${e.n-e.cap}人）`:""):`${e.n||0}人`].filter(Boolean).join("・")));
+      info.append(nm,el("div","status",[e.startAt?"開催 "+fmtDT(e.startAt):"",isXYZ?(e.kind==="external"?"外戦":"内戦"):"",e.format?e.format.replace(/^(内戦|外戦)・/,""):"",e.cap?`${Math.min(e.n||0,e.cap)}/${e.cap}人`+((e.n||0)>e.cap?`（キャンセル待ち${e.n-e.cap}人）`:""):`${e.n||0}人`].filter(Boolean).join("・")));
       const b=el("button",e.status==="setup"&&!myEntries[e.pub]?"primary":null,e.status==="setup"&&!myEntries[e.pub]?"参加登録へ":"大会ページを開く");b.type="button";b.onclick=()=>openEvent(e.pub);
       card.append(info,el("span","evst st-"+(e.status||"setup"),ST_LABEL[e.status]||""),b);wrap.append(card)}}
   if(!any)wrap.append(el("div","empty","いま表示できる大会はありません。運営が大会を作ると、ここに表示されます。"));
@@ -1923,7 +1924,7 @@ function myView(){
     const sw=el("div","row hallkind");sw.setAttribute("role","group");sw.setAttribute("aria-label","内戦・外戦の切り替え");
     for(const [k,l] of [["internal","内戦"],["external","外戦"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(kind===k));b.onclick=()=>{myTab=k;render()};sw.append(b)}
     rb.append(sw)}
-  else rb.append(el("div","status","外戦の戦績"));
+
   const list=all.filter(x=>x.kind===kind);
   if(!list.length){rb.append(el("div","status","まだ記録がありません。大会に参加すると、ここに戦績がたまっていきます。"));return host}
   const tot={w:0,l:0,c:0,r:0,b:0,t:0};for(const x of list){tot.w+=x.w||0;tot.l+=x.l||0;if(x.place==="champion")tot.c++;else if(x.place==="runner")tot.r++;else if(x.place==="third")tot.b++;if(x.place)tot.t++}
@@ -1966,7 +1967,7 @@ function portalJoin(box){
   const setup=T.status==="setup";
   if(!setup){box.append(el("div",null,"この大会には参加していません。対戦表と順位は下で見られます。"));return}
   if(T.kind!=="external"&&!isXYZ){box.append(el("div",null,"この大会はXYZメンバー限定です。"));return}
-  if(T.kind==="external"&&!U.handle){box.append(el("div",null,"外戦に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
+  if(T.kind==="external"&&!U.handle){box.append(el("div",null,"この大会に参加するにはXのIDが必要です。マイページでXのIDを登録してください。"));const b=el("button","primary","マイページへ");b.type="button";b.onclick=()=>goView("my");box.append(b);return}
   const later=ciUsed();const full=capOf()&&players().length>=capOf();
   box.append(el("div","lab","参加登録"),el("div",null,later?`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキは、開始30分前からのチェックインのときに選びます。`:`${U.name} さん（ユーザーID ${LOGIN}）として参加します。使うデッキを2つ選んでください。`));
   {const nb=el("div","status");nb.append(document.createTextNode("表示される名前がゲーム内のプレイヤー名と違うと失格処分となる場合があります。違う場合は、"));const lk=el("button","linkbtn","マイページ");lk.type="button";lk.onclick=()=>goView("my");nb.append(lk,document.createTextNode("で直してから登録してください。"));box.append(nb)}
@@ -2096,10 +2097,10 @@ function renderReport(){
     const b=el("button","primary big","この内容で参加登録する");b.type="button";b.disabled=!ready;
     b.onclick=async()=>{const name=n.value.trim().slice(0,40);if(!name){n.focus();fail("名前を入力してください");return}const handle=h.value.trim().replace(/^@+/,"").slice(0,30);
       let uidv=null;
-      if(needX){uidv=normUid(u1.value);if(!uidv){u1.focus();fail("外戦ではユーザーIDの入力が必要です");return}
+      if(needX){uidv=normUid(u1.value);if(!uidv){u1.focus();fail("この大会ではユーザーIDの入力が必要です");return}
         if(!/^[0-9]{5,15}$/.test(uidv)||/[^0-9\s-]/.test(u1.value.normalize("NFKC"))){u1.focus();fail("ユーザーIDは数字で入力してください");return}
       }
-      if(needX&&!handle){h.focus();fail("外戦ではXのIDの入力が必要です");return}
+      if(needX&&!handle){h.focus();fail("この大会ではXのIDの入力が必要です");return}
       if(handle&&!/^[A-Za-z0-9_]{1,15}$/.test(handle)){h.focus();fail("XのIDは半角英数字と _ の15文字以内で入力してください");return}
       const taken=new Set(PL.map(p=>who(p).name).concat(Object.values(rosterMap()).map(m=>m.name)));
       if(taken.has(name)){n.focus();fail(`「${name}」はすでにいます。名簿から選ぶか、別の名前にしてください`);return}
