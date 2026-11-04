@@ -705,7 +705,10 @@ function syncRoster(){
 function who(p){if(!p)return{name:"?",handle:""};const m=p.member&&rosterMap()[p.member];return{name:p.name||(m&&m.name)||"（名前なし）",handle:p.handle||(m&&m.handle)||""}}
 const CHIP_INK={elf:"#0E2A0A",royal:"#3A2B00",dragon:"#2E1600",bishop:"#22262F",nemesis:"#062A30",witch:"#FFFFFF",nightmare:"#FFFFFF"};
 function chip(c){const s=el("span","chip",CN[c]||c);s.style.background=`var(--c-${c})`;s.style.color=CHIP_INK[c]||"#fff";return s}
-const editing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&/^(text|number|search)$/.test(a.type)))&&a.closest(".wrap")&&!a.closest("#regForm,#newTourForm"))};
+// don't rebuild the page while someone is typing or has a dropdown open (on phones a rebuild closes the picker and the choice is lost)
+const editing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="TEXTAREA"||a.tagName==="SELECT"||(a.tagName==="INPUT"&&/^(text|number|search|datetime-local)$/.test(a.type)))&&a.closest(".wrap")&&!a.closest("#regForm,#newTourForm"))};
+// once a choice is made the dropdown lets go of focus, so the page can update right away
+document.addEventListener("change",e=>{if(e.target&&e.target.tagName==="SELECT")e.target.blur()},true);
 function render(){if(editing()){deferred=true;return}deferred=false;renderAll()}
 document.addEventListener("focusout",()=>setTimeout(()=>{if(deferred&&!editing())render()},0));
 
