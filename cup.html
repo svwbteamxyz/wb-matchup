@@ -562,7 +562,9 @@ const stopped=e=>{console.error(e);setSync(e&&e.code==="permission-denied"?"読�
 function firebaseAdapter(fs,db){return{
   watchDoc:(p,cb)=>fs.onSnapshot(fs.doc(db,p),s=>cb(s.exists()?s.data():null),stopped),
   watchColl:(p,cb)=>fs.onSnapshot(fs.collection(db,p),qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
-  set:(p,v)=>fs.setDoc(fs.doc(db,p),v),del:p=>fs.deleteDoc(fs.doc(db,p))
+  set:(p,v)=>fs.setDoc(fs.doc(db,p),v),del:p=>fs.deleteDoc(fs.doc(db,p)),
+  // change only some fields of a document (other fields, e.g. the rounds, are left as they are on the server)
+  patch:(p,v)=>{const o={};for(const [k,x] of Object.entries(v))o[k]=x===undefined?fs.deleteField():x;return fs.updateDoc(fs.doc(db,p),o)}
 }}
 function claudeAdapter(db){return{
   watchDoc:(p,cb)=>db.doc(p).onSnapshot(s=>cb(s.exists?s.data():null),stopped),
@@ -582,6 +584,9 @@ const idxPath=id=>`${ROOT}/tournaments/${id}`;
 const cupPath=()=>`cups/${pub}`;
 const matchPath=mid=>`${cupPath()}/matches/${mid}`;
 function saveT(){write(cupPath(),T)}
+// background tidy-ups write only their own fields, so a device with an out-of-date copy can never roll back rounds/results
+function patchT(keys){if(!T||!pub)return;if(!A.patch){saveT();return}const v={};for(const k of keys)v[k]=T[k];setSync("保存中…");
+  A.patch(cupPath(),v).then(()=>setSync("保存済み")).catch(e=>{console.error(e);setSync("保存できませんでした。再読み込みしてください")})}
 
 /* ---------- helpers ---------- */
 // participants live one-per-document under entries/, so several people can register at once
@@ -594,7 +599,7 @@ function players(){
 }
 const entryPath=pid=>`${cupPath()}/entries/${pid}`;
 function saveEntry(p){const o={member:p.member||null,name:p.name||"",handle:p.handle||"",uid:p.uid||null,icon:p.icon||null,decks:[p.decks[0]||null,p.decks[1]||null],order:p.order||now()};if(p.hideTeam)o.hideTeam=true;if(p.checkedIn)o.checkedIn=p.checkedIn;if(p.dq)o.dq=p.dq;if(p.drop)o.drop=p.drop;if(p.topReply)o.topReply=p.topReply;if(p.arch&&(p.arch[0]||p.arch[1]))o.arch=[String(p.arch[0]||"").slice(0,20),String(p.arch[1]||"").slice(0,20)];E[p.id]=o;write(entryPath(p.id),o)}
-function removeEntry(pid){delete E[pid];write(entryPath(pid),null);if((T.players||[]).some(p=>p.id===pid)){T.players=T.players.filter(p=>p.id!==pid);saveT()}}
+function removeEntry(pid){delete E[pid];write(entryPath(pid),null);if((T.players||[]).some(p=>p.id===pid)){T.players=T.players.filter(p=>p.id!==pid);patchT(["players"])}}
 const P=id=>players().find(p=>p.id===id)||null;
 function rosterMap(){if(MODE==="admin")return members;const o={};for(const r of (T&&T.roster)||[])o[r.mid]={name:r.name,handle:r.handle,order:r.order};return o}
 /* ---------- player icons ---------- */
@@ -681,7 +686,7 @@ async function syncBadges(){
     for(const [id,r] of Object.entries(teams))if(r&&teamDef(r.team))tm[await digest("a:"+id)]=r.team;
     const same=JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.badges||{}).sort())&&!T.pros&&!T.xyz;
     const sameP=JSON.stringify(Object.entries(tm).sort())===JSON.stringify(Object.entries(T.teams||{}).sort());
-    if(pub===myPub&&!badgeAgain&&(!same||!sameP)){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;saveT()}}finally{badgeSyncing=false}
+    if(pub===myPub&&!badgeAgain&&(!same||!sameP)){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;patchT(["badges","teams","pros","xyz"])}}finally{badgeSyncing=false}
   if(badgeAgain){badgeAgain=false;syncBadges()}
 }
 const entryDigest={};const digestPending=new Set();
@@ -734,7 +739,7 @@ let banSyncing=false;
 async function syncBans(){
   if(MODE!=="admin"||!T||!pub||T.status!=="setup"||banSyncing)return;banSyncing=true;
   try{const set=new Set();for(const b of Object.values(bans))for(const k of await banKeys(b.uid,b.handle))set.add(k);
-    const arr=[...set].sort();if(JSON.stringify(arr)!==JSON.stringify((T.banHashes||[]).slice().sort())){T.banHashes=arr;saveT()}}
+    const arr=[...set].sort();if(JSON.stringify(arr)!==JSON.stringify((T.banHashes||[]).slice().sort())){T.banHashes=arr;patchT(["banHashes"])}}
   finally{banSyncing=false}
 }
 function isBannedEntry(p){const u=normUid(p.uid),x=normX(who(p).handle);return Object.values(bans).some(b=>(u&&normUid(b.uid)===u)||(x&&normX(b.handle)===x))}
@@ -742,10 +747,10 @@ function isBannedEntry(p){const u=normUid(p.uid),x=normX(who(p).handle);return O
 function autoXYZ(p){if(!p)return false;if(p.member&&members[p.member])return true;const u=normUid(p.uid);if(u&&memberUidSet().has(u))return true;const h=normX(p.handle);if(!h)return false;return Object.values(members).some(m=>normX(m.handle)===h)}
 function syncRoster(){
   if(MODE!=="admin"||!T||T.status!=="setup")return;
-  if(T.kind==="external"){if((T.roster||[]).length){T.roster=[];saveT()}return}
+  if(T.kind==="external"){if((T.roster||[]).length){T.roster=[];patchT(["roster"])}return}
   const r=Object.entries(members).filter(([,m])=>m.name||m.handle).sort((a,b)=>(a[1].order||0)-(b[1].order||0)).map(([mid,m])=>({mid,name:m.name||"",handle:m.handle||"",order:m.order||0}));
   const norm=a=>JSON.stringify((a||[]).map(x=>[x.mid,x.name||"",x.handle||"",x.order||0]));
-  if(norm(r)!==norm(T.roster)){T.roster=r;saveT()}
+  if(norm(r)!==norm(T.roster)){T.roster=r;patchT(["roster"])}
 }
 function who(p){if(!p)return{name:"?",handle:""};const m=p.member&&rosterMap()[p.member];return{name:p.name||(m&&m.name)||"（名前なし）",handle:p.handle||(m&&m.handle)||""}}
 const CHIP_INK={elf:"#0E2A0A",royal:"#3A2B00",dragon:"#2E1600",bishop:"#22262F",nemesis:"#062A30",witch:"#FFFFFF",nightmare:"#FFFFFF"};
@@ -821,7 +826,8 @@ function makeRound(){
   }
   let ok=dfs(0);
   if(!ok){res.length=0;for(let i=0;i+1<order.length;i+=2)res.push([order[i],order[i+1]])}
-  res.forEach(([a,b],i)=>pairs.unshift({id:`r${n}-${i}`,a,b}));
+  const pre=Object.keys(M).some(k=>k.startsWith(`r${n}-`))?`r${n}x${now().toString(36)}`:`r${n}`;
+  res.forEach(([a,b],i)=>pairs.unshift({id:`${pre}-${i}`,a,b}));
   pairs.sort((x,y)=>(x.b?0:1)-(y.b?0:1)||x.id.localeCompare(y.id,undefined,{numeric:true}));
   return{n,pairs,rematch:!ok,startedAt:now()};
 }
@@ -1206,6 +1212,24 @@ function doStart(apply){
   T.swissRounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(n)));
   T.rounds=[];const r=makeRound();delete r.rematch;T.rounds.push(r);T.status="swiss";viewRound=1;saveT();render();
 }
+/* ---------- matches whose round vanished: show what is known so the organizer can rebuild it ---------- */
+function lostMatches(){
+  const live=new Set();for(const r of T.rounds||[])for(const m of r.pairs)live.add(m.id);
+  const ids=new Set([...Object.keys(M),...Object.values(C).map(c=>c&&c.m).filter(Boolean)].filter(id=>/^r\d/.test(id)&&!live.has(id)));
+  return [...ids].sort((x,y)=>x.localeCompare(y,undefined,{numeric:true})).map(id=>{const res=M[id]||{};const ppl=new Set();
+    if(res.roomBy)ppl.add(res.roomBy);if(res.winner)ppl.add(res.winner);for(const c of chatLines(id))if(c.from&&P(c.from))ppl.add(c.from);
+    return{id,res,ppl:[...ppl]}}).filter(x=>x.ppl.length||x.res.winner||x.res.room);
+}
+function lostBox(lost){
+  const d=el("details","archmerge");const sm=el("summary");sm.append(el("b",null,`消えたラウンドの記録 ${lost.length}卓（再入力の参考）`));d.append(sm);
+  d.append(el("div","status","対戦表から消えた卓に残っていた記録です。「組み合わせを作る」→「対戦表を組み替える」で同じ組み合わせに直し、勝敗は手動で入力してください。"));
+  for(const x of lost){const n=x.id.match(/^r(\d+)/);const row=el("div","perow");row.append(el("span","petab",`R${n?n[1]:"?"} ${x.id.split("-").pop()==="bye"?"BYE":"第"+(Number(x.id.split("-").pop())+1)+"卓"}`));
+    row.append(el("span",null,"関係者："+(x.ppl.map(id=>who(P(id)).name).join("・")||"不明")));
+    if(x.res.roomBy)row.append(el("span","status","ルーム作成："+who(P(x.res.roomBy)).name));
+    if(x.res.winner)row.append(el("span","ok","勝者："+who(P(x.res.winner)).name));
+    d.append(row)}
+  return d;
+}
 /* ---------- organizer re-pairing of the current round: tap two players to swap them ---------- */
 let pairEdit=null;
 function pairEditor(r){
@@ -1248,6 +1272,7 @@ function renderSwiss(){
   host.append(grid);
   const act=$("roundActions");act.replaceChildren();act.hidden=!admin;
   const isLast=viewRound===rs.length;
+  if(admin&&isLast){const lost=lostMatches();if(lost.length)act.append(lostBox(lost))}
   if(isLast&&T.status==="swiss"&&admin){const eb=el("button",null,"対戦表を組み替える");eb.type="button";eb.onclick=()=>{pairEdit={sel:null,pairs:r.pairs.map(m=>Object.assign({},m))};render()};act.append(eb)}
   if(isLast&&T.status==="swiss"){
     const done=roundDone(r);const left=r.pairs.filter(m=>m.b&&!(M[m.id]&&M[m.id].winner)).length;
@@ -1304,7 +1329,7 @@ function renderTop(){
   host.append(wrap);
   const fin=b[R-1][0];
   if(admin&&fin.winner&&T.status==="top"){const btn=el("button","primary","大会を終了して優勝者を表示");btn.type="button";btn.onclick=()=>{T.status="done";saveT();render()};host.append(btn)}
-  if(!fin.winner&&T.status==="done"){T.status="top";saveT()}
+  if(admin&&!fin.winner&&T.status==="done"){T.status="top";patchT(["status"])}
 }
 // meta report: distribution (pie), results and matchups, by class or by archetype. Organizer always; everyone after the event
 let metaUnit="class";
@@ -1392,7 +1417,7 @@ const archKey=(c,s)=>c+"|"+normArch(c,s).toLowerCase();
 function archLabel(c,raw){const n=normArch(c,raw);if(!n)return"";const map=(T&&T.archMap)||{};let to=map[c+"|"+n.toLowerCase()];if(to){const t2=map[c+"|"+String(to).toLowerCase()];if(t2)to=t2}return to||n}
 let archAliases={};
 function syncArchMap(){if(MODE!=="admin"||!T||!pub)return;const map={};for(const a of Object.values(archAliases)){if(a&&a.c&&a.from&&a.to)map[a.c+"|"+String(a.from).toLowerCase()]=a.to}
-  if(JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.archMap||{}).sort()))return;T.archMap=map;saveT()}
+  if(JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.archMap||{}).sort()))return;T.archMap=map;patchT(["archMap"])}
 const archSel={};const archDraft={to:""};
 function renderArchMerge(host,PL){
   // distinct names (after automatic tidy) per class, with how many players wrote them
@@ -1684,7 +1709,7 @@ function muteRow(mid){
   const row=el("div","row mutes");row.append(el("span","status","チャット："));
   for(const pid of [m.a,m.b]){const on=isMuted(pid);const b=el("button",on?"danger":null,on?`${who(P(pid)).name} の停止を解除`:`${who(P(pid)).name} を停止`);b.type="button";
     b.title=on?"この人がまたチャットを送れるようにします":"この人はこの大会のチャットを送れなくなります（運営呼び出しはできます）";
-    b.onclick=()=>{const L=new Set(T.muted||[]);if(L.has(pid))L.delete(pid);else L.add(pid);T.muted=[...L];saveT();render()};row.append(b)}
+    b.onclick=()=>{const L=new Set(T.muted||[]);if(L.has(pid))L.delete(pid);else L.add(pid);T.muted=[...L];patchT(["muted"]);render()};row.append(b)}
   return row;
 }
 function adminReply(mid){
