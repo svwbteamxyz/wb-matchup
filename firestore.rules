@@ -81,7 +81,7 @@ service cloud.firestore {
         allow create, update: if board.size() >= 16
           && request.resource.data.keys().hasOnly(['name', 'team', 'at'])
           && request.resource.data.team is string
-          && request.resource.data.team.size() <= 8;
+          && request.resource.data.team.size() <= 16;
       }
 
       // アーキタイプ名の統合（運営が設定）
