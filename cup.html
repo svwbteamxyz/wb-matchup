@@ -186,6 +186,9 @@ details.inq{padding-bottom:8px}details.inq>*:not(summary){margin-left:12px;margi
 details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}details.archself>*:not(summary){margin:0 12px 10px}
 .prow .who span.waittag{align-self:flex-start;margin-top:2px;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted)}
 .capok,.capwait{font-size:.9rem;font-weight:700;margin-bottom:8px}.capok{color:#1F8A4C}.capwait{color:var(--gold)}
+.teamedit .row{gap:8px;align-items:center;flex-wrap:wrap}.teamedit input{width:12em}
+.ctcolors{margin:6px 0}.ctsw{padding:4px 6px;background:transparent;border:2px solid transparent;border-radius:9px;line-height:0}.ctsw.on{border-color:var(--accent,#4B3AC6)}
+.ctprev{font-size:1.3em}
 .trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .bset .trophy{font-size:1.15rem!important}
 .trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
@@ -298,7 +301,8 @@ img.shot.big{max-width:100%;max-height:none;cursor:zoom-out}
 .prow .who b{overflow-wrap:anywhere}
 .prow .who span{font-size:.78rem;color:var(--muted)}
 .prow select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px;min-width:0;width:100%}
-@media (max-width:600px){.prow{grid-template-columns:22px minmax(0,1fr) auto}.prow select{grid-column:2/-1}}
+@media (max-width:600px){.prow{display:flex;flex-wrap:wrap;gap:6px 8px;padding-left:30px;position:relative}.prow .no{position:absolute;left:0;top:6px;width:22px}
+  .prow .who{flex:1 1 100%}.prow select{flex:1 1 calc(50% - 4px);width:auto}.prow select.teamsel{flex:1 1 100%;width:auto}.prow>button{flex:1 1 auto;white-space:nowrap}.prow>span:empty{display:none}.prow .deckhid{flex:1 1 100%}}
 .addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .addrow input{flex:1 1 140px}
 .chk{display:flex;flex-wrap:wrap;gap:6px}
@@ -637,8 +641,9 @@ function placements(){
   else{const st=standings().filter(s=>!(P(s.id)||{}).dq);if(st[0])out[st[0].id]="champion";if(st[1])out[st[1].id]="runner";if(st[2])out[st[2].id]="third"}
   return out;
 }
+const deletedPubs=new Set();
 function syncRecords(){
-  if(MODE!=="admin"||!T||T.status!=="done")return;
+  if(MODE!=="admin"||!T||T.status!=="done"||deletedPubs.has(pub))return;
   const pl=placements();
   for(const [pid,place] of Object.entries(pl)){
     const p=P(pid);const k=achKey(p);if(!k)continue;const id=recId(k);const cur=records[id]||{name:"",events:{}};
@@ -649,17 +654,32 @@ function syncRecords(){
 }
 // achievements are counted separately for internal (内戦) and external (外戦) events
 function tally(rec,kind){const c={w:0,r:0,b:0,t:0};for(const e of Object.values((rec&&rec.events)||{})){if(kind&&(e.kind||"internal")!==kind)continue;if(e.place==="champion")c.w++;else if(e.place==="runner")c.r++;else if(e.place==="third")c.b++;c.t++}return c}
-let badgeSyncing=false;
+// achievements left over from tournaments that were deleted are removed (checked against the tournament data itself)
+let toursReady=false,recordsReady=false;const pruneChecked=new Set();
+function dropRecordEvents(gone){
+  for(const [rid,rec] of Object.entries(records)){if(!rec||!rec.events||!rec.events[gone])continue;const ev=Object.assign({},rec.events);delete ev[gone];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}
+  syncBadges();renderHall();render()}
+function pruneRecords(){
+  if(MODE!=="admin"||!toursReady||!recordsReady)return;
+  const live=new Set(Object.values(tours).map(t=>t&&t.pub).filter(Boolean));
+  for(const rec of Object.values(records))for(const ep of Object.keys((rec&&rec.events)||{})){
+    if(live.has(ep)||pruneChecked.has(ep))continue;pruneChecked.add(ep);
+    if(deletedPubs.has(ep)){dropRecordEvents(ep);continue}
+    getOnce(`cups/${ep}`).then(d=>{if(!d)dropRecordEvents(ep)})}
+}
+let badgeSyncing=false,badgeAgain=false;
+// if something changes while a sync is running, run again afterwards so the latest kind/records always win
 async function syncBadges(){
-  if(MODE!=="admin"||!T||!pub||T.status==="done"||badgeSyncing)return;badgeSyncing=true;
+  if(MODE!=="admin"||!T||!pub||T.status==="done")return;if(badgeSyncing){badgeAgain=true;return}badgeSyncing=true;badgeAgain=false;const myPub=pub;
   try{const map={};for(const [id,rec] of Object.entries(allRecords())){const c=tally(rec,T.kind==="external"?"external":"internal");if(!c.t)continue;map[await digest("a:"+id)]=[c.w,c.r,c.t,c.b]}
     const tm={};
     // roster members automatically get the XYZ tag (an explicitly chosen team wins)
     for(const p of players()){if(!autoXYZ(p))continue;const k=achKey(p);if(!k)continue;const id=recId(k);if(teams[id])continue;tm[await digest("a:"+id)]="XYZ"}
-    for(const [id,r] of Object.entries(teams))if(r&&TEAM[r.team])tm[await digest("a:"+id)]=r.team;
+    for(const [id,r] of Object.entries(teams))if(r&&teamDef(r.team))tm[await digest("a:"+id)]=r.team;
     const same=JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.badges||{}).sort())&&!T.pros&&!T.xyz;
     const sameP=JSON.stringify(Object.entries(tm).sort())===JSON.stringify(Object.entries(T.teams||{}).sort());
-    if(!same||!sameP){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;saveT()}}finally{badgeSyncing=false}
+    if(pub===myPub&&!badgeAgain&&(!same||!sameP)){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;saveT()}}finally{badgeSyncing=false}
+  if(badgeAgain){badgeAgain=false;syncBadges()}
 }
 const entryDigest={};const digestPending=new Set();
 function decoOf(p){
@@ -675,15 +695,29 @@ const FINALIST='<svg viewBox="0 0 24 24" width="1.35em" height="1.35em" aria-hid
 // team tags. Edit this list to add/remove teams: [code, gradient start, gradient end, label shown, text color, text outline (optional), border color (optional)]
 const TEAMS=[["XYZ","#8E96A6","#E9ECF2","XYZ","#1E2430"],["DNF","#0A0A0F","#1F5FD6","DNF","#fff"],["MRG","#000","#2A2A2E","純","#fff"],["CR","#000","#2A2A2E","CR","#E53935"],["RC","#000","#1A1A1D","RC","#fff","","#E53935"],["ZETA","#000","#2A2A2E","ZETA","#fff"],["LVH","#050A06","#1F9D4C","LVH","#000","#7CE3A2"],["RID","#C99A0E","#F6CD3A","RID","#2A1F00"],["VL","#063B2C","#0E7A5A","VL","url(#tmg-VL)"]];
 const TEAM=Object.fromEntries(TEAMS.map(t=>[t[0],t]));
+// instant team badges typed by the organizer: code "~<color>~<label>", e.g. "~2~ABC"
+// [name, gradient start, gradient end, text color, text outline, border]
+const TEAM_COLORS=[["ネイビー","#0B1E4A","#2453B8","#fff"],["レッド","#6E0A10","#E0353D","#fff"],["オレンジ","#A84300","#FF8A1F","#fff"],["ゴールド","#8A6400","#F2C230","#2A1F00"],["ピンク","#9C1259","#FF6FB0","#fff"],
+  ["パープル","#34106A","#8B4DE8","#fff"],["スカイ","#0A6E8F","#43CBF0","#04202B"],["グリーン","#022A15","#0E6E3A","#fff"],["ホワイト","#D9DCE3","#FFFFFF","#111","","#22252B"],["ブラック×金","#000","#2A2A2E","url(#tmg-c9)"],["ブラック×銀","#000","#2A2A2E","url(#tmg-c10)"]];
+const CUSTOM_MAX=8;
+const CT_RE=/^~(\d{1,2})~(.+)$/;
+const isCustomTeam=c=>typeof c==="string"&&CT_RE.test(c);
+function customLabel(c){return c.match(CT_RE)[2]}
+function customColor(c){const i=Number(c.match(CT_RE)[1]);return TEAM_COLORS[i]?i:0}
+function teamDef(c){if(!c)return null;if(TEAM[c])return TEAM[c];if(!isCustomTeam(c))return null;const i=customColor(c),k=TEAM_COLORS[i];
+  return ["c"+i,k[1],k[2],customLabel(c),k[3],k[4]||"",k[5]||""]}
+const teamName=c=>isCustomTeam(c)?customLabel(c):c;
+const esc=t=>String(t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function makeCustomTeam(lab,ci){lab=String(lab||"").normalize("NFKC").replace(/[~\s]+/g," ").trim().slice(0,CUSTOM_MAX);return lab?`~${ci}~${lab}`:""}
 // generic smiley used in place of text for RID (original design: round eyes, centered smile)
 const FACE_TEAMS={};
 function faceSvg(code,t){return `<svg viewBox="0 0 24 20" width="1.2em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient></defs><rect x=".5" y=".5" width="23" height="19" rx="5" fill="url(#tm-${code})" stroke="#000" stroke-opacity=".22"/><circle cx="8.6" cy="8" r="1.6" fill="${t[4]}"/><circle cx="15.4" cy="8" r="1.6" fill="${t[4]}"/><path d="M7 11.6Q12 16.6 17 11.6" fill="none" stroke="${t[4]}" stroke-width="1.8" stroke-linecap="round"/></svg>`}
-function teamSvg(code){const t=TEAM[code];if(!t)return"";if(FACE_TEAMS[code])return faceSvg(code,t);const lab=t[3]||code,ink=t[4]||"#fff";const cjk=/[^\x00-\x7f]/.test(lab);const w=Math.max(30,(cjk?14:9.6)*lab.length+12);
-  return `<svg viewBox="0 0 ${w} 20" width="${w/20}em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient>${ink.startsWith("url(")?`<linearGradient id="tmg-${code}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1B0"/><stop offset=".5" stop-color="#E8B923"/><stop offset="1" stop-color="#B8860B"/></linearGradient>`:""}</defs><rect x="${t[6]?1:.5}" y="${t[6]?1:.5}" width="${t[6]?w-2:w-1}" height="${t[6]?18:19}" rx="5" fill="url(#tm-${code})" ${t[6]?`stroke="${t[6]}" stroke-width="1.8"`:`stroke="${code==="XYZ"||code==="RID"?"#000":"#fff"}" stroke-opacity=".22"`}/><path d="M3 17 ${w-3} 3" stroke="#fff" stroke-opacity=".1" stroke-width="3"/><text x="${w/2}" y="${cjk?15:14.6}" text-anchor="middle" font-family="${cjk?"Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,serif":"Arial Black,Arial,Helvetica,sans-serif"}" font-weight="900" font-size="${cjk?14:13}" letter-spacing=".5" fill="${ink}"${t[5]?` stroke="${t[5]}" stroke-width="1.6" paint-order="stroke" stroke-linejoin="round"`:""}${cjk?"":' font-style="italic"'}>${lab}</text></svg>`}
+function teamSvg(raw){const t=teamDef(raw);if(!t)return"";const code=t[0];if(FACE_TEAMS[code])return faceSvg(code,t);const lab0=t[3]||code,ink=t[4]||"#fff";const lab=esc(lab0);const cjk=/[^\x00-\x7f]/.test(lab0);const w=Math.max(30,[...lab0].reduce((a,ch)=>a+(/[^\x00-\x7f]/.test(ch)?14:9.6),0)+12);
+  return `<svg viewBox="0 0 ${w} 20" width="${w/20}em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient>${ink.startsWith("url(")?`<linearGradient id="tmg-${code}" x1="0" y1="0" x2="0" y2="1">${code==="c10"?'<stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CED6"/><stop offset="1" stop-color="#8A929E"/>':'<stop offset="0" stop-color="#FFF1B0"/><stop offset=".5" stop-color="#E8B923"/><stop offset="1" stop-color="#B8860B"/>'}</linearGradient>`:""}</defs><rect x="${t[6]?1:.5}" y="${t[6]?1:.5}" width="${t[6]?w-2:w-1}" height="${t[6]?18:19}" rx="5" fill="url(#tm-${code})" ${t[6]?`stroke="${t[6]}" stroke-width="1.8"`:`stroke="${code==="XYZ"||code==="RID"||code==="c3"||code==="c6"?"#000":"#fff"}" stroke-opacity=".22"`}/><path d="M3 17 ${w-3} 3" stroke="#fff" stroke-opacity=".1" stroke-width="3"/><text x="${w/2}" y="${cjk?15:14.6}" text-anchor="middle" font-family="${cjk?"Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,serif":"Arial Black,Arial,Helvetica,sans-serif"}" font-weight="900" font-size="${cjk?14:13}" letter-spacing=".5" fill="${ink}"${t[5]?` stroke="${t[5]}" stroke-width="1.6" paint-order="stroke" stroke-linejoin="round"`:""}${cjk?"":' font-style="italic"'}>${lab}</text></svg>`}
 function nameEl(p,name){
   const d=decoOf(p);const b=el("b","pname",name);
   const wrap=el("span","pn");wrap.append(b);if(!d)return wrap;
-  if(d.team&&TEAM[d.team]){const x=el("span","tm");x.innerHTML=teamSvg(d.team);x.setAttribute("role","img");x.setAttribute("aria-label",d.team+"所属");x.title=d.team+"所属";wrap.append(x)}
+  if(d.team&&teamDef(d.team)){const x=el("span","tm");x.innerHTML=teamSvg(d.team);x.setAttribute("role","img");x.setAttribute("aria-label",teamName(d.team)+"所属");x.title=teamName(d.team)+"所属";wrap.append(x)}
   // only the highest achievement is shown, with no counts, to keep names tidy
   // every achievement earned is shown, each with how many times it was earned
   const bset=el("span","bset");
@@ -1084,8 +1118,11 @@ function renderPlayers(){
     if(admin){const k=achKey(p);const id=k&&recId(k);const cur=id&&teams[id]?teams[id].team:"";
       const ts=el("select","teamsel");ts.id="team-"+p.id;ts.setAttribute("aria-label",`${w.name}の所属チーム`);
       const o0=el("option",null,autoXYZ(p)?"XYZ（名簿で自動）":"所属なし");o0.value="";ts.append(o0);for(const [c,,,lab] of TEAMS){const o=el("option",null,lab&&lab!==c?`${lab}（${c}）`:c);o.value=c;if(c===cur)o.selected=true;ts.append(o)}
+      const used=[...new Set(Object.values(teams).map(r=>r&&r.team).filter(isCustomTeam))].sort();
+      if(used.length){const g=el("optgroup");g.label="作成したチーム";for(const c of used){const o=el("option",null,`${customLabel(c)}（${TEAM_COLORS[customColor(c)][0]}）`);o.value=c;if(c===cur)o.selected=true;g.append(o)}ts.append(g)}
+      const on=el("option",null,"＋ 新しいチームを作る…");on.value="__new";ts.append(on);
       if(!id){ts.disabled=true;ts.title="ユーザーIDか名簿登録がある人だけ付けられます"}else ts.title="名前の横にチームアイコンを付けます（次の大会以降も引き継がれます）";
-      ts.onchange=()=>{if(!id)return;if(!ts.value){delete teams[id];write(`${ROOT}/teams/${id}`,null)}else{teams[id]={name:w.name||"",team:ts.value,at:now()};write(`${ROOT}/teams/${id}`,teams[id])}syncBadges();render()};
+      ts.onchange=()=>{if(!id)return;if(ts.value==="__new"){customOpen[p.id]={lab:"",ci:0};render();return}if(!ts.value){delete teams[id];write(`${ROOT}/teams/${id}`,null)}else{teams[id]={name:w.name||"",team:ts.value,at:now()};write(`${ROOT}/teams/${id}`,teams[id])}syncBadges();render()};
       row.append(ts)}
     if(admin&&!setup){
       if(p.dq){const u=el("button",null,"失格を取り消す");u.type="button";u.title="失格を取り消します（すでに不戦敗になった試合は戻りません）";u.onclick=()=>{const q=P(p.id);q.dq=null;saveEntry(q);render()};row.append(u)}
@@ -1098,6 +1135,7 @@ function renderPlayers(){
     const del=el("button","danger","外す");del.type="button";del.hidden=!setup||!admin;
     del.onclick=()=>{removeEntry(p.id);render()};
     row.append(del);list.append(row);
+    if(admin&&customOpen[p.id]){const ck=achKey(p);const cid=ck&&recId(ck);if(cid)list.append(customTeamEditor(p.id,cid,w.name));else delete customOpen[p.id]}
     if(admin&&archOpen[p.id]&&(p.decks||[]).some(Boolean)){const ed=el("div","archedit");ed.append(el("span","status",`${w.name} のアーキタイプ（運営が入力・変更できます。いつでも変更できます）`),
       archRow(p.decks,p.arch||["",""],(k,v,fin)=>{if(!fin)return;const q=P(p.id);q.arch=[(q.arch||[])[0]||"",(q.arch||[])[1]||""];q.arch[k]=v;saveEntry(q);setSync("アーキタイプを保存しました")},"aarch-"+p.id+"-"));list.append(ed)}
   });
@@ -1136,7 +1174,24 @@ $("regSave").onclick=()=>{
   if($("regJoin").checked&&T&&T.status==="setup"){joinMember(mid)}
   $("regName").value="";$("regHandle").value="";$("regUid").value="";$("regName").focus();setSync(`${name} を名簿に登録しました`);render();
 };
-let startAsk=false;const archOpen={};
+let startAsk=false;const archOpen={};const customOpen={};
+// organizer types a team name and picks one of the colour patterns; the badge is saved like the ready-made ones
+function customTeamEditor(pid,id,name){
+  const st=customOpen[pid];const box=el("div","archedit teamedit");
+  box.append(el("span","status",`${name} に付ける新しいチームバッジ（${CUSTOM_MAX}文字まで。次の大会以降も引き継がれます）`));
+  const r1=el("div","row");const inp=el("input");inp.id="ctlab-"+pid;inp.maxLength=CUSTOM_MAX;inp.placeholder="チーム名（例：ABC）";inp.value=st.lab;inp.setAttribute("aria-label","チーム名");
+  const pv=el("span","tm ctprev");const sws=[];const upd=()=>{const c=makeCustomTeam(inp.value,st.ci);pv.innerHTML=c?teamSvg(c):"";ok.disabled=!c;
+    const lab=c?customLabel(c):"Aa";sws.forEach((b,i)=>{b.innerHTML=teamSvg(`~${i}~${lab}`)})};
+  inp.oninput=()=>{st.lab=inp.value;upd()};r1.append(inp,pv);box.append(r1);
+  const sw=el("div","row ctcolors");sw.setAttribute("role","radiogroup");sw.setAttribute("aria-label","色");
+  TEAM_COLORS.forEach((k,i)=>{const b=el("button","ctsw"+(i===st.ci?" on":""));b.type="button";b.title=k[0];b.setAttribute("role","radio");b.setAttribute("aria-checked",String(i===st.ci));
+    sws.push(b);b.onclick=()=>{st.ci=i;render()};sw.append(b)});
+  box.append(sw);
+  const r2=el("div","row");const ok=el("button","primary","このバッジを付ける");ok.type="button";
+  ok.onclick=()=>{const c=makeCustomTeam(inp.value,st.ci);if(!c)return;teams[id]={name:name||"",team:c,at:now()};write(`${ROOT}/teams/${id}`,teams[id]);delete customOpen[pid];syncBadges();setSync(`「${customLabel(c)}」のバッジを付けました`);render()};
+  const no=el("button",null,"やめる");no.type="button";no.onclick=()=>{delete customOpen[pid];render()};
+  r2.append(ok,no);box.append(r2);upd();return box;
+}
 $("startBtn").onclick=()=>{
   const L=lineup();
   if((L.noShow.length||L.over.length)&&!startAsk){startAsk=true;render();return}
@@ -1660,7 +1715,8 @@ function renderHall(){
 }
 function renderPros(){
   const box=$("proList");if(!box)return;box.replaceChildren();
-  const list=Object.entries(teams).filter(([,r])=>r&&TEAM[r.team]).sort((a,b)=>TEAMS.findIndex(t=>t[0]===a[1].team)-TEAMS.findIndex(t=>t[0]===b[1].team)||(b[1].at||0)-(a[1].at||0));
+  const ord=c=>{const i=TEAMS.findIndex(t=>t[0]===c);return i<0?99:i};
+  const list=Object.entries(teams).filter(([,r])=>r&&teamDef(r.team)).sort((a,b)=>ord(a[1].team)-ord(b[1].team)||String(a[1].team).localeCompare(String(b[1].team))||(b[1].at||0)-(a[1].at||0));
   if(!list.length){box.append(el("div","status","まだいません"));return}
   for(const [id,r] of list){const row=el("div","row");const ic=el("span","tm");ic.innerHTML=teamSvg(r.team);row.append(ic,el("span",null,r.name||"—"),el("span","status",id.startsWith("u_")?"ユーザーID "+id.slice(2):"名簿"));
     const b=el("button",null,"外す");b.type="button";b.onclick=()=>{delete teams[id];write(`${ROOT}/teams/${id}`,null);syncBadges();render()};row.append(b);box.append(row)}
@@ -1681,7 +1737,7 @@ function profileNote(){
 }
 // participant-side switch to hide their own team badge (only shown when they have one)
 function teamToggle(me){
-  const p=P(me);const d=p&&decoOf(p);if(!d||!d.rawTeam||!TEAM[d.rawTeam])return null;
+  const p=P(me);const d=p&&decoOf(p);if(!d||!d.rawTeam||!teamDef(d.rawTeam))return null;
   const lab=el("label","teamhide");const cb=el("input");cb.type="checkbox";cb.id="hideTeam";cb.checked=!!p.hideTeam;
   const ic=el("span","tm");ic.innerHTML=teamSvg(d.rawTeam);
   lab.append(cb,document.createTextNode("チームバッジ"),ic,document.createTextNode("を外す"));
@@ -2233,11 +2289,13 @@ function setFormMode(mode){
   tourFormMode=mode;const ed=mode==="edit";$("createTour").textContent=ed?"変更を保存":"作成";
   const st=T&&T.status;const pre=!ed||st==="setup";
   // after the start only some settings can still change
-  for(const id of ["tKind","tFormat","tLobby","tStart","tCap"])$(id).disabled=ed&&!pre;
+  for(const id of ["tFormat","tLobby","tStart","tCap"])$(id).disabled=ed&&!pre;
+  // the kind can also be corrected after the event ends (achievements move to the right tab)
+  $("tKind").disabled=ed&&!(pre||st==="done");
   $("tRounds").disabled=ed&&!(pre||st==="swiss");$("tCut").disabled=ed&&!(pre||st==="swiss");$("tFormatTop").disabled=ed&&!(pre||st==="swiss"||st==="confirm");
   $("editNote").hidden=!ed||pre;
 }
-$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("tCap").value="0";$("newTourForm").hidden=false;$("tName").focus()};
+$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("tCap").value="0";$("tKind").value="internal";$("newTourForm").hidden=false;$("tName").focus()};
 $("editTourBtn").onclick=()=>{if(!T)return;setFormMode("edit");
   $("tName").value=T.name||"";$("tStart").value=T.startAt?toLocalInput(T.startAt):"";$("tRounds").value=String(T.swissRounds||0);if(!$("tRounds").value)$("tRounds").value="0";
   $("tCut").value=String(T.topCut||0);$("tCap").value=String(T.cap||0);$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
@@ -2273,6 +2331,7 @@ $("createTour").onclick=()=>{
 };
 $("delTour").onclick=()=>{
   const b=$("delTour");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="本当に削除する";setTimeout(()=>{b.classList.remove("armed");b.textContent="この大会を削除"},3000);return}
+  deletedPubs.add(pub);
   for(const k of Object.keys(M))write(`${cupPath()}/matches/${k}`,null);for(const k of Object.keys(E))write(`${cupPath()}/entries/${k}`,null);for(const k of Object.keys(C))write(`${cupPath()}/chat/${k}`,null);write(cupPath(),null);write(idxPath(tid),null);
   if(PKEY){for(const p of players()){const u=normUid(p.uid);if(u)write(`${portalPath()}/stats/${u}/events/${pub}`,null)}write(`${portalPath()}/events/${pub}`,null);delete EVA[pub]}
   for(const [rid,rec] of Object.entries(records)){if(rec&&rec.events&&rec.events[pub]){const ev=Object.assign({},rec.events);delete ev[pub];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}}
@@ -2308,9 +2367,9 @@ async function startAdmin(){
     A.watchColl(ROOT+"/members",m=>{members=m;syncRoster();syncBadges();render()});
     A.watchColl(ROOT+"/bans",m=>{bans=JSON.parse(JSON.stringify(m));syncBans();render()});
     A.watchColl(ROOT+"/teams",m=>{teams=JSON.parse(JSON.stringify(m));syncBadges();renderHall();render()});
-    A.watchColl(ROOT+"/records",m=>{records=JSON.parse(JSON.stringify(m));syncBadges();renderHall();render()});
+    A.watchColl(ROOT+"/records",m=>{records=JSON.parse(JSON.stringify(m));recordsReady=true;pruneRecords();syncBadges();renderHall();render()});
     let first=true;
-    A.watchColl(ROOT+"/tournaments",m=>{tours=m;
+    A.watchColl(ROOT+"/tournaments",m=>{tours=m;toursReady=true;pruneRecords();
       if(first){first=false;const latest=Object.entries(m).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];if(latest&&!pub)openTour(latest[0])}
       render()});
   }else{const cur=Object.entries(tours).find(([,t])=>t.pub===pub);openTour(cur?cur[0]:(Object.keys(tours)[0]||null))}
