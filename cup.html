@@ -189,6 +189,9 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .teamedit .row{gap:8px;align-items:center;flex-wrap:wrap}.teamedit input{width:12em}
 .ctcolors{margin:6px 0}.ctsw{padding:4px 6px;background:transparent;border:2px solid transparent;border-radius:9px;line-height:0}.ctsw.on{border-color:var(--accent,#4B3AC6)}
 .ctprev{font-size:1.3em}
+.pairedit .status{margin-bottom:10px}.pelist{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.perow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.perow.changed{border-color:var(--accent,#4B3AC6);background:color-mix(in srgb,var(--accent,#4B3AC6) 8%,transparent)}
+.petab{font-weight:700;min-width:4.5em;font-size:.9rem}.peslot{min-width:7em}.peslot.on{outline:3px solid var(--accent,#4B3AC6);outline-offset:1px}.perow .vs{opacity:.6}
 .trophy{position:relative;display:inline-flex;align-items:center;gap:1px;font-size:1.05em;line-height:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
 .bset .trophy{font-size:1.15rem!important}
 .trophy .tcnt{position:absolute;right:-5px;bottom:-2px;min-width:12px;height:12px;padding:0 2px;border-radius:6px;background:var(--ink);color:var(--panel);font:800 8.5px/12px var(--f-num);text-align:center;box-shadow:0 0 0 1.5px var(--panel)}
@@ -1203,12 +1206,40 @@ function doStart(apply){
   T.swissRounds=T.swissRounds||Math.max(1,Math.ceil(Math.log2(n)));
   T.rounds=[];const r=makeRound();delete r.rematch;T.rounds.push(r);T.status="swiss";viewRound=1;saveT();render();
 }
+/* ---------- organizer re-pairing of the current round: tap two players to swap them ---------- */
+let pairEdit=null;
+function pairEditor(r){
+  const box=el("div","pairedit");const E=pairEdit;
+  box.append(el("div","status","入れ替えたい2人を順にタップすると、席が入れ替わります。BYEの人も入れ替えられます。「この対戦表で確定」を押すまでは参加者に反映されません。"));
+  const played=new Set();for(const rr of T.rounds||[])if(rr!==r)for(const m of rr.pairs)if(m.b)played.add([m.a,m.b].sort().join("|"));
+  const list=el("div","pelist");
+  E.pairs.forEach((m,i)=>{const row=el("div","perow");const orig=r.pairs[i]||{};const changed=orig.a!==m.a||orig.b!==m.b;
+    row.append(el("span","petab",m.b?`第${i+1}卓`:"BYE"));
+    const slot=(k)=>{const id=m[k];const b=el("button","peslot"+(E.sel&&E.sel[0]===i&&E.sel[1]===k?" on":""));b.type="button";b.textContent=who(P(id)).name||"?";
+      if(isOut(id))b.append(el("span","outtag","脱落"));
+      b.onclick=()=>{if(!E.sel){E.sel=[i,k];render();return}const [j,l]=E.sel;E.sel=null;if(j!==i||l!==k){const t=E.pairs[j][l];E.pairs[j][l]=E.pairs[i][k];E.pairs[i][k]=t}render()};return b};
+    row.append(slot("a"));
+    if(m.b){row.append(el("span","vs","vs"),slot("b"));if(played.has([m.a,m.b].sort().join("|")))row.append(el("span","warn","再戦"))}
+    if(changed){row.classList.add("changed");if(M[orig.id]&&(M[orig.id].winner||M[orig.id].room))row.append(el("span","warn","入力済みの結果・ルームIDは消えます"))}
+    list.append(row)});
+  box.append(list);
+  const nch=E.pairs.filter((m,i)=>r.pairs[i].a!==m.a||r.pairs[i].b!==m.b).length;
+  const acts=el("div","row");const ok=el("button","primary",`この対戦表で確定（${nch}卓変更）`);ok.type="button";ok.disabled=!nch;
+  ok.onclick=()=>{const t0=now();
+    E.pairs.forEach((m,i)=>{const o=r.pairs[i];if(o.a===m.a&&o.b===m.b)return;
+      if(m.b){m.startedAt=t0;delete M[o.id];write(matchPath(o.id),null)}else delete m.startedAt;r.pairs[i]=Object.assign({},m)});
+    pairEdit=null;saveT();setSync(`${nch}卓の組み合わせを変更しました`);render()};
+  const no=el("button",null,"やめる");no.type="button";no.onclick=()=>{pairEdit=null;render()};
+  acts.append(ok,no);box.append(acts);return box;
+}
 function renderSwiss(){
   const rs=T.rounds||[];$("swissPanel").hidden=!rs.length;if(!rs.length)return;
   if(!viewRound||viewRound>rs.length)viewRound=rs.length;
   const tabs=$("rtabs");tabs.replaceChildren();
   rs.forEach(r=>{const b=el("button",null,`R${r.n}`+(roundDone(r)?" ✓":""));b.type="button";b.setAttribute("aria-pressed",String(r.n===viewRound));b.onclick=()=>{viewRound=r.n;render()};tabs.append(b)});
   const r=rs[viewRound-1];const host=$("roundHost");host.replaceChildren();
+  const isLast0=viewRound===rs.length;
+  if(admin&&isLast0&&T.status==="swiss"&&pairEdit){host.append(pairEditor(r));$("roundActions").replaceChildren();return}
   const grid=el("div","mgrid");
   r.pairs.forEach((m,i)=>{
     if(!m.b){grid.append(el("div","bye",`不戦勝（BYE）：${who(P(m.a)).name}　1勝として数えます`));return}
@@ -1217,6 +1248,7 @@ function renderSwiss(){
   host.append(grid);
   const act=$("roundActions");act.replaceChildren();act.hidden=!admin;
   const isLast=viewRound===rs.length;
+  if(isLast&&T.status==="swiss"&&admin){const eb=el("button",null,"対戦表を組み替える");eb.type="button";eb.onclick=()=>{pairEdit={sel:null,pairs:r.pairs.map(m=>Object.assign({},m))};render()};act.append(eb)}
   if(isLast&&T.status==="swiss"){
     const done=roundDone(r);const left=r.pairs.filter(m=>m.b&&!(M[m.id]&&M[m.id].winner)).length;
     if(rs.length<T.swissRounds){
@@ -1502,7 +1534,7 @@ const LIMIT=5*60*1000;
 const roomDraft={};
 function activeMatches(){
   const out=[];if(!T)return out;
-  if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(r)r.pairs.forEach(m=>{if(m.b)out.push(Object.assign({start:r.startedAt||null},m))})}
+  if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(r)r.pairs.forEach(m=>{if(m.b)out.push(Object.assign({},m,{start:m.startedAt||r.startedAt||null}))})}
   if(T.status==="top"){const b=bracket();if(b)b.forEach(ms=>ms.forEach(m=>{if(m.a&&m.b&&!m.winner)out.push(m)}))}
   return out;
 }
