@@ -1510,21 +1510,22 @@ function deadline(m,res){
   if(res.winner||res.manual||!m.start)return null;
   if(unresolvedCall(m.id))return null; // paused while the organizers handle a call
   if(!res.room)return{at:m.start+LIMIT,loser:m.a,why:"noroom"};
-  if(!res.entered)return{at:(res.roomAt||m.start)+LIMIT,loser:m.b,why:"noentry"};
+  // no automatic loss for not entering: after 5 minutes the room owner can ask the organizers to judge
+  if(!res.entered)return{at:(res.roomAt||m.start)+LIMIT,loser:m.b,why:"noentry",judge:true};
   return null;
 }
 const WHY={noroom:"ルーム未作成",noentry:"未入室",dq:"失格",drop:"ドロップ"};
 function enforceTimeouts(){
   const tnow=now();
   for(const m of activeMatches()){
-    const res=M[m.id]||{};if(res.manual)continue;const d=deadline(m,res);if(!d||tnow<d.at)continue;
+    const res=M[m.id]||{};if(res.manual)continue;const d=deadline(m,res);if(!d||d.judge||tnow<d.at)continue;
     const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;
     M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));
   }
 }
 const mmss=ms=>{ms=Math.max(0,ms);const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`};
 function cd(at,text){const s=el("span","cd");s.dataset.at=at;s.dataset.text=text;s.textContent=text.replace("{t}",mmss(at-now()));return s}
-setInterval(()=>{document.querySelectorAll(".cd").forEach(s=>{s.textContent=s.dataset.text.replace("{t}",mmss(Number(s.dataset.at)-now()))})},1000);
+setInterval(()=>{let re=false;document.querySelectorAll(".cd").forEach(s=>{s.textContent=s.dataset.text.replace("{t}",mmss(Number(s.dataset.at)-now()));if(s.dataset.re&&Number(s.dataset.at)<=now())re=true});if(re&&!editing())render()},1000);
 setInterval(()=>{if(T&&(T.status==="swiss"||T.status==="top"))enforceTimeouts()},5000);
 function roomBox(m,mine,oppName,res){
   const wrap=el("div","room");const host=mine==="a";
@@ -1539,7 +1540,15 @@ function roomBox(m,mine,oppName,res){
       const cur=Object.assign({},M[m.id]||{});const changed=cur.room!==v;cur.room=v;cur.roomBy=m.a;if(changed){cur.roomAt=now();cur.entered=null}M[m.id]=cur;delete roomDraft[m.id];write(matchPath(m.id),cleanRes(cur));i.blur();render()};
     wrap.append(i,b,msg);
     if(d&&d.why==="noroom")wrap.append(cd(d.at,"あと {t} 以内に入力しないと、あなたの不戦敗になります"));
-    if(d&&d.why==="noentry")wrap.append(cd(d.at,"相手の入室待ち（あと {t} で相手の不戦敗）"));
+    if(!d&&res.room&&!res.entered&&unresolvedCall(m.id))wrap.append(el("span","warn","運営を呼び出し中です。運営の判断をお待ちください"));
+    if(d&&d.why==="noentry"){
+      if(now()<d.at){const c=cd(d.at,"相手の入室待ち（あと {t} で、来ない場合は運営に判定を申請できます）");c.dataset.re="1";wrap.append(c)}
+      else if(unresolvedCall(m.id))wrap.append(el("span","warn","運営に判定を申請中です。運営の判断をお待ちください"));
+      else{const j=el("button","danger","運営に判定を申請");j.type="button";
+        j.onclick=()=>{if(!j.classList.contains("armed")){j.classList.add("armed");j.textContent="もう一度押すと運営に申請します";setTimeout(()=>{if(j.isConnected){j.classList.remove("armed");j.textContent="運営に判定を申請"}},3000);return}
+          sendChat(m.id,mine==="a"?m.a:m.b,`【判定申請】ルームID ${res.room} を知らせて5分経っても ${String(oppName).slice(0,20)} さんが入室しません`,{call:true});render()};
+        wrap.append(j,el("span","status","相手が5分経っても入室しないときに押してください。運営が確認して勝敗を決めます"))}
+    }
   }else if(res.room){
     wrap.append(el("span","code",res.room));
     const c=el("button",null,"コピー");c.type="button";c.onclick=()=>copyText(res.room,"ルームIDをコピーしました");wrap.append(c);
@@ -1548,7 +1557,7 @@ function roomBox(m,mine,oppName,res){
       const e=el("button","primary","入室しました");e.type="button";
       e.onclick=()=>{const cur=Object.assign({},M[m.id]||{});cur.entered=now();M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));render()};
       wrap.append(e,el("span","status",`${oppName} さんのルームに入ったら押してください`));
-      if(d&&d.why==="noentry")wrap.append(cd(d.at,"あと {t} 以内に入室しないと、あなたの不戦敗になります"));
+      if(d&&d.why==="noentry"){if(now()<d.at)wrap.append(cd(d.at,"あと {t} 以内に入室してください"));else wrap.append(el("span","warn","入室の期限を過ぎています。すぐに入室してください（相手が運営に判定を申請できる状態です）"))}
     }
   }else{
     wrap.append(el("span","status",`${oppName} さんがルームを作成中です。IDが入力されるとここに表示されます`));
