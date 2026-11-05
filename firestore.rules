@@ -230,7 +230,10 @@ service cloud.firestore {
           && !(resource.data.get('manual', false) == true && request.resource.data.get('manual', false) != true)
           && !(request.resource.data.get('forfeit', null) in ['noroom', 'noentry']
                && resource.data.get('winner', null) != null
-               && resource.data.get('forfeit', null) == null);
+               && resource.data.get('forfeit', null) == null)
+          // ルームIDが入っている試合を「ルーム未作成」の不戦敗にしない
+          && !(request.resource.data.get('forfeit', null) == 'noroom'
+               && resource.data.get('room', null) != null);
       }
     }
   }
