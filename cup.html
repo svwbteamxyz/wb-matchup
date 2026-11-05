@@ -189,6 +189,7 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .teamedit .row{gap:8px;align-items:center;flex-wrap:wrap}.teamedit input{width:12em}
 .ctcolors{margin:6px 0}.ctsw{padding:4px 6px;background:transparent;border:2px solid transparent;border-radius:9px;line-height:0}.ctsw.on{border-color:var(--accent,#4B3AC6)}
 .ctprev{font-size:1.3em}
+.bcast{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:8px 0;width:100%}.bcast .addrow input{flex:1}
 .pairedit .status{margin-bottom:10px}.pelist{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .perow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.perow.changed{border-color:var(--accent,#4B3AC6);background:color-mix(in srgb,var(--accent,#4B3AC6) 8%,transparent)}
 .petab{font-weight:700;min-width:4.5em;font-size:.9rem}.peslot{min-width:7em}.peslot.on{outline:3px solid var(--accent,#4B3AC6);outline-offset:1px}.perow .vs{opacity:.6}
@@ -564,6 +565,7 @@ function firebaseAdapter(fs,db){return{
   watchColl:(p,cb)=>fs.onSnapshot(fs.collection(db,p),qs=>{const m={};qs.docs.forEach(d=>m[d.id]=d.data());cb(m)},stopped),
   set:(p,v)=>fs.setDoc(fs.doc(db,p),v),del:p=>fs.deleteDoc(fs.doc(db,p)),
   // change only some fields of a document (other fields, e.g. the rounds, are left as they are on the server)
+  getServer:p=>fs.getDocFromServer(fs.doc(db,p)).then(s=>s.exists()?s.data():null),
   patch:(p,v)=>{const o={};for(const [k,x] of Object.entries(v))o[k]=x===undefined?fs.deleteField():x;return fs.updateDoc(fs.doc(db,p),o)}
 }}
 function claudeAdapter(db){return{
@@ -583,7 +585,25 @@ let pub=null,MODE="admin";
 const idxPath=id=>`${ROOT}/tournaments/${id}`;
 const cupPath=()=>`cups/${pub}`;
 const matchPath=mid=>`${cupPath()}/matches/${mid}`;
-function saveT(){write(cupPath(),T)}
+// several organizers may have the admin page open. Before a full save, the progress fields
+// (rounds, status, bracket...) on the server are compared with what this device last saw;
+// if someone else changed them meanwhile, nothing is written and the latest state is loaded instead.
+const CRIT=["status","rounds","bracket","confirm","swissRounds","topCut"];
+const stable=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray(x)?Object.keys(x).sort().reduce((o,kk)=>(o[kk]=x[kk],o),{}):x);
+const critOf=d=>stable(CRIT.map(k=>d?d[k]===undefined?null:d[k]:null));
+let baseCrit=null,saveChain=Promise.resolve();
+function saveT(){
+  if(!T||!pub)return;const path=cupPath(),snap=JSON.parse(JSON.stringify(T)),myPub=pub;
+  if(!A.getServer||MODE!=="admin"){write(path,snap);return}
+  setSync("保存中…");
+  saveChain=saveChain.then(async()=>{
+    let srv;try{srv=await A.getServer(path)}catch(e){console.error(e);setSync("通信できませんでした。もう一度操作してください");return}
+    if(srv&&baseCrit!==null&&critOf(srv)!==baseCrit){
+      if(pub===myPub){T=Object.assign({players:[],rounds:[]},JSON.parse(JSON.stringify(srv)));baseCrit=critOf(srv);pairEdit=null}
+      setSync("ほかの運営が先に更新していたため、保存せずに最新の状態を読み込みました。内容を確認してもう一度操作してください");render();return}
+    baseCrit=critOf(snap);write(path,snap);
+  });
+}
 // background tidy-ups write only their own fields, so a device with an out-of-date copy can never roll back rounds/results
 function patchT(keys){if(!T||!pub)return;if(!A.patch){saveT();return}const v={};for(const k of keys)v[k]=T[k];setSync("保存中…");
   A.patch(cupPath(),v).then(()=>setSync("保存済み")).catch(e=>{console.error(e);setSync("保存できませんでした。再読み込みしてください")})}
@@ -885,8 +905,12 @@ function matchCard(m,label){
   };
   card.append(sideEl(m.a,"a",m.b,"a"),el("div","vs","VS"),sideEl(m.b,"b",m.a,"b"));
   if(isBo3m(m.id)&&(res.games||[]).some(g=>g&&g.w)){const gs=el("div","chips");(res.games||[]).forEach((g,i)=>{if(!g||!g.w)return;const sp=el("span","status",`G${i+1}:`);gs.append(sp);if(g.da)gs.append(chip(g.da));gs.append(el("span","status",g.w==="a"?"○-×":"×-○"));if(g.db)gs.append(chip(g.db))});card.append(gs)}
-  if(admin&&chatLines(m.id).length){const call=unresolvedCall(m.id);const d=el("details");d.open=!!call;
-    d.append(el("summary",call?"warn":"status",call?`運営呼び出し中（チャット ${chatLines(m.id).length}件）`:`チャット ${chatLines(m.id).length}件`),chatLog(m.id,"admin"),adminReply(m.id));card.append(d);if(call)card.classList.add("calling")}
+  // the organizers can open any match's chat and speak first, not only after a call
+  if(admin&&(chatLines(m.id).length||!res.winner)){const call=unresolvedCall(m.id);const n=chatLines(m.id).length;const d=el("details","admchatbox");d.open=!!call||!!admChatOpen[m.id];
+    d.ontoggle=()=>{admChatOpen[m.id]=d.open;if(d.open)setTimeout(()=>{const i=document.getElementById("adm-"+m.id);if(i&&!n)i.focus()},0)};
+    d.append(el("summary",call?"warn":"status",call?`運営呼び出し中（チャット ${n}件）`:n?`チャット ${n}件`:"チャット（運営から話しかける）"));
+    if(n)d.append(chatLog(m.id,"admin"));else d.append(el("div","status","まだメッセージはありません。送ると、この卓の2人のチャット欄に「運営」として表示されます。"));
+    d.append(adminReply(m.id));card.append(d);if(call)card.classList.add("calling")}
   return card;
 }
 function cleanRes(r){const o={};for(const k of ["winner","score","da","db","ba","bb","at","room","roomBy","roomAt","entered","forfeit","manual","games"])o[k]=r[k]==null?null:r[k];return o}
@@ -1231,7 +1255,7 @@ function lostBox(lost){
   return d;
 }
 /* ---------- organizer re-pairing of the current round: tap two players to swap them ---------- */
-let pairEdit=null;
+let pairEdit=null;const admChatOpen={};
 function pairEditor(r){
   const box=el("div","pairedit");const E=pairEdit;
   box.append(el("div","status","入れ替えたい2人を順にタップすると、席が入れ替わります。BYEの人も入れ替えられます。「この対戦表で確定」を押すまでは参加者に反映されません。"));
@@ -1251,7 +1275,9 @@ function pairEditor(r){
   const acts=el("div","row");const ok=el("button","primary",`この対戦表で確定（${nch}卓変更）`);ok.type="button";ok.disabled=!nch;
   ok.onclick=()=>{const t0=now();
     E.pairs.forEach((m,i)=>{const o=r.pairs[i];if(o.a===m.a&&o.b===m.b)return;
-      if(m.b){m.startedAt=t0;delete M[o.id];write(matchPath(o.id),null)}else delete m.startedAt;r.pairs[i]=Object.assign({},m)});
+      if(m.b){m.startedAt=t0;delete M[o.id];write(matchPath(o.id),null)}else delete m.startedAt;
+      for(const [cid,c] of Object.entries(C))if(c&&c.m===o.id){delete C[cid];write(`${cupPath()}/chat/${cid}`,null)}
+      delete chatDraft[o.id];delete chatDraft["adm-"+o.id];r.pairs[i]=Object.assign({},m)});
     pairEdit=null;saveT();setSync(`${nch}卓の組み合わせを変更しました`);render()};
   const no=el("button",null,"やめる");no.type="button";no.onclick=()=>{pairEdit=null;render()};
   acts.append(ok,no);box.append(acts);return box;
@@ -1273,6 +1299,7 @@ function renderSwiss(){
   const act=$("roundActions");act.replaceChildren();act.hidden=!admin;
   const isLast=viewRound===rs.length;
   if(admin&&isLast){const lost=lostMatches();if(lost.length)act.append(lostBox(lost))}
+  if(admin&&isLast&&T.status==="swiss")act.append(broadcastBox());
   if(isLast&&T.status==="swiss"&&admin){const eb=el("button",null,"対戦表を組み替える");eb.type="button";eb.onclick=()=>{pairEdit={sel:null,pairs:r.pairs.map(m=>Object.assign({},m))};render()};act.append(eb)}
   if(isLast&&T.status==="swiss"){
     const done=roundDone(r);const left=r.pairs.filter(m=>m.b&&!(M[m.id]&&M[m.id].winner)).length;
@@ -1292,7 +1319,10 @@ function renderSwiss(){
     const anyRes=r.pairs.some(m=>M[m.id]&&M[m.id].winner);
     if(!anyRes){
       const redo=el("button",null,"このラウンドを組み直す");redo.type="button";
-      redo.onclick=()=>{T.rounds.pop();const nr=makeRound();delete nr.rematch;T.rounds.push(nr);saveT();render()};
+      redo.onclick=()=>{const old=T.rounds[T.rounds.length-1];const oid=new Set(old.pairs.map(m=>m.id));
+        for(const id of oid)if(M[id]){delete M[id];write(matchPath(id),null)}
+        for(const [cid,c] of Object.entries(C))if(c&&oid.has(c.m)){delete C[cid];write(`${cupPath()}/chat/${cid}`,null)}
+        T.rounds.pop();const nr=makeRound();delete nr.rematch;T.rounds.push(nr);saveT();render()};
       act.append(redo);
     }
   }
@@ -1317,6 +1347,24 @@ function renderStand(){
   if(T.topCut&&T.status!=="confirm")host.append(el("div","status",`色付きの上位${T.topCut}名が決勝トーナメントに進みます（失格・ドロップした人は除きます）`));
   if(T.status==="confirm"&&admin)renderConfirmAdmin(host);
 }
+/* ---------- organizer message to every table at once ---------- */
+function broadcastTargets(){
+  if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];return r?r.pairs.filter(m=>m.b).map(m=>m.id):[]}
+  if(T.status==="top"){const b=bracket()||[];const out=[];b.forEach(ms=>ms.forEach(m=>{if(m.a&&m.b&&!m.winner)out.push(m.id)}));return out}
+  return[];
+}
+function broadcastBox(){
+  const box=el("div","bcast");const ids=broadcastTargets();
+  box.append(el("b",null,"全卓へ一斉送信"),el("span","status",`　${ids.length}卓のチャットに「運営」として届きます`));
+  const row=el("div","addrow");const i=el("input");i.type="text";i.id="bcastInput";i.maxLength=110;i.placeholder="例：次のラウンドは21:30開始です";i.setAttribute("aria-label","全卓へのメッセージ");
+  i.value=chatDraft.__bcast||"";i.oninput=()=>{chatDraft.__bcast=i.value};
+  const b=el("button","primary","全卓に送る");b.type="button";b.disabled=!ids.length;
+  const go=()=>{const v=i.value.trim();if(!v){i.focus();return}
+    if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent=`もう一度押すと${ids.length}卓に送ります`;setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent="全卓に送る"}},3000);return}
+    for(const id of broadcastTargets())sendChat(id,"admin","【全体】"+v);chatDraft.__bcast="";i.value="";i.blur();setSync(`${ids.length}卓に送信しました`);render()};
+  b.onclick=go;i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go()}});
+  row.append(i,b);box.append(row);return box;
+}
 function renderTop(){
   const b=bracket();$("topPanel").hidden=!b;if(!b)return;
   const host=$("bracketHost");host.replaceChildren();const wrap=el("div","bracket");const R=b.length;
@@ -1327,6 +1375,7 @@ function renderTop(){
     });
     wrap.append(col)});
   host.append(wrap);
+  if(admin&&T.status==="top")host.append(broadcastBox());
   const fin=b[R-1][0];
   if(admin&&fin.winner&&T.status==="top"){const btn=el("button","primary","大会を終了して優勝者を表示");btn.type="button";btn.onclick=()=>{T.status="done";saveT();render()};host.append(btn)}
   if(admin&&!fin.winner&&T.status==="done"){T.status="top";patchT(["status"])}
@@ -2342,7 +2391,7 @@ function openCup(key,id){
   unsub.forEach(u=>{try{u()}catch(e){}});unsub=[];tid=id||null;pub=key||null;T=null;M={};E={};C={};viewRound=null;render();
   if(!pub)return;
   const mine=pub;
-  unsub.push(A.watchDoc(cupPath(),d=>{if(pub!==mine)return;T=d?Object.assign({players:[],rounds:[]},JSON.parse(JSON.stringify(d))):null;syncRoster();syncBans();syncBadges();render()}));
+  unsub.push(A.watchDoc(cupPath(),d=>{if(pub!==mine)return;baseCrit=d?critOf(d):null;T=d?Object.assign({players:[],rounds:[]},JSON.parse(JSON.stringify(d))):null;syncRoster();syncBans();syncBadges();render()}));
   unsub.push(A.watchColl(cupPath()+"/matches",m=>{if(pub!==mine)return;M=JSON.parse(JSON.stringify(m));render()}));
   unsub.push(A.watchColl(cupPath()+"/entries",m=>{if(pub!==mine)return;E=JSON.parse(JSON.stringify(m));syncBadges();render()}));
   unsub.push(A.watchColl(cupPath()+"/chat",m=>{if(pub!==mine)return;C=JSON.parse(JSON.stringify(m));
