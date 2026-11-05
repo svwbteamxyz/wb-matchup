@@ -559,7 +559,14 @@ let unsub=[],deferred=false;
 /* ---------- adapters (same shape as スコア表) ---------- */
 function setSync(t){$("syncStatus").textContent=t}
 const writers={};
+// loop guard: if the same document is written again and again (two pages disagreeing, e.g. an
+// out-of-date page left open on another device), stop writing it for a minute and say where
+const wHist={},wPause={};
+function pathLabel(p){if(/^portals\/[^/]+$/.test(p))return"参加者ページの設定（XYZ名簿・問い合わせの鍵）";if(/\/events\//.test(p))return"大会一覧";if(/\/stats\//.test(p))return"参加者の戦績（マイページ）";if(/\/records\//.test(p))return"実績";if(/^cups\/[^/]+$/.test(p))return"大会データ";if(/\/entries\//.test(p))return"参加者情報";if(/\/matches\//.test(p))return"試合結果";return p.split("/").slice(-2).join("/")}
+function loopGuard(path){const t=now();if(wPause[path]&&t<wPause[path])return false;const h=(wHist[path]||[]).filter(x=>t-x<60000);h.push(t);wHist[path]=h;
+  if(h.length>10){wPause[path]=t+60000;wHist[path]=[];console.warn("write loop paused",path);setSync(`「${pathLabel(path)}」への保存が繰り返されたため1分止めました。ほかの端末やタブで運営画面が開いていないか確認し、閉じてください`);return false}return true}
 function write(path,val){
+  if(!loopGuard(path))return;
   setSync("保存中…");
   const w=writers[path]||(writers[path]=(()=>{let busy=false,has=false,next;const go=async v=>{if(busy){has=true;next=v;return}busy=true;
     try{await (v?A.set(path,v):A.del(path));setSync("保存済み")}catch(e){console.error(e);setSync(e&&(e.code==="permission-denied"||e.code==="invalid_argument")?"保存が拒否されました。ルール設定を確認してください":"保存できませんでした。通信を確認してください")}
@@ -605,6 +612,7 @@ function saveT(){
   setSync("保存中…");
   saveChain=saveChain.then(async()=>{
     let srv;try{srv=await A.getServer(path)}catch(e){console.error(e);setSync("通信できませんでした。もう一度操作してください");return}
+    if(!srv&&baseCrit!==null){setSync("この大会は削除されています。保存しませんでした");return}
     if(srv&&baseCrit!==null&&critOf(srv)!==baseCrit){
       if(pub===myPub){T=Object.assign({players:[],rounds:[]},JSON.parse(JSON.stringify(srv)));baseCrit=critOf(srv);pairEdit=null}
       setSync("ほかの運営が先に更新していたため、保存せずに最新の状態を読み込みました。内容を確認してもう一度操作してください");render();return}
@@ -700,7 +708,11 @@ function syncRecords(){
 // achievements are counted separately for internal (内戦) and external (外戦) events
 function tally(rec,kind){const c={w:0,r:0,b:0,t:0};for(const e of Object.values((rec&&rec.events)||{})){if(kind&&(e.kind||"internal")!==kind)continue;if(e.place==="champion")c.w++;else if(e.place==="runner")c.r++;else if(e.place==="third")c.b++;c.t++}return c}
 // achievements left over from tournaments that were deleted are removed (checked against the tournament data itself)
-let toursReady=false,recordsReady=false;const pruneChecked=new Set();
+let toursReady=false,recordsReady=false,eventsReady=false;const pruneChecked=new Set();
+// a tournament that is no longer in the organizer's list must not stay in the participants' tournament list
+function pruneEvents(){if(MODE!=="admin"||!PKEY||!toursReady||!eventsReady||!Object.keys(tours).length)return;
+  const live=new Set(Object.values(tours).map(t=>t&&t.pub).filter(Boolean));
+  for(const ep of Object.keys(EVA)){if(live.has(ep))continue;if(!autoOk("evprune:"+ep,60000))continue;delete EVA[ep];write(`${portalPath()}/events/${ep}`,null)}}
 function dropRecordEvents(gone){
   for(const [rid,rec] of Object.entries(records)){if(!rec||!rec.events||!rec.events[gone])continue;const ev=Object.assign({},rec.events);delete ev[gone];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}
   syncBadges();renderHall();render()}
@@ -2338,9 +2350,9 @@ function memberUidSet(){const s=new Set();for(const [mid,r] of Object.entries(me
 async function syncXYZ(){if(!PKEY||!PDAloaded||xyzBusy)return;xyzBusy=true;
   try{const list=[];for(const u of memberUidSet())list.push(await pdigest("u:"+u));list.sort();
     const pubSame=!inboxPub||!!(PDA&&PDA.inboxPub&&PDA.inboxPub.n===inboxPub.n&&PDA.inboxPub.e===inboxPub.e);
-    if(pubSame&&JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;const doc={xyz:list,updated:now()};if(inboxPub||(PDA&&PDA.inboxPub))doc.inboxPub=inboxPub||PDA.inboxPub;PDA=doc;write(portalPath(),doc)}finally{xyzBusy=false}}
+    if(pubSame&&JSON.stringify(list)===JSON.stringify(((PDA&&PDA.xyz)||[]).slice().sort()))return;const doc={xyz:list,updated:now()};if(inboxPub||(PDA&&PDA.inboxPub))doc.inboxPub=inboxPub||PDA.inboxPub;if(!autoOk("xyz",30000))return;PDA=doc;write(portalPath(),doc)}finally{xyzBusy=false}}
 const EV_KEYS=["name","kind","status","created","format","n","startAt","cap"];
-function syncEvent(){if(!PKEY||!T||!pub)return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null,cap:T.cap||0};
+function syncEvent(){if(!PKEY||!T||!pub||!toursReady||deletedPubs.has(pub)||!Object.values(tours).some(t=>t&&t.pub===pub))return;const e={name:T.name||"",kind:T.kind==="external"?"external":"internal",status:T.status||"setup",created:T.created||0,format:fmtLabel(),n:players().length,startAt:T.startAt||null,cap:T.cap||0};
   if(sameObj(EVA[pub],e,EV_KEYS))return;EVA[pub]=e;write(`${portalPath()}/events/${pub}`,e)}
 function syncStats(){if(!PKEY||!T||!pub||T.status==="setup")return;
   for(const p of players()){const u=normUid(p.uid);if(!u)continue;const s=summaryFor(p.id);const j=JSON.stringify(s);const k=pub+"|"+u;if(statSent[k]===j)continue;statSent[k]=j;write(`${portalPath()}/stats/${u}/events/${pub}`,s)}}
@@ -2633,14 +2645,14 @@ async function startAdmin(){
     A.watchColl(ROOT+"/archAlias",m=>{archAliases=JSON.parse(JSON.stringify(m));syncArchMap();render()});
     A.watchColl(ROOT+"/memberUids",m=>{memberUids=JSON.parse(JSON.stringify(m));syncXYZ();syncBadges();render()});
     A.watchDoc(portalPath(),d=>{PDA=d;PDAloaded=true;syncXYZ()});
-    A.watchColl(portalPath()+"/events",m=>{EVA=JSON.parse(JSON.stringify(m));render()});
+    A.watchColl(portalPath()+"/events",m=>{EVA=JSON.parse(JSON.stringify(m));eventsReady=true;pruneEvents();render()});
     A.watchColl(portalPath()+"/claims",m=>{claims=JSON.parse(JSON.stringify(m));render()});
     A.watchColl(ROOT+"/members",m=>{members=m;syncRoster();syncBadges();render()});
     A.watchColl(ROOT+"/bans",m=>{bans=JSON.parse(JSON.stringify(m));syncBans();render()});
     A.watchColl(ROOT+"/teams",m=>{teams=JSON.parse(JSON.stringify(m));syncBadges();renderHall();render()});
     A.watchColl(ROOT+"/records",m=>{records=JSON.parse(JSON.stringify(m));recordsReady=true;pruneRecords();syncBadges();renderHall();render()});
     let first=true;
-    A.watchColl(ROOT+"/tournaments",m=>{tours=m;toursReady=true;pruneRecords();
+    A.watchColl(ROOT+"/tournaments",m=>{tours=m;toursReady=true;pruneRecords();pruneEvents();
       if(first){first=false;const latest=Object.entries(m).filter(([,t])=>t.pub).sort((a,b)=>(b[1].created||0)-(a[1].created||0))[0];if(latest&&!pub)openTour(latest[0])}
       render()});
   }else{const cur=Object.entries(tours).find(([,t])=>t.pub===pub);openTour(cur?cur[0]:(Object.keys(tours)[0]||null))}
