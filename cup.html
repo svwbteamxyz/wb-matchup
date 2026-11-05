@@ -190,6 +190,11 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .ctcolors{margin:6px 0}.ctsw{padding:4px 6px;background:transparent;border:2px solid transparent;border-radius:9px;line-height:0}.ctsw.on{border-color:var(--accent,#4B3AC6)}
 .ctprev{font-size:1.3em}
 .bcast{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:8px 0;width:100%}.bcast .addrow input{flex:1}
+.alertbox.resimg{max-width:860px}.alertbox a.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:inherit;font-weight:700}.alertbox a.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.alertov{position:fixed;inset:0;background:rgba(10,8,30,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.alertbox{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:22px 20px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;animation:apop .18s ease-out}
+.alertbox h2{margin:0;font-size:1.25rem}.alertbox p{margin:0;line-height:1.6}.alertbox .bigid{font-size:1.6rem;font-weight:900;letter-spacing:.06em}.alertbox button{margin-top:6px}
+@keyframes apop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
 .pairedit .status{margin-bottom:10px}.pelist{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .perow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.perow.changed{border-color:var(--accent,#4B3AC6);background:color-mix(in srgb,var(--accent,#4B3AC6) 8%,transparent)}
 .petab{font-weight:700;min-width:4.5em;font-size:.9rem}.peslot{min-width:7em}.peslot.on{outline:3px solid var(--accent,#4B3AC6);outline-offset:1px}.perow .vs{opacity:.6}
@@ -1105,6 +1110,86 @@ function renderChamp(){
   const w=who(P(cid));const d=el("div","champ");const tx=el("div");
   tx.append(el("div","k","CHAMPION"),el("div","t",w.name+(w.handle?"  @"+w.handle:"")));
   d.append(tx);host.append(d);
+  const gb=el("button","primary","結果画像を作る（Xに貼れる画像）");gb.type="button";gb.style.marginTop="10px";gb.onclick=()=>openResultImage();host.append(gb);
+}
+/* ---------- result image: podium for the top 3 and the rest of the ranking beside it ---------- */
+function finalRanking(){
+  const st=standings().filter(s=>!(P(s.id)||{}).dq);const rec=Object.fromEntries(st.map(s=>[s.id,s]));const out=[];const used=new Set();
+  const add=(id,label,place)=>{if(!id||used.has(id)||!P(id))return;used.add(id);out.push({id,label,place,w:(rec[id]||{}).w||0,l:(rec[id]||{}).l||0})};
+  if(T.topCut&&T.bracket){const b=bracket();const R=b.length;const f=b[R-1][0];
+    if(f.winner){add(f.winner,"優勝",1);add(f.winner===f.a?f.b:f.a,"準優勝",2)}
+    if(R>=2){const th=b[R-2].filter(m=>m.winner&&m.a&&m.b).map(m=>m.winner===m.a?m.b:m.a).sort((x,y)=>st.findIndex(s=>s.id===x)-st.findIndex(s=>s.id===y));th.forEach(id=>add(id,"3位",3))}
+    for(let r=R-3;r>=0;r--){const lo=b[r].filter(m=>m.winner&&m.a&&m.b).map(m=>m.winner===m.a?m.b:m.a).sort((x,y)=>st.findIndex(s=>s.id===x)-st.findIndex(s=>s.id===y));lo.forEach(id=>add(id,`ベスト${2**(R-r)}`,2**(R-r-1)+1))}
+    for(const s of st)add(s.id,`${out.length+1}位`,out.length+1);
+  }else st.forEach((s,i)=>add(s.id,i===0?"優勝":i===1?"準優勝":`${i+1}位`,i+1));
+  return out;
+}
+function loadImg(src){return new Promise(r=>{if(!src){r(null);return}const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=src})}
+async function drawResultImage(){
+  const W=1600,H=900,cv=document.createElement("canvas");cv.width=W;cv.height=H;const g=cv.getContext("2d");
+  try{await document.fonts.ready}catch(e){}
+  const F=(w,px)=>`${w} ${px}px "Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic","Meiryo",sans-serif`;
+  const fit=(t,max,w,px)=>{t=String(t||"");g.font=F(w,px);if(g.measureText(t).width<=max)return t;while(t.length>1&&g.measureText(t+"…").width>max)t=t.slice(0,-1);return t+"…"};
+  const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
+  // background
+  const bg=g.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#0E0C24");bg.addColorStop(1,"#26206A");g.fillStyle=bg;g.fillRect(0,0,W,H);
+  g.globalAlpha=.07;g.fillStyle="#fff";for(let i=0;i<14;i++){g.beginPath();g.arc(160+i*120,120+(i%3)*40,2,0,7);g.fill()}g.globalAlpha=1;
+  const rank=finalRanking();const n=players().filter(p=>!p.dq).length;
+  // header
+  g.fillStyle="#B9B2FF";g.font=F(700,24);g.fillText("RESULT",60,70);
+  g.fillStyle="#fff";g.fillText("",0,0);g.font=F(900,52);g.fillText(fit(T.name,900,900,52),60,132);
+  const sub=[T.startAt?fmtDT(T.startAt):fmtDT(T.created||now()),`${n}人参加`,(showKind()?fmtLabel():fmtLabel().replace(/^(内戦|外戦)・/,""))].join("　");
+  g.fillStyle="#C9C5E8";g.font=F(500,24);g.fillText(fit(sub,920,500,24),60,176);
+  // podium
+  const top=rank.filter(x=>x.place<=3);const p1=top.find(x=>x.place===1),p2=top.find(x=>x.place===2),p3=top.filter(x=>x.place===3);
+  const cols=[{x:70,w:280,h:190,who:p2?[p2]:[],c:["#E9ECF2","#9AA3B2"],num:"2"},{x:370,w:300,h:260,who:p1?[p1]:[],c:["#FFE58A","#C99A12"],num:"1"},{x:690,w:280,h:150,who:p3,c:["#F2B98A","#9C5A26"],num:"3"}];
+  const base=850;
+  for(const col of cols){const top=base-col.h;const gr=g.createLinearGradient(0,top,0,base);gr.addColorStop(0,col.c[0]);gr.addColorStop(1,col.c[1]);g.fillStyle=gr;rr(col.x,top,col.w,col.h+20,16);g.fill();
+    g.fillStyle="rgba(0,0,0,.28)";g.font=F(900,col.num==="1"?120:96);g.textAlign="center";g.fillText(col.num,col.x+col.w/2,top+(col.num==="1"?140:110));g.textAlign="left";
+    const ppl=col.who;if(!ppl.length)continue;const multi=ppl.length>1;
+    for(let k=0;k<ppl.length;k++){const x=ppl[k];const p=P(x.id),w=who(p);const cx=multi?col.x+col.w*(k+.5)/ppl.length:col.x+col.w/2;
+      const rad=multi?44:(col.num==="1"?72:58);const cy=top-(multi?180:(col.num==="1"?190:165));
+      // avatar
+      g.save();g.beginPath();g.arc(cx,cy,rad,0,7);g.closePath();g.fillStyle="#3A3480";g.fill();g.clip();
+      const im=await loadImg(p.icon);if(im)g.drawImage(im,cx-rad,cy-rad,rad*2,rad*2);else{g.fillStyle="#fff";g.font=F(900,rad);g.textAlign="center";g.textBaseline="middle";g.fillText([...(w.name||"?")][0],cx,cy+2);g.textBaseline="alphabetic";g.textAlign="left"}
+      g.restore();g.lineWidth=col.num==="1"?6:4;g.strokeStyle=col.c[0];g.beginPath();g.arc(cx,cy,rad,0,7);g.stroke();
+      if(col.num==="1"){const y0=cy-rad-14,cw2=70;g.fillStyle="#FFD54A";g.beginPath();g.moveTo(cx-cw2/2,y0);g.lineTo(cx-cw2/2,y0-34);g.lineTo(cx-cw2/4,y0-14);g.lineTo(cx,y0-42);g.lineTo(cx+cw2/4,y0-14);g.lineTo(cx+cw2/2,y0-34);g.lineTo(cx+cw2/2,y0);g.closePath();g.fill();
+        g.fillStyle="#FFF3B0";for(const dx of [-cw2/2,0,cw2/2]){g.beginPath();g.arc(cx+dx,dx?y0-36:y0-44,5,0,7);g.fill()}}
+      const maxw=multi?col.w/ppl.length-12:col.w+30;g.textAlign="center";g.fillStyle="#fff";
+      g.font=F(900,multi?24:(col.num==="1"?34:28));g.fillText(fit(w.name,maxw,900,multi?24:(col.num==="1"?34:28)),cx,cy+rad+(multi?32:42));
+      if(w.handle){g.fillStyle="#BDB8E6";g.font=F(500,multi?17:20);g.fillText(fit("@"+w.handle,maxw,500,multi?17:20),cx,cy+rad+(multi?56:70))}
+      // decks
+      const dk=(p.decks||[]).filter(Boolean);g.font=F(700,multi?15:18);const cw=dk.map(c=>g.measureText(CN[c]||c).width+20);const chH=multi?24:28;
+      const col2=(c)=>getComputedStyle(document.documentElement).getPropertyValue("--c-"+c).trim()||"#888";
+      if(multi){dk.forEach((c,i)=>{const dy=cy+rad+66+i*(chH+6);const dx=cx-cw[i]/2;g.fillStyle=col2(c);rr(dx,dy,cw[i],chH,12);g.fill();g.fillStyle=CHIP_INK[c]||"#fff";g.textAlign="left";g.fillText(CN[c]||c,dx+10,dy+18)})}
+      else{const tot=cw.reduce((a,b)=>a+b,0)+(dk.length-1)*8;let dx=cx-tot/2;const dy=cy+rad+84;
+        dk.forEach((c,i)=>{g.fillStyle=col2(c);rr(dx,dy,cw[i],chH,12);g.fill();g.fillStyle=CHIP_INK[c]||"#fff";g.textAlign="left";g.fillText(CN[c]||c,dx+10,dy+21);dx+=cw[i]+8})}
+      g.textAlign="left"}}
+  // rest of the ranking
+  const rest=rank.filter(x=>x.place>3);const LX=1030,LW=510;g.fillStyle="rgba(255,255,255,.06)";rr(LX-20,60,LW+40,H-100,22);g.fill();
+  g.fillStyle="#B9B2FF";g.font=F(700,24);g.fillText(rest.length?`${rest[0].place}位以降`:"4位以降",LX,108);
+  const rowH=40,maxRows=Math.floor((H-180)/rowH);const shown=rest.slice(0,rest.length>maxRows?maxRows-1:maxRows);
+  shown.forEach((x,i)=>{const y=150+i*rowH;g.fillStyle=i%2?"rgba(255,255,255,.03)":"rgba(255,255,255,.07)";rr(LX-8,y-28,LW+16,rowH-4,8);g.fill();
+    g.fillStyle="#D8D3FF";g.font=F(800,20);g.fillText(x.label,LX,y);g.fillStyle="#fff";g.font=F(700,22);g.fillText(fit(who(P(x.id)).name,LW-200,700,22),LX+120,y);
+    g.fillStyle="#C9C5E8";g.font=F(500,19);g.textAlign="right";g.fillText(`${x.w}勝${x.l}敗`,LX+LW,y);g.textAlign="left"});
+  if(rest.length>shown.length){g.fillStyle="#C9C5E8";g.font=F(500,20);g.fillText(`ほか ${rest.length-shown.length}名`,LX,150+shown.length*rowH)}
+  if(!rest.length){g.fillStyle="#C9C5E8";g.font=F(500,20);g.fillText("—",LX,150)}
+  g.fillStyle="rgba(255,255,255,.5)";g.font=F(600,18);g.textAlign="right";g.fillText("XYZ CUP",W-40,H-24);g.textAlign="left";
+  return cv;
+}
+async function openResultImage(){
+  const ov=el("div","alertov");const box=el("div","alertbox resimg");box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");box.setAttribute("aria-label","結果画像");
+  box.append(el("h2",null,"結果画像"),el("p","status","作成中…"));ov.append(box);document.body.append(ov);
+  const close=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)close()};
+  let cv;try{cv=await drawResultImage()}catch(e){console.error(e);box.lastChild.textContent="画像を作れませんでした";return}
+  const url=cv.toDataURL("image/png");box.replaceChildren(el("h2",null,"結果画像"));const im=el("img");im.src=url;im.alt=`${T.name} の結果`;im.style.width="100%";im.style.borderRadius="10px";box.append(im);
+  box.append(el("p","status","スマホは画像を長押しでも保存できます。Xに投稿するときは、保存した画像を添付してください。"));
+  const row=el("div","row");row.style.flexWrap="wrap";row.style.gap="8px";
+  const fname=`${T.name||"result"}_結果.png`.replace(/[\\/:*?"<>|]/g,"_");
+  const dl=el("a","btn primary","画像を保存");dl.href=url;dl.download=fname;dl.setAttribute("role","button");row.append(dl);
+  cv.toBlob(bl=>{if(!bl)return;const f=new File([bl],fname,{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]})){const sh=el("button",null,"共有（Xなどに送る）");sh.type="button";sh.onclick=()=>navigator.share({files:[f],text:`${T.name} の結果`}).catch(()=>{});row.prepend(sh)}});
+  const x=el("a",null,"Xの投稿画面を開く");x.href="https://x.com/intent/post?text="+encodeURIComponent(`${T.name} の結果🏆\n`);x.target="_blank";x.rel="noopener";x.className="btn";row.append(x);
+  const c=el("button",null,"閉じる");c.type="button";c.onclick=close;row.append(c);box.append(row);
 }
 function renderPlayers(){
   const setup=T.status==="setup";
@@ -1559,6 +1644,37 @@ function getReg(){try{return localStorage.getItem(regKey())||""}catch(e){return 
 function setReg(v){memMe[regKey()]=v;try{localStorage.setItem(regKey(),v)}catch(e){}}
 $("meSel").onchange=()=>{const v=$("meSel").value;memMe[meKey()]=v;try{localStorage.setItem(meKey(),v)}catch(e){}
   if(P(v))setReg(v);render()};
+/* ---------- pop-up alerts for participants (new match, room ID arrived, finals confirmation, organizer message) ---------- */
+const alertQ=[];let alertOpen=false,alertSeen=null,alertPub=null,titleBase=null;
+function seenSet(){if(alertPub!==pub){alertPub=pub;alertSeen=new Set();try{for(const k of JSON.parse(localStorage.getItem("xyzcup-seen-"+pub)||"[]"))alertSeen.add(k)}catch(e){}}return alertSeen}
+function markSeen(k){const S=seenSet();if(S.has(k))return false;S.add(k);try{localStorage.setItem("xyzcup-seen-"+pub,JSON.stringify([...S].slice(-200)))}catch(e){}return true}
+function pushAlert(k,title,lines){if(!markSeen(k))return;alertQ.push({title,lines});showAlert()}
+function beep(){try{const C=window.__ac||(window.__ac=new (window.AudioContext||window.webkitAudioContext)());const o=C.createOscillator(),g=C.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(C.destination);o.start();o.stop(C.currentTime+.18)}catch(e){}}
+function showAlert(){
+  if(alertOpen||!alertQ.length)return;alertOpen=true;const a=alertQ.shift();
+  if(titleBase===null)titleBase=document.title;document.title="🔔 "+a.title;
+  try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}beep();
+  const ov=el("div","alertov");const dlg=el("div","alertbox");dlg.setAttribute("role","alertdialog");dlg.setAttribute("aria-modal","true");dlg.setAttribute("aria-labelledby","alertTitle");
+  const h=el("h2",null,a.title);h.id="alertTitle";dlg.append(h);for(const l of a.lines){const pe=el("p",l.cls||null,l.t);if(l.copy){const cb=el("button",null,"コピー");cb.type="button";cb.style.marginLeft="10px";cb.onclick=()=>{try{navigator.clipboard.writeText(l.copy);cb.textContent="コピーしました"}catch(e){}};pe.append(cb)}dlg.append(pe)}
+  const ok=el("button","primary big","OK");ok.type="button";
+  ok.onclick=()=>{ov.remove();alertOpen=false;document.title=titleBase;titleBase=null;const r=$("reportPanel");if(r&&!alertQ.length)r.scrollIntoView({behavior:"smooth",block:"start"});showAlert()};
+  dlg.append(ok);ov.append(dlg);document.body.append(ov);setTimeout(()=>ok.focus(),0);
+}
+function playerAlerts(me,mp,mm){
+  if(MODE==="admin"||!T||!mp||mp.dq||mp.drop)return;
+  if(T.status==="confirm"&&T.confirm&&(T.confirm.invited||[]).includes(me)&&!mp.topReply)
+    pushAlert("cf","決勝トーナメントに進出しました！",[{t:"5分以内に「出場する」か「辞退」を選んでください。時間内に選ばないと辞退扱いになります。",cls:"warn"}]);
+  if(!mm)return;
+  if(mm.bye){pushAlert("bye:"+mm.label,"次のラウンドが始まりました",[{t:mm.label},{t:"このラウンドは不戦勝（1勝）です。次の組み合わせを待ってください。"}]);return}
+  const m=mm.m,mine=m.a===me?"a":"b",ow=who(P(mine==="a"?m.b:m.a)),res=M[m.id]||{};
+  if(!res.winner)pushAlert("m:"+m.id+":"+m.a+":"+m.b,"対戦が始まりました",[{t:mm.label},{t:`対戦相手：${ow.name}`},
+    {t:mine==="a"?"あなたがルームを作る側です。5分以内にルームを作ってIDを入力してください。":"相手がルームを作ります。ルームIDが届くまでお待ちください。",cls:mine==="a"?"warn":null}]);
+  if(mine==="b"&&res.room&&!res.entered&&!res.winner)pushAlert("room:"+m.id+":"+res.room,"ルームIDが届きました",[{t:`ルームID：${res.room}`,cls:"bigid",copy:String(res.room)},{t:"このIDのルームに入ってから「入室しました」を押してください（5分以内）。",cls:"warn"}]);
+  // chat from the opponent or the organizers (only the newest unseen one pops up)
+  const inc=chatLines(m.id).filter(c=>c.from!==me&&(c.text||c.img)&&!c.resolve);
+  if(inc.length){const last=inc[inc.length-1];inc.slice(0,-1).forEach(c=>markSeen("chat:"+c.id));
+    const fromAdmin=last.from==="admin";pushAlert("chat:"+last.id,fromAdmin?"運営からのメッセージ":`${who(P(last.from)).name} さんからチャット`,[{t:last.text||"画像が送られました"}])}
+}
 function myMatch(me){
   if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(!r)return null;const i=r.pairs.findIndex(m=>m.a===me||m.b===me);if(i<0)return null;const m=r.pairs[i];return{m,label:m.b?`予選 R${r.n}　第${i+1}卓`:`予選 R${r.n}`,bye:!m.b,last:r.n>=T.swissRounds}}
   if(T.status==="top"||T.status==="done"){const b=bracket();if(!b)return null;const R=b.length;let found=null;
@@ -1621,18 +1737,28 @@ function deadline(m,res){
   return null;
 }
 const WHY={noroom:"ルーム未作成",noentry:"未入室",dq:"失格",drop:"ドロップ"};
+// A time-out loss is written only after re-reading the match from the server: a device whose copy is
+// out of date (e.g. a phone just back from sleep) must never wipe a room ID that was already entered.
+const toBusy=new Set();
 function enforceTimeouts(){
   const tnow=now();
   for(const m of activeMatches()){
     const res=M[m.id]||{};if(res.manual)continue;const d=deadline(m,res);if(!d||d.judge||tnow<d.at)continue;
-    const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;
-    M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));
+    if(!A.getServer){const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));continue}
+    if(toBusy.has(m.id))continue;toBusy.add(m.id);const path=matchPath(m.id);
+    A.getServer(path).then(fresh=>{
+      fresh=fresh||{};if(fresh.manual||fresh.winner)return;const d2=deadline(m,fresh);if(!d2||d2.judge||now()<d2.at)return;
+      const cur=Object.assign({},fresh);cur.winner=d2.loser===m.a?m.b:m.a;cur.forfeit=d2.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=now();
+      M[m.id]=cur;write(path,cleanRes(cur));render();
+    }).catch(e=>console.error(e)).finally(()=>setTimeout(()=>toBusy.delete(m.id),4000));
   }
 }
 const mmss=ms=>{ms=Math.max(0,ms);const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`};
 function cd(at,text){const s=el("span","cd");s.dataset.at=at;s.dataset.text=text;s.textContent=text.replace("{t}",mmss(at-now()));return s}
 setInterval(()=>{let re=false;document.querySelectorAll(".cd").forEach(s=>{s.textContent=s.dataset.text.replace("{t}",mmss(Number(s.dataset.at)-now()));if(s.dataset.re&&Number(s.dataset.at)<=now())re=true});if(re&&!editing())render()},1000);
-setInterval(()=>{if(T&&(T.status==="swiss"||T.status==="top"))enforceTimeouts()},5000);
+// time-outs are judged only on the organizer page (one clock, the same one that started the round),
+// so a participant's phone with a wrong clock or an out-of-date copy can't hand out losses
+setInterval(()=>{if(T&&(T.status==="swiss"||T.status==="top")&&(MODE==="admin"||!A.getServer))enforceTimeouts()},5000);
 function roomBox(m,mine,oppName,res){
   const wrap=el("div","room");const host=mine==="a";
   const am=activeMatches().find(x=>x.id===m.id);const d=am?deadline(am,res):null;
@@ -2306,6 +2432,7 @@ function renderReport(){
     box.append(row,...(archEdit?[archEdit,archNote()]:[]),el("div","status",MODE==="portal"?"参加登録済みです。予選が始まると、ここに自分の対戦相手が表示されます。":"この端末は "+who(mp).name+" さんとして登録されています。別の人を登録するには、先に参加を取り消してください。予選が始まると、ここに自分の対戦相手が表示されます。"));return;
   }
   const mm=myMatch(me);
+  playerAlerts(me,mp,mm);
   {const tt=teamToggle(me);if(tt)host.append(tt)}
   if(!mp.dq&&(mp.decks||[]).some(Boolean)){const d=el("details","myt archself");if(archSelfOpen.v)d.open=true;d.ontoggle=()=>{archSelfOpen.v=d.open};
     const sm=el("summary");sm.append(el("b",null,"自分のアーキタイプ"),el("span","status",[0,1].map(k=>mp.decks[k]?`${CN[mp.decks[k]]}${mp.arch&&mp.arch[k]?"「"+mp.arch[k]+"」":"（未入力）"}`:"").filter(Boolean).join(" / ")));d.append(sm);
