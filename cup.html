@@ -190,6 +190,8 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .ctcolors{margin:6px 0}.ctsw{padding:4px 6px;background:transparent;border:2px solid transparent;border-radius:9px;line-height:0}.ctsw.on{border-color:var(--accent,#4B3AC6)}
 .ctprev{font-size:1.3em}
 .bcast{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:8px 0;width:100%}.bcast .addrow input{flex:1}
+.resview img{display:block;width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}.resview .resact{margin:10px 0 4px;gap:8px;flex-wrap:wrap}
+.resview a.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:inherit;font-weight:700}.resview a.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .alertbox.resimg{max-width:860px}.alertbox a.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:inherit;font-weight:700}.alertbox a.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .alertov{position:fixed;inset:0;background:rgba(10,8,30,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
 .alertbox{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:22px 20px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;animation:apop .18s ease-out}
@@ -670,7 +672,8 @@ const recId=k=>k.replace(":","_");
 function placements(){
   // {entryId: "champion"|"runner"|"top"} for a finished tournament
   const out={};if(!T||T.status!=="done")return out;
-  if(T.topCut){const b=bracket();if(!b)return out;for(const s of T.bracket.seeds)out[s]="top";if(b.length>=2)for(const m of b[b.length-2])if(m.winner&&m.a&&m.b)out[m.winner===m.a?m.b:m.a]="third";const f=b[b.length-1][0];if(f.winner){out[f.winner]="champion";out[f.winner===f.a?f.b:f.a]="runner"}}
+  // finals held → from the bracket; ended after the qualifiers (no finals, or too few entrants for them) → from the standings
+  if(T.topCut&&T.bracket){const b=bracket();if(!b)return out;for(const s of T.bracket.seeds)out[s]="top";if(b.length>=2)for(const m of b[b.length-2])if(m.winner&&m.a&&m.b)out[m.winner===m.a?m.b:m.a]="third";const f=b[b.length-1][0];if(f.winner){out[f.winner]="champion";out[f.winner===f.a?f.b:f.a]="runner"}}
   else{const st=standings().filter(s=>!(P(s.id)||{}).dq);if(st[0])out[st[0].id]="champion";if(st[1])out[st[1].id]="runner";if(st[2])out[st[2].id]="third"}
   return out;
 }
@@ -678,6 +681,9 @@ const deletedPubs=new Set();
 function syncRecords(){
   if(MODE!=="admin"||!T||T.status!=="done"||deletedPubs.has(pub))return;
   const pl=placements();
+  const keep=new Set(Object.keys(pl).map(pid=>{const k=achKey(P(pid));return k?recId(k):null}).filter(Boolean));
+  if(Object.keys(pl).length)for(const [rid,rec] of Object.entries(records)){if(keep.has(rid)||!rec||!rec.events||!rec.events[pub])continue;
+    const ev=Object.assign({},rec.events);delete ev[pub];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}
   for(const [pid,place] of Object.entries(pl)){
     const p=P(pid);const k=achKey(p);if(!k)continue;const id=recId(k);const cur=records[id]||{name:"",events:{}};
     const kind=T.kind==="external"?"external":"internal";const ev=cur.events&&cur.events[pub];if(ev&&ev.place===place&&(ev.kind||"internal")===kind)continue;
@@ -813,8 +819,10 @@ function standings(){
   }
   const mwp=s=>{const g=s.w+s.l;return g?Math.max(1/3,s.w/g):0};
   for(const s of Object.values(S)){s.mwp=mwp(s);const g=s.gw+s.gl;s.gwp=g?Math.max(1/3,s.gw/g):0}
-  for(const s of Object.values(S)){s.omw=s.opps.length?s.opps.reduce((a,o)=>a+S[o].mwp,0)/s.opps.length:0}
-  for(const s of Object.values(S)){s.oomw=s.opps.length?s.opps.reduce((a,o)=>a+S[o].omw,0)/s.opps.length:0}
+  // a bye counts as having beaten the weakest possible opponent (33%), so it never lifts the tiebreakers
+  const BYE=1/3;
+  for(const s of Object.values(S)){const n=s.opps.length+s.bye;s.omw=n?(s.opps.reduce((a,o)=>a+S[o].mwp,0)+s.bye*BYE)/n:0}
+  for(const s of Object.values(S)){const n=s.opps.length+s.bye;s.oomw=n?(s.opps.reduce((a,o)=>a+S[o].omw,0)+s.bye*BYE)/n:0}
   const b3=fmtOf("swiss")==="bo3c";
   return Object.values(S).sort((a,b)=>b.w-a.w||b.omw-a.omw||(b3?b.gwp-a.gwp:0)||b.oomw-a.oomw||a.order-b.order);
 }
@@ -1104,13 +1112,28 @@ function renderChamp(){
   const host=$("champ");host.replaceChildren();
   if(T.status!=="done")return;
   let cid=null;
-  if(T.topCut){const b=bracket();cid=b&&b[b.length-1][0].winner}else{const s=standings();cid=s[0]&&s[0].id}
+  if(T.topCut&&T.bracket){const b=bracket();cid=b&&b[b.length-1][0].winner}else{const s=standings().filter(x=>!(P(x.id)||{}).dq);cid=s[0]&&s[0].id}
   if(!cid)return;
   syncRecords();
+  // the result image itself is shown here (made on this device; remade only when the results change)
+  const sig=resultSig();
+  if(resImg.sig===sig&&resImg.url){host.append(resultView());return}
   const w=who(P(cid));const d=el("div","champ");const tx=el("div");
-  tx.append(el("div","k","CHAMPION"),el("div","t",w.name+(w.handle?"  @"+w.handle:"")));
+  tx.append(el("div","k","CHAMPION"),el("div","t",w.name+(w.handle?"  @"+w.handle:"")),el("div","status","結果画像を作成中…"));
   d.append(tx);host.append(d);
-  const gb=el("button","primary","結果画像を作る（Xに貼れる画像）");gb.type="button";gb.style.marginTop="10px";gb.onclick=()=>openResultImage();host.append(gb);
+  if(resImg.busy!==sig){resImg.busy=sig;const myPub=pub;
+    drawResultImage().then(cv=>{if(pub!==myPub)return;resImg={sig,url:cv.toDataURL("image/png"),busy:null,blob:null};cv.toBlob(b=>{resImg.blob=b;if(!editing())render()},"image/png");if(!editing())render()})
+      .catch(e=>{console.error(e);resImg.busy=null})}
+}
+let resImg={sig:null,url:null,busy:null,blob:null};
+function resultSig(){return stable([pub,T.name,T.startAt||0,finalRanking().map(x=>[x.id,x.label,x.w,x.l]),players().map(p=>{const w=who(p);return[p.id,w.name,w.handle||"",(p.icon||"").length,p.decks||[],p.dq?1:0]})])}
+function resultView(){
+  const wrap=el("div","resview");const im=el("img");im.src=resImg.url;im.alt=`${T.name} の結果（優勝・準優勝・3位と、それ以降の順位）`;wrap.append(im);
+  const row=el("div","row resact");const fname=`${T.name||"result"}_結果.png`.replace(/[\\/:*?"<>|]/g,"_");
+  if(resImg.blob){const f=new File([resImg.blob],fname,{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]})){const sh=el("button","primary","画像を共有（Xなどに送る）");sh.type="button";sh.onclick=()=>navigator.share({files:[f],text:`${T.name} の結果🏆`}).catch(()=>{});row.append(sh)}}
+  const dl=el("a","btn"+(row.childElementCount?"":" primary"),"画像を保存");dl.href=resImg.url;dl.download=fname;dl.setAttribute("role","button");row.append(dl);
+  const x=el("a","btn","Xの投稿画面を開く");x.href="https://x.com/intent/post?text="+encodeURIComponent(`${T.name} の結果🏆\n`);x.target="_blank";x.rel="noopener";row.append(x);
+  wrap.append(row,el("div","status","スマホは画像を長押しでも保存できます。Xには保存した画像を添付してください。"));return wrap;
 }
 /* ---------- result image: podium for the top 3 and the rest of the ranking beside it ---------- */
 function finalRanking(){
