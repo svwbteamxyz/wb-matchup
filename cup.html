@@ -1840,7 +1840,7 @@ function roomBox(m,mine,oppName,res){
 }
 /* ---------- chat with the opponent ---------- */
 const chatDraft={};
-const QUICK=["ルームIDが違うようです。もう一度確認してください","ルームに入れません","今から入室します","少し遅れます"];
+const QUICK=["よろしくお願いします","ありがとうございました","ルームに入れません","少し遅れます"];
 function chatLines(mid){return Object.entries(C).filter(([,c])=>c.m===mid).map(([id,c])=>Object.assign({id},c)).sort((a,b)=>(a.at||0)-(b.at||0))}
 const hhmm=t=>{const d=new Date(t);return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`};
 // anti-spam for players: counted from the shared chat itself, so reloading the page doesn't reset it
