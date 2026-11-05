@@ -1378,7 +1378,7 @@ function renderTop(){
   if(admin&&T.status==="top")host.append(broadcastBox());
   const fin=b[R-1][0];
   if(admin&&fin.winner&&T.status==="top"){const btn=el("button","primary","大会を終了して優勝者を表示");btn.type="button";btn.onclick=()=>{T.status="done";saveT();render()};host.append(btn)}
-  if(admin&&!fin.winner&&T.status==="done"){T.status="top";patchT(["status"])}
+  // (a finished tournament is never moved back automatically: right after opening, results may simply not be loaded yet)
 }
 // meta report: distribution (pie), results and matchups, by class or by archetype. Organizer always; everyone after the event
 let metaUnit="class";
