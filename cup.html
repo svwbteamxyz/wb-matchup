@@ -678,16 +678,22 @@ function placements(){
   return out;
 }
 const deletedPubs=new Set();
+// automatic writes are rate-limited per document: if two pages disagree (e.g. an old version left open
+// in another tab), they must not keep overwriting each other forever
+const autoWriteAt={};
+function autoOk(key,ms){const t=now();if(autoWriteAt[key]&&t-autoWriteAt[key]<ms){if(!autoOk.warned){autoOk.warned=1;console.warn("auto-write throttled",key)}return false}autoWriteAt[key]=t;return true}
 function syncRecords(){
   if(MODE!=="admin"||!T||T.status!=="done"||deletedPubs.has(pub))return;
   const pl=placements();
   const keep=new Set(Object.keys(pl).map(pid=>{const k=achKey(P(pid));return k?recId(k):null}).filter(Boolean));
   if(Object.keys(pl).length)for(const [rid,rec] of Object.entries(records)){if(keep.has(rid)||!rec||!rec.events||!rec.events[pub])continue;
+    if(!autoOk("rec:"+rid,20000))continue;
     const ev=Object.assign({},rec.events);delete ev[pub];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}
   for(const [pid,place] of Object.entries(pl)){
     const p=P(pid);const k=achKey(p);if(!k)continue;const id=recId(k);const cur=records[id]||{name:"",events:{}};
     const kind=T.kind==="external"?"external":"internal";const ev=cur.events&&cur.events[pub];if(ev&&ev.place===place&&(ev.kind||"internal")===kind)continue;
     const next={name:who(p).name,events:Object.assign({},cur.events,{[pub]:{t:T.name,place,kind,at:T.created||now()}})};
+    if(!autoOk("rec:"+id,20000))continue;
     records[id]=next;write(`${ROOT}/records/${id}`,next);
   }
 }
@@ -717,7 +723,7 @@ async function syncBadges(){
     for(const [id,r] of Object.entries(teams))if(r&&teamDef(r.team))tm[await digest("a:"+id)]=r.team;
     const same=JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.badges||{}).sort())&&!T.pros&&!T.xyz;
     const sameP=JSON.stringify(Object.entries(tm).sort())===JSON.stringify(Object.entries(T.teams||{}).sort());
-    if(pub===myPub&&!badgeAgain&&(!same||!sameP)){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;patchT(["badges","teams","pros","xyz"])}}finally{badgeSyncing=false}
+    if(pub===myPub&&!badgeAgain&&(!same||!sameP)){if(autoOk("badges:"+pub,15000)){T.badges=map;T.teams=tm;delete T.pros;delete T.xyz;patchT(["badges","teams","pros","xyz"])}else setTimeout(syncBadges,16000)}}finally{badgeSyncing=false}
   if(badgeAgain){badgeAgain=false;syncBadges()}
 }
 const entryDigest={};const digestPending=new Set();
@@ -1574,7 +1580,7 @@ const archKey=(c,s)=>c+"|"+normArch(c,s).toLowerCase();
 function archLabel(c,raw){const n=normArch(c,raw);if(!n)return"";const map=(T&&T.archMap)||{};let to=map[c+"|"+n.toLowerCase()];if(to){const t2=map[c+"|"+String(to).toLowerCase()];if(t2)to=t2}return to||n}
 let archAliases={};
 function syncArchMap(){if(MODE!=="admin"||!T||!pub)return;const map={};for(const a of Object.values(archAliases)){if(a&&a.c&&a.from&&a.to)map[a.c+"|"+String(a.from).toLowerCase()]=a.to}
-  if(JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.archMap||{}).sort()))return;T.archMap=map;patchT(["archMap"])}
+  if(JSON.stringify(Object.entries(map).sort())===JSON.stringify(Object.entries(T.archMap||{}).sort()))return;if(!autoOk("arch:"+pub,15000))return;T.archMap=map;patchT(["archMap"])}
 const archSel={};const archDraft={to:""};
 function renderArchMerge(host,PL){
   // distinct names (after automatic tidy) per class, with how many players wrote them
@@ -2267,7 +2273,7 @@ function myView(){
 }
 // my results per deck I used (class + my archetype), with a breakdown by opponent class
 function myDeckStats(list){
-  const D={};for(const x of list)for(const m of x.matches||[])for(const [md,od,win] of m.g||[]){const a=(x.myArch&&x.myArch[md])||"";const k=md+"|"+a;
+  const D={};for(const x of list)for(const m of x.matches||[])for(const gg of m.g||[]){const [md,od,win]=Array.isArray(gg)?gg:[gg.m,gg.o,gg.w];const a=(x.myArch&&x.myArch[md])||"";const k=md+"|"+a;
     const d=D[k]||(D[k]={c:md,a,w:0,l:0,vs:{}});win?d.w++:d.l++;const v=d.vs[od]||(d.vs[od]={w:0,l:0});win?v.w++:v.l++}
   const box=el("div","mydecks");box.append(el("div","lab","使用デッキ別の成績"));
   const rows=Object.values(D).sort((x,y)=>(y.w+y.l)-(x.w+x.l));
@@ -2306,8 +2312,8 @@ function portalJoin(box){
 // a participant's own record in the open tournament (the organizer's page writes these for everyone with a user ID)
 // [my class, opponent class, 1 = won] for each game of a match that has decks recorded
 function gamesFor(m,me){const res=M[m.id];if(!res||res.forfeit)return[];const mine=m.a===me?"a":"b",ot=mine==="a"?"b":"a";const out=[];
-  if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;const md=g["d"+mine],od=g["d"+ot];if(md&&od)out.push([md,od,g.w===mine?1:0])}return out}
-  if(!res.winner)return out;const md=usedDeck(m,res,mine),od=usedDeck(m,res,ot);if(md&&od)out.push([md,od,res.winner===me?1:0]);return out}
+  if(isBo3m(m.id)){for(const g of res.games||[]){if(!g||!g.w)continue;const md=g["d"+mine],od=g["d"+ot];if(md&&od)out.push({m:md,o:od,w:g.w===mine?1:0})}return out}
+  if(!res.winner)return out;const md=usedDeck(m,res,mine),od=usedDeck(m,res,ot);if(md&&od)out.push({m:md,o:od,w:res.winner===me?1:0});return out}
 function summaryFor(me){
   const matches=[];let w=0,l=0;
   for(const r of T.rounds||[])for(const m of r.pairs){if(m.a!==me&&m.b!==me)continue;
