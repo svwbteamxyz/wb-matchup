@@ -1116,7 +1116,7 @@ function renderStartBox(){
 setInterval(()=>{if(T&&T.startAt&&T.status==="setup"&&!editing()){const o=ciOpen();if(o!==renderStartBox.last){renderStartBox.last=o;render()}}},15000);
 function checkinBlock(me){
   const p=P(me);if(!p||!ciUsed()||T.status!=="setup")return null;
-  const box=el("div","ci "+(p.checkedIn?"ci-done":ciOpen()?"ci-open":"ci-wait"));
+  const box=el("div","ci "+(p.checkedIn?"ci-done":ciOpen()?"ci-open":"ci-wait"));box.id="ciBlock";
   if(p.checkedIn){box.append(el("b",null,"✓ チェックイン済み"),el("span","status",`開始 ${fmtDT(T.startAt)}。予選が始まるまでお待ちください`));return box}
   if(!ciOpen()){box.append(el("b",null,"チェックイン前"),el("span","status",`${fmtDT(T.startAt-CHECKIN_MS)} からチェックインできます（開始 ${fmtDT(T.startAt)}）。チェックインしないと参加できません`));return box}
   box.append(el("b",null,"チェックイン受付中"),el("span","status",`開始 ${fmtDT(T.startAt)}。使うデッキを2つ選んでチェックインしてください。チェックインしていない人は、大会開始時に参加取り消しになります`));
@@ -1756,6 +1756,9 @@ function showAlert(){
 function playerAlerts(me,mp,mm){
   if(MODE==="admin"||!T||!mp)return;
   if(mp.dq||mp.drop)return;
+  if(ciUsed()&&ciOpen()&&!mp.checkedIn)
+    pushAlert("ci","チェックイン受付中です",[{t:`開始 ${fmtDT(T.startAt)}`},{t:"開始までに使うデッキを2つ選んでチェックインしてください。チェックインしないと参加取り消しになります。",cls:"warn"}],
+      {label:"チェックインへ",go:()=>{const b=$("ciBlock");if(b)b.scrollIntoView({behavior:"smooth",block:"center"})}});
   if(T.status==="confirm"&&T.confirm&&(T.confirm.invited||[]).includes(me)&&!mp.topReply)
     pushAlert("cf","決勝トーナメントに進出しました！",[{t:"5分以内に「出場する」か「辞退」を選んでください。時間内に選ばないと辞退扱いになります。",cls:"warn"}]);
   if(!mm)return;
