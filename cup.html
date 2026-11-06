@@ -1424,7 +1424,13 @@ function pairEditor(r){
   box.append(list);
   const nch=E.pairs.filter((m,i)=>r.pairs[i].a!==m.a||r.pairs[i].b!==m.b).length;
   const acts=el("div","row");const ok=el("button","primary",`この対戦表で確定（${nch}卓変更）`);ok.type="button";ok.disabled=!nch;
-  ok.onclick=()=>{const t0=now();
+  ok.onclick=async()=>{ok.disabled=true;const myPub=pub;
+    // check the server first: a table that already has a result must not be wiped by an out-of-date page
+    if(A.getServer){try{const srv=await A.getServer(cupPath());const sr=srv&&srv.rounds||[];const last=sr[sr.length-1];
+        if(!srv||sr.length!==T.rounds.length||!last||stable(last.pairs)!==stable(r.pairs)){setSync("ほかの運営が先に対戦表を変えていたため、保存しませんでした。最新の状態で組み替え直してください");pairEdit=null;if(srv&&pub===myPub){T=srv;baseCrit=critOf(srv)}render();return}
+        for(let i=0;i<E.pairs.length;i++){const o=r.pairs[i],m=E.pairs[i];if(o.a===m.a&&o.b===m.b)continue;const x=await A.getServer(matchPath(o.id));if(x&&x.winner){setSync(`第${i+1}卓はすでに結果が入っているため、組み替えませんでした`);ok.disabled=false;render();return}}
+      }catch(e){console.error(e);setSync("通信できませんでした。もう一度お試しください");ok.disabled=false;return}}
+    if(pub!==myPub)return;const t0=now();
     E.pairs.forEach((m,i)=>{const o=r.pairs[i];if(o.a===m.a&&o.b===m.b)return;
       if(m.b){m.startedAt=t0;delete M[o.id];write(matchPath(o.id),null)}else delete m.startedAt;
       for(const [cid,c] of Object.entries(C))if(c&&c.m===o.id){delete C[cid];write(`${cupPath()}/chat/${cid}`,null)}
@@ -1467,12 +1473,21 @@ function renderSwiss(){
       b.onclick=()=>{T.status="done";saveT();render()};act.append(b);
     }
     act.append(el("span","status",done?"全試合の結果が入りました":`結果待ち ${left}試合`));
-    const anyRes=r.pairs.some(m=>M[m.id]&&M[m.id].winner);
-    if(!anyRes){
+    // re-drawing the round is only offered before anything has happened at any table (no result, room ID or chat),
+    // needs a second press, and is checked against the server first so an out-of-date page can't wipe a round in progress
+    const anyAct=r.pairs.some(m=>{const x=M[m.id];return x&&(x.winner||x.room||x.entered)})||Object.values(C).some(c=>c&&r.pairs.some(m=>m.id===c.m));
+    if(!anyAct){
       const redo=el("button",null,"このラウンドを組み直す");redo.type="button";
-      redo.onclick=()=>{const old=T.rounds[T.rounds.length-1];const oid=new Set(old.pairs.map(m=>m.id));
+      redo.onclick=async()=>{
+        if(!redo.classList.contains("armed")){redo.classList.add("armed");redo.textContent="もう一度押すと組み直します（ルームIDやチャットも消えます）";setTimeout(()=>{if(redo.isConnected){redo.classList.remove("armed");redo.textContent="このラウンドを組み直す"}},4000);return}
+        redo.disabled=true;const old=T.rounds[T.rounds.length-1];const oid=[...new Set(old.pairs.map(m=>m.id))];const myPub=pub;
+        if(A.getServer){try{const srv=await A.getServer(cupPath());const sr=srv&&srv.rounds||[];const last=sr[sr.length-1];
+            if(!srv||sr.length!==T.rounds.length||!last||stable(last.pairs)!==stable(old.pairs)){setSync("ほかの運営が先に進めていたため、組み直しませんでした。最新の状態を確認してください");if(srv&&pub===myPub){T=srv;baseCrit=critOf(srv)}render();return}
+            for(const id of oid){const x=await A.getServer(matchPath(id));if(x&&(x.winner||x.room||x.entered)){setSync("すでに対戦が始まっている卓があるため、組み直しませんでした");render();return}}
+          }catch(e){console.error(e);setSync("通信できませんでした。もう一度お試しください");render();return}}
+        if(pub!==myPub)return;
         for(const id of oid)if(M[id]){delete M[id];write(matchPath(id),null)}
-        for(const [cid,c] of Object.entries(C))if(c&&oid.has(c.m)){delete C[cid];write(`${cupPath()}/chat/${cid}`,null)}
+        for(const [cid,c] of Object.entries(C))if(c&&oid.includes(c.m)){delete C[cid];write(`${cupPath()}/chat/${cid}`,null)}
         T.rounds.pop();const nr=makeRound();delete nr.rematch;T.rounds.push(nr);saveT();render()};
       act.append(redo);
     }
@@ -1833,9 +1848,12 @@ const WHY={noroom:"ルーム未作成",noentry:"未入室",dq:"失格",drop:"ド
 // A time-out loss is written only after re-reading the match from the server: a device whose copy is
 // out of date (e.g. a phone just back from sleep) must never wipe a room ID that was already entered.
 const toBusy=new Set();
+// a time-out is never counted from before this organizer page saw the match become playable
+// (later finals rounds start from the reported time of the previous results, which come from players' clocks)
+const seenAt={};
 function enforceTimeouts(){
   const tnow=now();
-  for(const m of activeMatches()){
+  for(const m0 of activeMatches()){const fs=seenAt[m0.id]||(seenAt[m0.id]=tnow);const m=Object.assign({},m0,{start:Math.max(m0.start||0,fs)});
     const res=M[m.id]||{};if(res.manual)continue;const d=deadline(m,res);if(!d||d.judge||tnow<d.at)continue;
     if(!A.getServer){const cur=Object.assign({},res);cur.winner=d.loser===m.a?m.b:m.a;cur.forfeit=d.why;cur.score=isBo3m(m.id)?"2-0":null;cur.at=tnow;M[m.id]=cur;write(matchPath(m.id),cleanRes(cur));continue}
     if(toBusy.has(m.id))continue;toBusy.add(m.id);const path=matchPath(m.id);
