@@ -726,7 +726,8 @@ let toursReady=false,recordsReady=false,eventsReady=false;const pruneChecked=new
 // a tournament that is no longer in the organizer's list must not stay in the participants' tournament list
 function pruneEvents(){if(MODE!=="admin"||!PKEY||!toursReady||!eventsReady||!Object.keys(tours).length)return;
   const live=new Set(Object.values(tours).map(t=>t&&t.pub).filter(Boolean));
-  for(const ep of Object.keys(EVA)){if(live.has(ep))continue;if(!autoOk("evprune:"+ep,60000))continue;delete EVA[ep];write(`${portalPath()}/events/${ep}`,null)}}
+  for(const ep of Object.keys(EVA)){if(live.has(ep)||!A.getServer)continue;if(!autoOk("evprune:"+ep,60000))continue;
+    A.getServer(`cups/${ep}`).then(d=>{if(d===null&&EVA[ep]){delete EVA[ep];write(`${portalPath()}/events/${ep}`,null)}}).catch(()=>{})}}
 function dropRecordEvents(gone){
   for(const [rid,rec] of Object.entries(records)){if(!rec||!rec.events||!rec.events[gone])continue;const ev=Object.assign({},rec.events);delete ev[gone];const nr=Object.assign({},rec,{events:ev});records[rid]=nr;write(`${ROOT}/records/${rid}`,Object.keys(ev).length?nr:null)}
   syncBadges();renderHall();render()}
@@ -736,7 +737,8 @@ function pruneRecords(){
   for(const rec of Object.values(records))for(const ep of Object.keys((rec&&rec.events)||{})){
     if(live.has(ep)||pruneChecked.has(ep))continue;pruneChecked.add(ep);
     if(deletedPubs.has(ep)){dropRecordEvents(ep);continue}
-    getOnce(`cups/${ep}`).then(d=>{if(!d)dropRecordEvents(ep)})}
+    // ask the server directly (a cached "not found" right after opening must never delete achievements)
+    if(!A.getServer)continue;A.getServer(`cups/${ep}`).then(d=>{if(d===null&&!live.has(ep))dropRecordEvents(ep)}).catch(()=>{pruneChecked.delete(ep)})}
 }
 let badgeSyncing=false,badgeAgain=false;
 // if something changes while a sync is running, run again afterwards so the latest kind/records always win
@@ -871,35 +873,44 @@ function makeRound(){
   const n=(T.rounds||[]).length+1;
   const played=new Set();const hadBye=new Set();
   for(const r of T.rounds||[])for(const m of r.pairs){if(m.b)played.add([m.a,m.b].sort().join("|"));else hadBye.add(m.a)}
-  let order;
-  if(n===1)order=shuffle(players().filter(p=>!p.dq&&!p.drop).map(p=>p.id));
-  else{
-    // shuffle inside each win-group so equal records meet randomly, then keep the group order
-    const st=standings().filter(s=>!isOut(s.id));const groups={};for(const s of st)(groups[s.w]=groups[s.w]||[]).push(s.id);
-    order=Object.keys(groups).map(Number).sort((a,b)=>b-a).flatMap(w=>shuffle(groups[w]));
-  }
-  const pairs=[];
-  if(order.length%2===1){
-    let bi=order.length-1;for(let i=order.length-1;i>=0;i--){if(!hadBye.has(order[i])){bi=i;break}}
-    const b=order.splice(bi,1)[0];pairs.push({id:`r${n}-bye`,a:b,b:null});
-  }
-  const res=[];const used=new Set();
   const key=(a,b)=>[a,b].sort().join("|");
-  let steps=0;
-  function dfs(i){
-    if(++steps>200000)return false;
-    while(i<order.length&&used.has(order[i]))i++;
-    if(i>=order.length)return true;
-    const a=order[i];used.add(a);
-    for(let j=i+1;j<order.length;j++){const b=order[j];if(used.has(b)||played.has(key(a,b)))continue;used.add(b);res.push([a,b]);if(dfs(i+1))return true;res.pop();used.delete(b)}
-    used.delete(a);return false;
+  // order: random in round 1; afterwards by wins (players with the same wins in random order)
+  const makeOrder=()=>{if(n===1)return shuffle(players().filter(p=>!p.dq&&!p.drop).map(p=>p.id));
+    const st=standings().filter(s=>!isOut(s.id));const groups={};for(const s of st)(groups[s.w]=groups[s.w]||[]).push(s.id);
+    return Object.keys(groups).map(Number).sort((a,b)=>b-a).flatMap(w=>shuffle(groups[w]))};
+  // pair everyone with someone they have not met, keeping opponents as close in the standings as possible
+  const tryPair=(order,limit)=>{const res=[],used=new Set();let steps=0;
+    const dfs=i=>{if(++steps>limit)return false;while(i<order.length&&used.has(order[i]))i++;if(i>=order.length)return true;
+      const a=order[i];used.add(a);
+      for(let j=i+1;j<order.length;j++){const b=order[j];if(used.has(b)||played.has(key(a,b)))continue;used.add(b);res.push([a,b]);if(dfs(i+1))return true;res.pop();used.delete(b)}
+      used.delete(a);return false};
+    return dfs(0)?res:null};
+  // the bye goes to the lowest-placed player who has not had one; if that makes a rematch unavoidable, the next one up
+  const byeCands=o=>{const c=[];for(let i=o.length-1;i>=0;i--)if(!hadBye.has(o[i]))c.push(i);if(!c.length)c.push(o.length-1);return c};
+  let best=null,bye=null,baseOrder=makeOrder();
+  for(let attempt=0;attempt<40&&!best;attempt++){
+    const order=attempt===0?baseOrder.slice():makeOrder();let b=null;
+    if(order.length%2===1){const c=byeCands(order);const bi=c[Math.min(Math.floor(attempt/8),c.length-1)];b=order.splice(bi,1)[0]}
+    const r=tryPair(order,attempt===0?200000:40000);if(r){best=r;bye=b}
   }
-  let ok=dfs(0);
-  if(!ok){res.length=0;for(let i=0;i+1<order.length;i+=2)res.push([order[i],order[i+1]])}
+  if(!best){
+    // no rematch-free pairing exists (very late rounds): pair in order, then swap partners to remove as many rematches as possible
+    const order=baseOrder.slice();if(order.length%2===1){bye=order.splice(byeCands(order)[0],1)[0]}
+    best=[];for(let i=0;i+1<order.length;i+=2)best.push([order[i],order[i+1]]);
+    for(let pass=0;pass<5;pass++){let changed=false;
+      for(let x=0;x<best.length;x++){if(!played.has(key(...best[x])))continue;
+        for(let y=0;y<best.length;y++){if(y===x)continue;const [a,b]=best[x],[c,d]=best[y];
+          if(!played.has(key(a,d))&&!played.has(key(c,b))){best[x]=[a,d];best[y]=[c,b];changed=true;break}
+          if(!played.has(key(a,c))&&!played.has(key(b,d))){best[x]=[a,c];best[y]=[b,d];changed=true;break}}}
+      if(!changed)break}
+  }
+  const pairs=[];if(bye)pairs.push({id:`r${n}-bye`,a:bye,b:null});
+  const res=best;
   const pre=Object.keys(M).some(k=>k.startsWith(`r${n}-`))?`r${n}x${now().toString(36)}`:`r${n}`;
   res.forEach(([a,b],i)=>pairs.unshift({id:`${pre}-${i}`,a,b}));
   pairs.sort((x,y)=>(x.b?0:1)-(y.b?0:1)||x.id.localeCompare(y.id,undefined,{numeric:true}));
-  return{n,pairs,rematch:!ok,startedAt:now()};
+  const rem=res.filter(([a,b])=>played.has(key(a,b))).length;
+  return{n,pairs,rematch:rem>0,startedAt:now()};
 }
 
 /* ---------- bracket ---------- */
