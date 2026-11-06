@@ -197,6 +197,9 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .alertbox{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:22px 20px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;animation:apop .18s ease-out}
 .alertbox h2{margin:0;font-size:1.25rem}.alertbox p{margin:0;line-height:1.6}.alertbox .bigid{font-size:1.6rem;font-weight:900;letter-spacing:.06em}.alertbox button{margin-top:6px}
 @keyframes apop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.alertbox.ppage{max-width:640px;max-height:88vh;overflow:auto;text-align:left}.pphead{display:flex;align-items:center;gap:12px}.ppname>:first-child{font-size:1.2rem;font-weight:800}.ppage .rep{margin:0}
+.dmbox{margin:4px 0 10px 30px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:6px}
+.dmplayer{border:2px solid var(--accent);border-radius:12px;padding:10px 12px;margin-bottom:12px}
 .pairedit .status{margin-bottom:10px}.pelist{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .perow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.perow.changed{border-color:var(--accent,#4B3AC6);background:color-mix(in srgb,var(--accent,#4B3AC6) 8%,transparent)}
 .petab{font-weight:700;min-width:4.5em;font-size:.9rem}.peslot{min-width:7em}.peslot.on{outline:3px solid var(--accent,#4B3AC6);outline-offset:1px}.perow .vs{opacity:.6}
@@ -306,7 +309,7 @@ img.shot.big{max-width:100%;max-height:none;cursor:zoom-out}
 .champ .k{font-size:.75rem;font-weight:700;letter-spacing:.12em;color:var(--accent)}
 /* players */
 .plist{display:flex;flex-direction:column;gap:6px}
-.prow{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center}
+.prow{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) auto auto auto auto auto;gap:8px;align-items:center}
 .prow .no{font-family:var(--f-num);color:var(--muted);font-size:.8rem;text-align:right}
 .prow .who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
 .prow .who b{overflow-wrap:anywhere}
@@ -403,7 +406,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
       <div class="f">
         <label>予選ラウンド数 <select id="tRounds"><option value="0">人数から自動</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
         <label>決勝トーナメント <select id="tCut"><option value="0">なし（予選のみ）</option><option value="2">上位2名</option><option value="4" selected>上位4名</option><option value="8">上位8名</option></select></label>
-        <label>定員 <select id="tCap"><option value="0">なし</option><option value="16">16人</option><option value="32">32人</option><option value="64">64人</option><option value="128">128人</option></select></label>
+        <label>定員 <input id="tCap" type="text" inputmode="numeric" maxlength="3" placeholder="なし" autocomplete="off" style="width:6.5em" aria-describedby="tCapNote"> 人<span id="tCapNote" class="status" style="display:block;font-size:.75rem">空欄なら定員なし（2〜999人）</span></label>
         <label>種別 <select id="tKind"><option value="internal">内戦（チームメンバーのみ）</option><option value="external">外戦（外部プレイヤーも参加）</option></select></label>
         <label>予選フォーマット <select id="tFormat"><option value="bo1">2デッキBO1</option><option value="bo3c">BO3コンクエスト</option></select></label>
         <label>決勝フォーマット <select id="tFormatTop"><option value="bo1">2デッキBO1</option><option value="bo3c" selected>BO3コンクエスト</option></select></label>
@@ -489,7 +492,7 @@ table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;f
   <section class="panel" id="hallPanel" hidden>
     <details id="hallBox">
       <summary class="row" style="cursor:pointer"><h2>実績</h2><span class="status" id="hallCount"></span></summary>
-      <div class="status" style="margin:8px 0">大会が終わると、優勝・準優勝・3位・決勝トーナメント進出が自動で記録されます。実績は内戦と外戦で別々に数え、内戦の大会では内戦の実績、外戦の大会では外戦の実績だけが名前に付きます。同じ人かどうかはユーザーIDで見分けます（内戦でユーザーIDがない人は名簿で見分けます）。実績に応じて名前の後ろにアイコンが付きます：優勝は金トロフィー、準優勝は銀トロフィー、3位は銅トロフィー、決勝R進出はリボンメダル。いちばん高い実績のアイコンだけを表示します。</div>
+      <div class="status" style="margin:8px 0">大会が終わると、優勝・準優勝・3位・決勝トーナメント進出が自動で記録されます。実績は内戦・外戦を合わせて数え、どの大会でも名前の後ろに付きます。同じ人かどうかはユーザーIDで見分けます（内戦でユーザーIDがない人は名簿で見分けます）。実績に応じて名前の後ろにアイコンが付きます：優勝は金トロフィー、準優勝は銀トロフィー、3位は銅トロフィー、決勝R進出はリボンメダル。取った実績はすべて、回数付きで表示します。</div>
       <div class="row hallkind" id="hallKind" role="group" aria-label="内戦・外戦の切り替え"></div>
       <div class="tbox"><table class="st" id="hallTable"></table></div>
       <h3 style="margin:14px 0 6px;font-size:.95rem">チームアイコン</h3>
@@ -727,8 +730,9 @@ function pruneRecords(){
 let badgeSyncing=false,badgeAgain=false;
 // if something changes while a sync is running, run again afterwards so the latest kind/records always win
 async function syncBadges(){
-  if(MODE!=="admin"||!T||!pub||T.status==="done")return;if(badgeSyncing){badgeAgain=true;return}badgeSyncing=true;badgeAgain=false;const myPub=pub;
-  try{const map={};for(const [id,rec] of Object.entries(allRecords())){const c=tally(rec,T.kind==="external"?"external":"internal");if(!c.t)continue;map[await digest("a:"+id)]=[c.w,c.r,c.t,c.b]}
+  // finished tournaments are kept up to date too, so the winner's new trophy shows on that tournament's page as well
+  if(MODE!=="admin"||!T||!pub)return;if(badgeSyncing){badgeAgain=true;return}badgeSyncing=true;badgeAgain=false;const myPub=pub;
+  try{const map={};for(const [id,rec] of Object.entries(allRecords())){const c=tally(rec,null);if(!c.t)continue;map[await digest("a:"+id)]=[c.w,c.r,c.t,c.b]}
     const tm={};
     // roster members automatically get the XYZ tag (an explicitly chosen team wins)
     for(const p of players()){if(!autoXYZ(p))continue;const k=achKey(p);if(!k)continue;const id=recId(k);if(teams[id])continue;tm[await digest("a:"+id)]="XYZ"}
@@ -963,12 +967,14 @@ function renderAll(){
   $("dangerPanel").hidden=!has||!admin;
   if(MODE==="portal"){if(renderPortal())return}else $("myPanel").hidden=true;
   renderReport();
-  renderBans();renderHall();renderUidPanel();renderInbox();adminPortalSync();
+  renderBans();renderHall();renderUidPanel();renderInbox();renderPlayerPage();adminPortalSync();
   if(!has){$("lobbyBox").hidden=true;$("champ").replaceChildren(T===null&&tid?el("div","empty","読み込み中…"):el("div","empty",admin?"「新しい大会を作る」から始めてください。":MODE==="player"?"大会が見つかりません。運営から受け取ったURLをもう一度確認してください。":"読み込み中…"));return}
   renderCalls();renderLobby();renderPlayers();renderSwiss();renderStand();renderTop();renderDecks();renderChamp();
 }
 /* ---------- capacity: first come first served, no-shows replaced from the waiting list ---------- */
 const capOf=()=>(T&&T.cap)||0;
+// empty = no limit; any whole number from 2 (full-width digits are accepted)
+function capInput(){const v=Math.floor(Number(String($("tCap").value||"").normalize("NFKC").trim()));return v>=2?Math.min(v,999):0}
 // players are kept in registration order; within the capacity = confirmed, after it = waiting list
 function capInfo(pid){const cap=capOf();const L=players();const i=L.findIndex(p=>p.id===pid);if(!cap||i<0)return{in:true,pos:i+1};return i<cap?{in:true,pos:i+1}:{in:false,wait:i-cap+1}}
 // who actually plays: if check-in is running, only those who checked in; then the first [capacity] in registration order
@@ -1293,6 +1299,8 @@ function renderPlayers(){
         addBan({name:w.name,uid:p.uid||"",handle:w.handle||"",reason:""});if(setup)removeEntry(p.id);render()};row.append(bb)}
     const del=el("button","danger","外す");del.type="button";del.hidden=!setup||!admin;
     del.onclick=()=>{removeEntry(p.id);render()};
+    if(admin){const u=normUid(p.uid);const open=u?inqOpenCount(u):0;const mb=el("button",open?"primary":null,open?`マイページ（未対応 ${open}）`:"マイページ");mb.type="button";
+      mb.title="この参加者のマイページ（プロフィール・実績・戦績・メッセージ）を開きます";mb.onclick=()=>openPlayerPage(p.id);row.append(mb)}
     row.append(del);list.append(row);
     if(admin&&customOpen[p.id]){const ck=achKey(p);const cid=ck&&recId(ck);if(cid)list.append(customTeamEditor(p.id,cid,w.name));else delete customOpen[p.id]}
     if(admin&&archOpen[p.id]&&(p.decks||[]).some(Boolean)){const ed=el("div","archedit");ed.append(el("span","status",`${w.name} のアーキタイプ（運営が入力・変更できます。いつでも変更できます）`),
@@ -1333,7 +1341,7 @@ $("regSave").onclick=()=>{
   if($("regJoin").checked&&T&&T.status==="setup"){joinMember(mid)}
   $("regName").value="";$("regHandle").value="";$("regUid").value="";$("regName").focus();setSync(`${name} を名簿に登録しました`);render();
 };
-let startAsk=false;const archOpen={};const customOpen={};
+let startAsk=false;const archOpen={};const dmOpen={};const customOpen={};
 // organizer types a team name and picks one of the colour patterns; the badge is saved like the ready-made ones
 function customTeamEditor(pid,id,name){
   const st=customOpen[pid];const box=el("div","archedit teamedit");
@@ -1689,7 +1697,7 @@ $("meSel").onchange=()=>{const v=$("meSel").value;memMe[meKey()]=v;try{localStor
 const alertQ=[];let alertOpen=false,alertSeen=null,alertPub=null,titleBase=null;
 function seenSet(){if(alertPub!==pub){alertPub=pub;alertSeen=new Set();try{for(const k of JSON.parse(localStorage.getItem("xyzcup-seen-"+pub)||"[]"))alertSeen.add(k)}catch(e){}}return alertSeen}
 function markSeen(k){const S=seenSet();if(S.has(k))return false;S.add(k);try{localStorage.setItem("xyzcup-seen-"+pub,JSON.stringify([...S].slice(-200)))}catch(e){}return true}
-function pushAlert(k,title,lines){if(!markSeen(k))return;alertQ.push({title,lines});showAlert()}
+function pushAlert(k,title,lines,ok){if(!markSeen(k))return;alertQ.push({title,lines,ok});showAlert()}
 function beep(){try{const C=window.__ac||(window.__ac=new (window.AudioContext||window.webkitAudioContext)());const o=C.createOscillator(),g=C.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(C.destination);o.start();o.stop(C.currentTime+.18)}catch(e){}}
 function showAlert(){
   if(alertOpen||!alertQ.length)return;alertOpen=true;const a=alertQ.shift();
@@ -1697,12 +1705,14 @@ function showAlert(){
   try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}beep();
   const ov=el("div","alertov");const dlg=el("div","alertbox");dlg.setAttribute("role","alertdialog");dlg.setAttribute("aria-modal","true");dlg.setAttribute("aria-labelledby","alertTitle");
   const h=el("h2",null,a.title);h.id="alertTitle";dlg.append(h);for(const l of a.lines){const pe=el("p",l.cls||null,l.t);if(l.copy){const cb=el("button",null,"コピー");cb.type="button";cb.style.marginLeft="10px";cb.onclick=()=>{try{navigator.clipboard.writeText(l.copy);cb.textContent="コピーしました"}catch(e){}};pe.append(cb)}dlg.append(pe)}
-  const ok=el("button","primary big","OK");ok.type="button";
-  ok.onclick=()=>{ov.remove();alertOpen=false;document.title=titleBase;titleBase=null;const r=$("reportPanel");if(r&&!alertQ.length)r.scrollIntoView({behavior:"smooth",block:"start"});showAlert()};
+  const ok=el("button","primary big",a.ok?a.ok.label:"OK");ok.type="button";
+  ok.onclick=()=>{ov.remove();alertOpen=false;document.title=titleBase;titleBase=null;if(a.ok)a.ok.go();else{const r=$("reportPanel");if(r&&!alertQ.length&&!r.hidden)r.scrollIntoView({behavior:"smooth",block:"start"})}showAlert()};
+  if(a.ok){const later=el("button",null,"あとで");later.type="button";later.onclick=()=>{ov.remove();alertOpen=false;document.title=titleBase;titleBase=null;showAlert()};dlg.append(later)}
   dlg.append(ok);ov.append(dlg);document.body.append(ov);setTimeout(()=>ok.focus(),0);
 }
 function playerAlerts(me,mp,mm){
-  if(MODE==="admin"||!T||!mp||mp.dq||mp.drop)return;
+  if(MODE==="admin"||!T||!mp)return;
+  if(mp.dq||mp.drop)return;
   if(T.status==="confirm"&&T.confirm&&(T.confirm.invited||[]).includes(me)&&!mp.topReply)
     pushAlert("cf","決勝トーナメントに進出しました！",[{t:"5分以内に「出場する」か「辞退」を選んでください。時間内に選ばないと辞退扱いになります。",cls:"warn"}]);
   if(!mm)return;
@@ -1715,6 +1725,17 @@ function playerAlerts(me,mp,mm){
   const inc=chatLines(m.id).filter(c=>c.from!==me&&(c.text||c.img)&&!c.resolve);
   if(inc.length){const last=inc[inc.length-1];inc.slice(0,-1).forEach(c=>markSeen("chat:"+c.id));
     const fromAdmin=last.from==="admin";pushAlert("chat:"+last.id,fromAdmin?"運営からのメッセージ":`${who(P(last.from)).name} さんからチャット`,[{t:last.text||"画像が送られました"}])}
+}
+function dmBoxPlayer(me){
+  const mid="dm-"+me;const box=el("div","chat dmplayer");box.append(el("span","k","運営からのメッセージ"),chatLog(mid,me));
+  const row=el("div","addrow");const i=el("input");i.type="text";i.id="dmInput";i.maxLength=120;i.placeholder="運営に返信する";i.setAttribute("aria-label","運営への返信");
+  i.value=chatDraft[mid]||"";i.oninput=()=>{chatDraft[mid]=i.value};
+  const wn=el("div","warn");
+  const send=()=>{const v=i.value.trim();if(!v)return;const blk=chatBlock(mid,me,v,{});if(blk&&!/止められて/.test(blk)){wn.textContent=blk;return}
+    if(sendChat(mid,me,v,{call:true})){chatDraft[mid]="";i.value="";i.blur()}};
+  i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();send()}});
+  const b=el("button","primary","返信");b.type="button";b.onclick=send;row.append(i,b);box.append(row,wn);
+  box.append(el("div","status","運営とあなただけのやりとりです（対戦相手には表示されません）"));return box;
 }
 function myMatch(me){
   if(T.status==="swiss"){const r=(T.rounds||[])[T.rounds.length-1];if(!r)return null;const i=r.pairs.findIndex(m=>m.a===me||m.b===me);if(i<0)return null;const m=r.pairs[i];return{m,label:m.b?`予選 R${r.n}　第${i+1}卓`:`予選 R${r.n}`,bye:!m.b,last:r.n>=T.swissRounds}}
@@ -1886,7 +1907,10 @@ function chatLog(mid,me){
     const line=el("div","msg"+(c.from===me?" me":"")+(c.from==="admin"?" adm":"")+(c.call?" call":"")+(c.resolve?" res":""));
     const nm=c.from==="admin"?"運営":c.from===me?"あなた":who(P(c.from)).name;
     const body=el("span");
-    if(c.call)body.append(el("strong",null,"運営を呼び出しました"),document.createTextNode(c.text?"　"+c.text:""));
+    const isDm=String(mid).startsWith("dm-");
+    if(c.call&&isDm)body.append(document.createTextNode(c.text||""));
+    else if(c.resolve&&isDm){if(!c.text)continue;body.append(document.createTextNode(c.text))}
+    else if(c.call)body.append(el("strong",null,"運営を呼び出しました"),document.createTextNode(c.text?"　"+c.text:""));
     else if(c.resolve)body.append(el("strong",null,"対応済みにしました"),document.createTextNode(c.text?"　"+c.text:""));
     else if(c.text)body.append(document.createTextNode(c.text));
     if(c.img){const im=el("img","shot");im.src=c.img;im.alt="送信されたスクリーンショット";im.title="クリックで拡大／縮小";im.onclick=()=>im.classList.toggle("big");body.append(im)}
@@ -1987,8 +2011,8 @@ $("banAdd").onclick=()=>{const u=normUid($("banUid").value),x=normX($("banX").va
 let hallKind="internal";
 function renderHall(){
   $("hallPanel").hidden=!admin;if(!admin)return;renderPros();
-  const sw=$("hallKind");if(sw){sw.replaceChildren();for(const [k,l] of [["internal","内戦"],["external","外戦"]]){const b=el("button",hallKind===k?"on":null,l);b.type="button";b.setAttribute("aria-pressed",String(hallKind===k));b.onclick=()=>{hallKind=k;renderHall()};sw.append(b)}}
-  const rows=Object.entries(allRecords()).map(([id,r])=>Object.assign({id,name:r.name},tally(r,hallKind))).filter(r=>r.t).sort((a,b)=>b.w-a.w||b.r-a.r||b.b-a.b||b.t-a.t);
+  const sw=$("hallKind");if(sw)sw.hidden=true;if(false&&sw){sw.replaceChildren();for(const [k,l] of [["internal","内戦"],["external","外戦"]]){const b=el("button",hallKind===k?"on":null,l);b.type="button";b.setAttribute("aria-pressed",String(hallKind===k));b.onclick=()=>{hallKind=k;renderHall()};sw.append(b)}}
+  const rows=Object.entries(allRecords()).map(([id,r])=>Object.assign({id,name:r.name},tally(r,null))).filter(r=>r.t).sort((a,b)=>b.w-a.w||b.r-a.r||b.b-a.b||b.t-a.t);
   $("hallCount").textContent=`${rows.length}人`;const t=$("hallTable");t.replaceChildren();
   if(!rows.length){t.innerHTML="<tbody><tr><td class='status' style='text-align:left'>まだ記録はありません</td></tr></tbody>";return}
   t.innerHTML="<thead><tr><th></th><th>名前</th><th>優勝</th><th>準優勝</th><th>3位</th><th>決勝R進出</th><th>識別</th></tr></thead>";const tb=el("tbody");
@@ -2067,6 +2091,46 @@ function renderInbox(){
     d.append(f);
     if(t.open){const ok=el("button",null,"返信せずに対応済みにする");ok.type="button";ok.onclick=()=>{const at=now();for(const i of t.items)if(i.from==="user"&&!inboxDone[i.id]){inboxDone[i.id]={at};write(`${ROOT}/inboxDone/${i.id}`,{at})}render()};d.append(ok)}
     host.append(d)}
+}
+function inqItems(u){const items=[];for(const [id,m] of Object.entries(inboxMsgs))if(normUid(m.uid)===u)items.push(Object.assign({id,from:"user"},m));
+  for(const [id,r] of Object.entries(inboxReplies))if(r&&normUid(r.uid)===u)items.push(Object.assign({id,from:"admin"},r));return items.sort((a,b)=>(a.at||0)-(b.at||0))}
+function inqOpenCount(u){return inqItems(u).filter(i=>i.from==="user"&&!inboxDone[i.id]).length}
+let ppOpen=null;
+function openPlayerPage(pid){ppOpen=pid;renderPlayerPage()}
+function renderPlayerPage(){
+  const old=document.getElementById("ppOverlay");if(!ppOpen||!admin||!T){if(old)old.remove();ppOpen=null;return}
+  const p=P(ppOpen);if(!p){if(old)old.remove();ppOpen=null;return}
+  // keep the dialog (and whatever is being typed) if it is already open and the user is typing
+  if(old&&old.contains(document.activeElement)&&editing())return;
+  const keepScroll=old?old.querySelector(".alertbox").scrollTop:0;if(old)old.remove();
+  const w=who(p),u=normUid(p.uid);
+  const ov=el("div","alertov");ov.id="ppOverlay";const box=el("div","alertbox ppage");box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");box.setAttribute("aria-label",`${w.name} さんのマイページ`);
+  const close=()=>{ppOpen=null;ov.remove()};ov.onclick=e=>{if(e.target===ov)close()};ov.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+  const head=el("div","pphead");head.append(avatar(p,56));const nm=el("div","ppname");nm.append(nameEl(p,w.name));
+  if(w.handle)nm.append(el("div","status","@"+w.handle));nm.append(el("div","status",u?`ユーザーID ${u}`:"ユーザーIDなし"));head.append(nm);
+  const x=el("button",null,"閉じる");x.type="button";x.onclick=close;head.append(el("span","spacer"),x);box.append(head);
+  // achievements (all events)
+  const rec=u?allRecords()["u_"+u]:null;const k=achKey(p);const rec2=rec||(k?allRecords()[recId(k)]:null);const c=tally(rec2,null);
+  const ach=el("div","rep");ach.append(el("div","lab","実績（内戦・外戦の合計）"));
+  ach.append(el("div",null,`優勝 ${c.w}回・準優勝 ${c.r}回・3位 ${c.b}回・決勝R進出 ${c.t}回`));
+  const evs=Object.values((rec2&&rec2.events)||{}).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,10);
+  const PL={champion:"優勝",runner:"準優勝",third:"3位",top:"決勝R進出"};
+  for(const e of evs)ach.append(el("div","status",`${e.t||"大会"}：${PL[e.place]||e.place}`));
+  box.append(ach);
+  // this tournament
+  const s=summaryFor(p.id);const cur=el("div","rep");cur.append(el("div","lab",`この大会（${T.name}）`));
+  cur.append(el("div",null,`${s.w}勝${s.l}敗`+(s.rank?`　予選${s.rank}位`:"")+(p.dq?"　失格":p.drop?"　ドロップ":"")+(p.checkedIn?"　チェックイン済み":"")));
+  if((p.decks||[]).filter(Boolean).length)cur.append(el("div","status","デッキ："+(p.decks||[]).filter(Boolean).map(d=>CN[d]||d).join(" / ")));
+  for(const m of s.matches)cur.append(el("div","status",`${m.label}　${m.opp||"不戦勝"}　${m.res==="win"?"勝ち":m.res==="lose"?"負け":m.res==="bye"?"不戦勝":"結果待ち"}`));
+  box.append(cur);
+  // messages (the participant's My Page thread)
+  const msg=el("div","rep");msg.id="ppMsg";msg.append(el("div","lab","メッセージ"));
+  if(!u||!PKEY){msg.append(el("div","status","ユーザーIDのない参加者には、マイページへメッセージを送れません。"))}
+  else{msg.append(el("div","status","ここから送ると、本人のマイページ「運営への問い合わせ」に届きます（本人と運営だけが読めます）。"));
+    const items=inqItems(u);msg.append(inqThread(items,"admin"));
+    msg.append(inqForm("pp-"+u,inboxDraft,async(text,img)=>{const id=uid("r");const at=now();write(`${portalPath()}/inq/${u}/msgs/${id}`,{from:"admin",text,img:img||null,at});inboxReplies[id]={uid:u,text,img:img||null,at};write(`${ROOT}/replies/${id}`,inboxReplies[id]);
+      for(const i of items)if(i.from==="user"&&!inboxDone[i.id]){inboxDone[i.id]={at};write(`${ROOT}/inboxDone/${i.id}`,{at})}render()},"メッセージを送る"))}
+  box.append(msg);ov.append(box);document.body.append(ov);box.scrollTop=keepScroll;if(!old)setTimeout(()=>x.focus(),0);
 }
 // shared pieces
 function inqThread(items,view){
@@ -2154,6 +2218,8 @@ function renderPortal(){
   if(LOGIN&&Uloaded&&U){
     const nav=el("div","row pnav");const who_=el("div","pwho");who_.append(avatar({icon:U.icon,name:U.name||"?"},30),el("b",null,U.name||"?"),el("span","status","ID "+LOGIN));nav.append(who_,el("span","spacer"));
     let unread=0;try{const seen=Number(localStorage.getItem("xyz-cup-inqseen-"+LOGIN))||0;unread=Object.values(MYINQ).filter(m=>m.from==="admin"&&(m.at||0)>seen).length}catch(e){}
+    if(unread&&pview!=="my"){const last=Object.entries(MYINQ).filter(([,m])=>m.from==="admin").sort((a,b)=>(a[1].at||0)-(b[1].at||0)).pop();
+      if(last)pushAlert("inq:"+last[0],"運営からのメッセージ",[{t:last[1].text||"画像が届きました"},{t:"マイページで確認・返信できます。",cls:"status"}],{label:"マイページを開く",go:()=>{goView("my");setTimeout(()=>{const x=$("myInq");if(x)x.scrollIntoView({behavior:"smooth"})},300)}})}
     for(const [v,l] of [["list","大会一覧"],["my",unread&&pview!=="my"?`マイページ（運営から返信 ${unread}）`:"マイページ"]]){const b=el("button",null,l);b.type="button";b.setAttribute("aria-pressed",String(pview===v));b.onclick=()=>goView(v);nav.append(b)}
     const lo=el("button",null,"ログアウト");lo.type="button";lo.onclick=async()=>{try{await AUTH.signOut()}catch(e){}};nav.append(lo);host.append(nav);
   }
@@ -2453,6 +2519,8 @@ function renderReport(){
   if(MODE==="portal"&&!mp&&T.status!=="setup"&&(T.notAdmitted||[]).some(x=>x.id===myEntryId())){box.append(el("div","warn","定員に達していたため、この大会には参加できませんでした（キャンセル待ちからの繰り上げがありませんでした）。またの参加をお待ちしています。"));return}
   if(MODE==="portal"&&!mp){portalJoin(box);return}
   if(!mp){box.append(el("div",null,setup?(T.kind==="external"?"右上の「あなたは」で「新しく参加登録する」を選び、名前を入れて参加してください。":"右上で自分の名前を選んで、この大会に参加してください。名簿にいない人は「名簿にいない（新しく登録する）」を選びます。"):PL.length?"右上で自分の名前を選ぶと、自分の試合と報告ボタンが出ます。この端末では次から自動で選ばれます。":"参加者が登録されると、ここから自分の試合を報告できます。"));return}
+  // organizer messages + pop-ups work in every phase (registration, check-in, matches, after the event)
+  playerAlerts(me,mp,myMatch(me));
   if(setup){
     if(capOf()){const ci=capInfo(me);box.append(el("div",ci.in?"capok":"capwait",ci.in?`参加枠内（定員${capOf()}人中 ${ci.pos}番目の登録）`:`キャンセル待ち ${ci.wait}番目（定員${capOf()}人）`+(ciUsed()?"。チェックインしておくと、チェックインしない人が出た場合に登録順で繰り上がります":"。参加をやめる人が出ると繰り上がります")))}
     {const ci=checkinBlock(me);if(ci)box.append(ci)}
@@ -2473,7 +2541,6 @@ function renderReport(){
     box.append(row,...(archEdit?[archEdit,archNote()]:[]),el("div","status",MODE==="portal"?"参加登録済みです。予選が始まると、ここに自分の対戦相手が表示されます。":"この端末は "+who(mp).name+" さんとして登録されています。別の人を登録するには、先に参加を取り消してください。予選が始まると、ここに自分の対戦相手が表示されます。"));return;
   }
   const mm=myMatch(me);
-  playerAlerts(me,mp,mm);
   {const tt=teamToggle(me);if(tt)host.append(tt)}
   if(!mp.dq&&(mp.decks||[]).some(Boolean)){const d=el("details","myt archself");if(archSelfOpen.v)d.open=true;d.ontoggle=()=>{archSelfOpen.v=d.open};
     const sm=el("summary");sm.append(el("b",null,"自分のアーキタイプ"),el("span","status",[0,1].map(k=>mp.decks[k]?`${CN[mp.decks[k]]}${mp.arch&&mp.arch[k]?"「"+mp.arch[k]+"」":"（未入力）"}`:"").filter(Boolean).join(" / ")));d.append(sm);
@@ -2578,10 +2645,10 @@ function setFormMode(mode){
   $("tRounds").disabled=ed&&!(pre||st==="swiss");$("tCut").disabled=ed&&!(pre||st==="swiss");$("tFormatTop").disabled=ed&&!(pre||st==="swiss"||st==="confirm");
   $("editNote").hidden=!ed||pre;
 }
-$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("tCap").value="0";$("tKind").value="internal";$("newTourForm").hidden=false;$("tName").focus()};
+$("newTourBtn").onclick=()=>{setFormMode("new");$("tName").value="";$("tStart").value="";$("tCap").value="";$("tKind").value="internal";$("newTourForm").hidden=false;$("tName").focus()};
 $("editTourBtn").onclick=()=>{if(!T)return;setFormMode("edit");
   $("tName").value=T.name||"";$("tStart").value=T.startAt?toLocalInput(T.startAt):"";$("tRounds").value=String(T.swissRounds||0);if(!$("tRounds").value)$("tRounds").value="0";
-  $("tCut").value=String(T.topCut||0);$("tCap").value=String(T.cap||0);$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
+  $("tCut").value=String(T.topCut||0);$("tCap").value=T.cap?String(T.cap):"";$("tKind").value=T.kind==="external"?"external":"internal";$("tFormat").value=fmtOf("swiss");$("tFormatTop").value=fmtOf("top");$("tFormatTop").disabled=$("tFormatTop").disabled||!T.topCut;
   $("tLobby").value=T.lobby?"1":"0";$("tLobbyCode").value=(T.lobby&&T.lobby.code)||"";$("tLobbyCode").hidden=!T.lobby;
   $("newTourForm").hidden=false;$("tName").focus()};
 $("cancelTour").onclick=()=>{$("newTourForm").hidden=true;setFormMode("new")};
@@ -2590,7 +2657,7 @@ function saveTourEdit(){
   T.name=name;if(tours[tid]){tours[tid]=Object.assign({},tours[tid],{name});write(idxPath(tid),tours[tid])}
   if(!$("tStart").disabled){const v=$("tStart").value?new Date($("tStart").value).getTime():null;T.startAt=Number.isFinite(v)?v:null}
   if(!$("tKind").disabled)T.kind=$("tKind").value;
-  if(!$("tCap").disabled)T.cap=Number($("tCap").value)||0;
+  if(!$("tCap").disabled)T.cap=capInput();
   if(!$("tFormat").disabled){T.format=$("tFormat").value;T.formatSwiss=$("tFormat").value}
   if(!$("tLobby").disabled)T.lobby=$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null;
   if(!$("tRounds").disabled){const r=Number($("tRounds").value)||0;T.swissRounds=T.status==="setup"?r:Math.max(r||T.swissRounds,(T.rounds||[]).length)}
@@ -2608,7 +2675,7 @@ $("createTour").onclick=()=>{
   tours[id]=idx;write(idxPath(id),idx);
   pub=key;
   const stv=$("tStart").value;const startAt=stv?new Date(stv).getTime():null;
-  const t={cap:Number($("tCap").value)||0,name:idx.name,created:idx.created,startAt:Number.isFinite(startAt)?startAt:null,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
+  const t={cap:capInput(),name:idx.name,created:idx.created,startAt:Number.isFinite(startAt)?startAt:null,status:"setup",swissRounds:Number($("tRounds").value)||0,topCut:Number($("tCut").value)||0,format:$("tFormat").value,formatSwiss:$("tFormat").value,formatTop:$("tFormatTop").value,kind:$("tKind").value,lobby:$("tLobby").value==="1"?{code:$("tLobbyCode").value.trim().slice(0,20)}:null,ban:false,players:[],rounds:[],bracket:null,roster:[]};
   T=t;syncRoster();write(cupPath(),T);
   $("newTourForm").hidden=true;$("tName").value="";$("tStart").value="";$("tLobby").value="0";$("tLobbyCode").value="";$("tLobbyCode").hidden=true;openCup(key,id);
 };
