@@ -90,6 +90,13 @@ table.sc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-
 .empty{padding:28px 16px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
 .io{width:100%;min-height:80px;font-family:var(--f-num);font-size:.78rem;font:inherit}
 
+.prog{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 12px;display:flex;flex-direction:column;gap:6px;background:var(--panel)}
+.prog-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}.prog-h b{font-size:1.02em}.prog-left{color:var(--accent);font-weight:700;font-size:.92em}
+.prog-dots{display:flex;gap:4px}.prog-dots i{flex:1;height:6px;border-radius:3px;background:var(--line)}.prog-dots i.done{background:var(--accent);opacity:.45}.prog-dots i.now{background:var(--accent)}
+.prog-tables{display:flex;align-items:baseline;gap:6px}.prog-tables b{font-size:1.15em}
+.dropbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.dropwarn{display:flex;flex-direction:column;gap:6px;border:1px solid var(--danger);border-radius:10px;padding:10px 12px;margin-top:6px;width:100%}.dropwarn b{color:var(--danger)}
+
 /* cup */
 .tm{display:inline-flex;align-items:center;line-height:1;margin-left:2px}
 .prow .who span.tm,.prow .who span.trophy{font-size:1rem}
@@ -1025,7 +1032,7 @@ function autoForfeitOut(){if(MODE!=="admin"||!T||T.status!=="top")return;const b
 function noTopChance(pid){
   if(!T||T.status!=="swiss"||!T.topCut)return false;
   const st=standings();const me=st.find(s=>s.id===pid);if(!me)return false;
-  const left=Math.max(0,(T.swissRounds||0)-(T.rounds||[]).length);const maxW=me.w+left;
+  const left=Math.max(0,(T.swissRounds||0)-(T.rounds||[]).length)+openMatchesOf(pid).length;const maxW=me.w+left;
   const ahead=st.filter(s=>s.id!==pid&&!isOut(s.id)&&s.w>maxW).length;
   return ahead>=T.topCut;
 }
@@ -1209,7 +1216,7 @@ async function drawResultImage(){
   // background
   const bg=g.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#0E0C24");bg.addColorStop(1,"#26206A");g.fillStyle=bg;g.fillRect(0,0,W,H);
   g.globalAlpha=.07;g.fillStyle="#fff";for(let i=0;i<14;i++){g.beginPath();g.arc(160+i*120,120+(i%3)*40,2,0,7);g.fill()}g.globalAlpha=1;
-  const rank=finalRanking();const n=players().filter(p=>!p.dq).length;
+  const rank=finalRanking();const n=players().length;
   // header
   g.fillStyle="#B9B2FF";g.font=F(700,24);g.fillText("RESULT",60,70);
   g.fillStyle="#fff";g.fillText("",0,0);g.font=F(900,52);g.fillText(fit(T.name,900,900,52),60,132);
@@ -1578,7 +1585,7 @@ function pieSvg(slices,total){
 function renderDecks(){
   const show=admin||T.status==="done";
   if(!show){$("deckPanel").hidden=true;return}
-  const PL=players().filter(p=>!p.dq);const arch=metaUnit==="arch";
+  const PL=players();const arch=metaUnit==="arch";// disqualified players' decks stay in the meta report
   const unitKey=(c,a)=>arch?c+"|"+(a||"（未入力）"):c;
   const slotKey=(p,k)=>{const c=(p.decks||[])[k];if(!c)return null;return unitKey(c,p.arch?archLabel(c,p.arch[k]):"")};
   const keyOf=(pid,c)=>{const p=P(pid);if(!p||!c)return null;const k=(p.decks||[]).indexOf(c);return unitKey(c,k>=0&&p.arch?archLabel(c,p.arch[k]):"")};
@@ -1736,6 +1743,41 @@ function getReg(){try{return localStorage.getItem(regKey())||""}catch(e){return 
 function setReg(v){memMe[regKey()]=v;try{localStorage.setItem(regKey(),v)}catch(e){}}
 $("meSel").onchange=()=>{const v=$("meSel").value;memMe[meKey()]=v;try{localStorage.setItem(meKey(),v)}catch(e){}
   if(P(v))setReg(v);render()};
+/* ---------- participant: progress (rounds left, tables still playing) and drop ---------- */
+function progressInfo(){
+  if(T.status==="swiss"){const rs=T.rounds||[];const cur=rs[rs.length-1];if(!cur)return null;const tot=Math.max(T.swissRounds||0,rs.length);
+    const real=cur.pairs.filter(m=>m.b);return{stage:`予選 第${cur.n||rs.length}ラウンド`,n:cur.n||rs.length,tot,left:tot-rs.length,open:real.filter(m=>!(M[m.id]||{}).winner).length,total:real.length}}
+  if(T.status==="top"){const b=bracket();if(!b)return null;const R=b.length;const st=b.findIndex(ms=>ms.some(m=>m.a&&m.b&&!m.winner));if(st<0)return null;
+    const real=b[st].filter(m=>m.a&&m.b);return{stage:`決勝トーナメント ${roundLabel(st,R)}`,top:true,left:R-1-st,open:real.filter(m=>!m.winner).length,total:real.length}}
+  return null;
+}
+function progressBlock(me){
+  const x=progressInfo();if(!x)return null;const d=el("div","prog");
+  const h=el("div","prog-h");h.append(el("b",null,x.stage));
+  if(!x.top)h.append(el("span","prog-left",x.left>0?`全${x.tot}ラウンド・このあと残り${x.left}ラウンド`:`全${x.tot}ラウンド・最終ラウンド`));
+  else h.append(el("span","prog-left",x.left>0?`このあと残り${x.left}回戦`:"決勝戦"));
+  d.append(h);
+  if(!x.top){const dots=el("div","prog-dots");dots.setAttribute("aria-hidden","true");for(let i=1;i<=x.tot;i++)dots.append(el("i",i<x.n?"done":i===x.n?"now":null));d.append(dots)}
+  const bar=el("div","prog-tables");bar.append(el("span",null,"試合中の卓"),el("b",null,x.open?`残り ${x.open}卓`:"全卓終了"),el("span","status",`／${x.total}卓`));d.append(bar);
+  const mm=myMatch(me);const mine=mm&&!mm.bye&&!(mm.m.winner||(M[mm.m.id]||{}).winner);
+  if(!mine&&x.open)d.append(el("span","status",x.top?"残りの卓が終わると次の試合が始まります":x.left>0?"残りの卓が終わると次のラウンドの組み合わせが発表されます":"残りの卓が終わると予選終了です"));
+  return d;
+}
+const dropAsk={v:null};
+function dropBlock(me){
+  const out=noTopChance(me);const open=openMatchesOf(me).length>0;
+  const d=el("div",out?"ci":"dropbox");
+  if(out)d.append(el("b",null,"決勝ラウンド進出の可能性がなくなりました"),el("span","status","残りのラウンドを続けることも、ここで大会をドロップ（途中棄権）することもできます。ドロップすると次のラウンドから組み合わせに入りません。"));
+  if(dropAsk.v!==me){const b=el("button","danger","大会をドロップする");b.type="button";b.onclick=()=>{dropAsk.v=me;render()};d.append(b);return d}
+  const w=el("div","dropwarn");
+  if(!out)w.append(el("b",null,"まだ決勝ラウンドに進出できる可能性があります"));
+  w.append(el("span",null,(out?"":"ドロップすると、この先の成績に関係なく決勝ラウンドには進めません。")+"ドロップすると次のラウンドから組み合わせに入らず、取り消せません。"));
+  if(open)w.append(el("span","warn","今の試合はまだ結果が出ていません。ドロップするとこの試合は不戦敗になります。"));
+  const row=el("div","row");const yes=el("button","danger armed","それでもドロップする");yes.type="button";
+  yes.onclick=()=>{dropAsk.v=null;const q=P(me);q.drop=now();saveEntry(q);for(const m of openMatchesOf(me))forfeitTo(m,me,"drop");render()};
+  const no=el("button",null,"やめる");no.type="button";no.onclick=()=>{dropAsk.v=null;render()};
+  row.append(yes,no);w.append(row);d.append(w);return d;
+}
 /* ---------- pop-up alerts for participants (new match, room ID arrived, finals confirmation, organizer message) ---------- */
 const alertQ=[];let alertOpen=false,alertSeen=null,alertPub=null,titleBase=null;
 function seenSet(){if(alertPub!==pub){alertPub=pub;alertSeen=new Set();try{for(const k of JSON.parse(localStorage.getItem("xyzcup-seen-"+pub)||"[]"))alertSeen.add(k)}catch(e){}}return alertSeen}
@@ -2630,11 +2672,8 @@ function renderReport(){
   if(mp.dq){box.append(el("div","warn","運営の判断により失格となりました。詳しくは運営にお問い合わせください。"));return}
   if(mp.drop){box.append(el("div",null,"この大会はドロップしました。お疲れさまでした。"));return}
   if(T.status==="confirm"){const cb=confirmBlock(me);if(cb)box.append(cb);return}
-  if(T.status==="swiss"&&noTopChance(me)&&!openMatchesOf(me).length){
-    const d=el("div","ci");d.append(el("b",null,"決勝ラウンド進出の可能性がなくなりました"),el("span","status","残りのラウンドを続けることも、ここで大会をドロップ（途中棄権）することもできます。ドロップすると次のラウンドから組み合わせに入りません。"));
-    const b=el("button","danger","大会をドロップする");b.type="button";
-    b.onclick=()=>{if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="本当にドロップする";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent="大会をドロップする"}},3000);return}const q=P(me);q.drop=now();saveEntry(q);render()};
-    d.append(b);host.append(d)}
+  {const pg=progressBlock(me);if(pg)box.append(pg)}
+  if(T.status==="swiss")host.append(dropBlock(me));
   if(T.status==="done"){box.append(el("div",null,"大会は終了しました。おつかれさまでした！"));return}
   if(!mm){box.append(el("div",null,T.status==="top"?"決勝トーナメントの試合はありません（進出なし、または次の対戦相手が決まるのを待っています）。":"今は試合がありません。"));return}
   box.append(el("div","lab",mm.label));
