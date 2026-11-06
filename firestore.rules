@@ -103,6 +103,10 @@ service cloud.firestore {
       match /replies/{x} {
         allow read, write: if board.size() >= 16;
       }
+      // 運営の設定（アーキタイプの選択肢など）
+      match /settings/{x} {
+        allow read, write: if board.size() >= 16;
+      }
 
       // 環境ごとのスコア表
       match /seasons/{season} {
@@ -192,7 +196,7 @@ service cloud.firestore {
     match /cups/{cup} {
       allow get, delete: if cup.size() >= 20;
       allow create, update: if cup.size() >= 20
-        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt', 'confirm', 'archMap', 'mxSent', 'mxMap', 'muted', 'cap', 'notAdmitted'])
+        && request.resource.data.keys().hasOnly(['name', 'created', 'status', 'swissRounds', 'topCut', 'ban', 'format', 'formatSwiss', 'formatTop', 'kind', 'lobby', 'players', 'rounds', 'bracket', 'roster', 'banHashes', 'badges', 'teams', 'pros', 'xyz', 'startAt', 'confirm', 'archMap', 'mxSent', 'mxMap', 'muted', 'cap', 'notAdmitted', 'archOpts'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 40;
       allow list: if false;
