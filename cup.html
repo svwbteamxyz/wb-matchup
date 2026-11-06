@@ -1038,7 +1038,7 @@ function renderConfirmAdmin(host){
   t.append(tb);const tbox=el("div","tbox");tbox.append(t);box.append(tbox);
   const row=el("div","row");
   const go=el("button","primary",L.K>=2?`決勝トーナメントを始める（${L.K}名）`:"出場者が足りないので大会を終了する");go.type="button";
-  go.onclick=()=>{if(!late&&C.invited.some(id=>!rep(id)&&!isOut(id))&&!go.classList.contains("armed")){go.classList.add("armed");go.textContent="未回答の人がいます。もう一度押すと辞退扱いで始めます";setTimeout(()=>{if(go.isConnected)render()},4000);return}startTop()};
+  go.onclick=()=>{if(now()<C.deadline&&C.invited.some(id=>!rep(id)&&!isOut(id))&&!go.classList.contains("armed")){go.classList.add("armed");go.textContent="未回答の人がいます。もう一度押すと辞退扱いで始めます";setTimeout(()=>{if(go.isConnected)render()},4000);return}startTop()};
   const ext=el("button",null,"回答期限を5分延ばす");ext.type="button";ext.onclick=()=>{T.confirm.deadline=Math.max(now(),T.confirm.deadline)+CONFIRM_MS;saveT();render()};
   row.append(go,ext);box.append(row);
   if(L.fill.length)box.append(el("div","status",`繰上げ出場：${L.fill.map(id=>who(P(id)).name).join("、")}`));
