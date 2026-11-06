@@ -200,6 +200,7 @@ details.archself{margin:0 0 10px}details.archself summary{display:flex;gap:10px;
 .alertbox.ppage{max-width:640px;max-height:88vh;overflow:auto;text-align:left}.pphead{display:flex;align-items:center;gap:12px}.ppname>:first-child{font-size:1.2rem;font-weight:800}.ppage .rep{margin:0}
 .dmbox{margin:4px 0 10px 30px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:6px}
 .dmplayer{border:2px solid var(--accent);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+a.xlink{color:var(--accent);text-decoration:none}a.xlink:hover,a.xlink:focus-visible{text-decoration:underline}
 .pairedit .status{margin-bottom:10px}.pelist{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .perow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.perow.changed{border-color:var(--accent,#4B3AC6);background:color-mix(in srgb,var(--accent,#4B3AC6) 8%,transparent)}
 .petab{font-weight:700;min-width:4.5em;font-size:.9rem}.peslot{min-width:7em}.peslot.on{outline:3px solid var(--accent,#4B3AC6);outline-offset:1px}.perow .vs{opacity:.6}
@@ -775,6 +776,10 @@ const FACE_TEAMS={};
 function faceSvg(code,t){return `<svg viewBox="0 0 24 20" width="1.2em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient></defs><rect x=".5" y=".5" width="23" height="19" rx="5" fill="url(#tm-${code})" stroke="#000" stroke-opacity=".22"/><circle cx="8.6" cy="8" r="1.6" fill="${t[4]}"/><circle cx="15.4" cy="8" r="1.6" fill="${t[4]}"/><path d="M7 11.6Q12 16.6 17 11.6" fill="none" stroke="${t[4]}" stroke-width="1.8" stroke-linecap="round"/></svg>`}
 function teamSvg(raw){const t=teamDef(raw);if(!t)return"";const code=t[0];if(FACE_TEAMS[code])return faceSvg(code,t);const lab0=t[3]||code,ink=t[4]||"#fff";const lab=esc(lab0);const cjk=/[^\x00-\x7f]/.test(lab0);const w=Math.max(30,[...lab0].reduce((a,ch)=>a+(/[^\x00-\x7f]/.test(ch)?14:9.6),0)+12);
   return `<svg viewBox="0 0 ${w} 20" width="${w/20}em" height="1em" aria-hidden="true"><defs><linearGradient id="tm-${code}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t[1]}"/><stop offset="1" stop-color="${t[2]}"/></linearGradient>${ink.startsWith("url(")?`<linearGradient id="tmg-${code}" x1="0" y1="0" x2="0" y2="1">${code==="c10"?'<stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C9CED6"/><stop offset="1" stop-color="#8A929E"/>':'<stop offset="0" stop-color="#FFF1B0"/><stop offset=".5" stop-color="#E8B923"/><stop offset="1" stop-color="#B8860B"/>'}</linearGradient>`:""}</defs><rect x="${t[6]?1:.5}" y="${t[6]?1:.5}" width="${t[6]?w-2:w-1}" height="${t[6]?18:19}" rx="5" fill="url(#tm-${code})" ${t[6]?`stroke="${t[6]}" stroke-width="1.8"`:`stroke="${code==="XYZ"||code==="RID"||code==="c3"||code==="c6"?"#000":"#fff"}" stroke-opacity=".22"`}/><path d="M3 17 ${w-3} 3" stroke="#fff" stroke-opacity=".1" stroke-width="3"/><text x="${w/2}" y="${cjk?15:14.6}" text-anchor="middle" font-family="${cjk?"Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,serif":"Arial Black,Arial,Helvetica,sans-serif"}" font-weight="900" font-size="${cjk?14:13}" letter-spacing=".5" fill="${ink}"${t[5]?` stroke="${t[5]}" stroke-width="1.6" paint-order="stroke" stroke-linejoin="round"`:""}${cjk?"":' font-style="italic"'}>${lab}</text></svg>`}
+// "@handle" as a link to the X profile (only for valid X user names)
+function xLink(handle,cls,tag){const h=String(handle||"").replace(/^@+/,"").trim();if(!/^[A-Za-z0-9_]{1,15}$/.test(h))return el(tag||"span",cls||null,"@"+h);
+  const a=el("a",(cls?cls+" ":"")+"xlink","@"+h);a.href="https://x.com/"+h;a.target="_blank";a.rel="noopener noreferrer";a.title=`@${h} のXプロフィールを開く`;
+  if(tag==="div"){const d=el("div",cls||null);a.className="xlink";d.append(a);return d}return a}
 function nameEl(p,name){
   const d=decoOf(p);const b=el("b","pname",name);
   const wrap=el("span","pn");wrap.append(b);if(!d)return wrap;
@@ -917,7 +922,7 @@ function matchCard(m,label){
   const sideEl=(pid,me,opp,slot)=>{
     const p=P(pid),q=P(opp),w=who(p);const s=el("div","side");
     if(done)s.classList.add(res.winner===pid?"win":"lose");
-    const nm=el("div","nm");const nh=el("div","whoav");nh.append(avatar(p,24),nameEl(p,w.name));nm.append(nh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
+    const nm=el("div","nm");const nh=el("div","whoav");nh.append(avatar(p,24),nameEl(p,w.name));nm.append(nh);if(w.handle)nm.append(xLink(w.handle));
     const chips=el("div","chips");(p&&p.decks||[]).filter(Boolean).forEach(c=>chips.append(chip(c)));nm.append(chips);
     const ctl=el("div","ctl");
     // deck pick: with BAN, this player bans one of the opponent's decks; without, picks own deck
@@ -1256,7 +1261,7 @@ function renderPlayers(){
   PL.forEach((p,i)=>{
     const w=who(p);const row=el("div","prow");
     row.append(el("span","no",String(i+1)));
-    const nm=el("div","who");const nmh=el("div","whoav");nmh.append(avatar(p,26),nameEl(p,w.name));nm.append(nmh);if(w.handle)nm.append(el("span",null,"@"+w.handle));
+    const nm=el("div","who");const nmh=el("div","whoav");nmh.append(avatar(p,26),nameEl(p,w.name));nm.append(nmh);if(w.handle)nm.append(xLink(w.handle));
     if(admin&&p.uid)nm.append(el("span",null,"ユーザーID "+p.uid));
     if(admin&&isBannedEntry(p))nm.append(el("span","warn","出禁リストに該当"));
     if(isOut(p.id))nm.append(el("span","outtag",outLabel(p)));
@@ -2107,7 +2112,7 @@ function renderPlayerPage(){
   const ov=el("div","alertov");ov.id="ppOverlay";const box=el("div","alertbox ppage");box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");box.setAttribute("aria-label",`${w.name} さんのマイページ`);
   const close=()=>{ppOpen=null;ov.remove()};ov.onclick=e=>{if(e.target===ov)close()};ov.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
   const head=el("div","pphead");head.append(avatar(p,56));const nm=el("div","ppname");nm.append(nameEl(p,w.name));
-  if(w.handle)nm.append(el("div","status","@"+w.handle));nm.append(el("div","status",u?`ユーザーID ${u}`:"ユーザーIDなし"));head.append(nm);
+  if(w.handle)nm.append(xLink(w.handle,"status","div"));nm.append(el("div","status",u?`ユーザーID ${u}`:"ユーザーIDなし"));head.append(nm);
   const x=el("button",null,"閉じる");x.type="button";x.onclick=close;head.append(el("span","spacer"),x);box.append(head);
   // achievements (all events)
   const rec=u?allRecords()["u_"+u]:null;const k=achKey(p);const rec2=rec||(k?allRecords()[recId(k)]:null);const c=tally(rec2,null);
@@ -2559,7 +2564,7 @@ function renderReport(){
   if(T.lobby&&T.lobby.code&&!mm.bye)box.append(el("div","status",`対戦はプライベートロビー（コード ${T.lobby.code}）で行ってください`));
   if(mm.bye){box.append(el("div",null,"このラウンドは不戦勝（1勝）です。次のラウンドの組み合わせを待ってください。"));return}
   const m=mm.m;const mine=m.a===me?"a":"b";const opp=mine==="a"?m.b:m.a;const op=P(opp),ow=who(op);const res=M[m.id]||{};
-  const oppRow=el("div","opp");oppRow.append(el("span","status","対戦相手"),avatar(op,40),nameEl(op,ow.name));if(ow.handle)oppRow.append(el("span","status","@"+ow.handle));
+  const oppRow=el("div","opp");oppRow.append(el("span","status","対戦相手"),avatar(op,40),nameEl(op,ow.name));if(ow.handle)oppRow.append(xLink(ow.handle,"status"));
   const ch=el("div","chips");(op.decks||[]).filter(Boolean).forEach(c=>ch.append(chip(c)));oppRow.append(ch);box.append(oppRow);
   if(!res.winner)box.append(roomBox(m,mine,ow.name,res));
   box.append(chatBox(m,me));
