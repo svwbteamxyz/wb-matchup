@@ -493,8 +493,11 @@ function crAutoEntries(c){
     for(const [k,n] of CLS){const e=(p.e||{})[k];if(!e)continue;const rk=numv(e.rank),rt=numv(e.rate);
       if(!((rk&&o.rank&&rk<=o.rank)||(rt&&o.rate&&rt>=o.rate)))continue;
       const res=rk?`${n} 最終${rk}位`:`${n} 最終CR${Math.round(rt)}`;
-      ev.push({t:`${s.name} ランクマッチ`,at:s.ended||s.created||0,res,auto:1})}}
+      ev.push({t:`${s.name} ランクマッチ`,at:envEnd(s),res,auto:1})}}
   return ev}
+// end date: the date entered on this page for that environment, else the day the next environment was created
+const envEnd=s=>{const d=(cfg.crEnd||{})[s.id];return d?Date.parse(d):(s.ended||s.created||0)};
+const ymd=ms=>{if(!ms)return"";const d=new Date(ms);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 function crBest(c){let best=null;for(const {p} of crRows(c))for(const [k] of CLS){const rt=numv(((p.e||{})[k]||{}).rate);if(rt&&(!best||rt>best.cr))best={cr:Math.round(rt),crc:k}}return best}
 async function loadCrSheet(){
   try{const meta=await F.getDoc(F.doc(db,ROOT));const d=meta.exists()?meta.data():{};const ss=Array.isArray(d.seasons)?d.seasons:[];
@@ -605,7 +608,20 @@ function renderMemberEd(){
     const nIn=(id,v,on)=>{const i=el("input");i.id=id;i.type="number";i.inputMode="numeric";i.min="0";i.value=v||"";i.style.cssText="width:90px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface)";i.oninput=()=>{on(parseInt(i.value,10)||0);queueSave()};i.onchange=()=>renderMemberEd();return i};
     const a=el("label");a.append(document.createTextNode("順位が "),nIn("crRank",o.rank,v=>{cfg.crAuto=Object.assign(crOpt(),{rank:v})}),document.createTextNode(" 位以内"));
     const b=el("label");b.append(document.createTextNode("または CRが "),nIn("crRate",o.rate,v=>{cfg.crAuto=Object.assign(crOpt(),{rate:v})}),document.createTextNode(" 以上"));
-    r.append(a,b);g.append(r,el("p","hint",`終わった環境のうち、クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます（日付はその環境が終わった日＝次の環境を作った日）。CR管理表の環境：${crSeasons.length}件`));P.append(g)}
+    r.append(a,b);g.append(r,el("p","hint","終わった環境のうち、クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます。日付は下の「環境の終了日」です。"));
+    // per-environment end dates (official schedule); until entered, the day the next environment was created is used
+    const envs=crSeasons.filter(x=>!x.current).sort((x,y)=>(y.created||0)-(x.created||0));
+    const ends=el("details");ends.open=envs.some(x=>!(cfg.crEnd||{})[x.id]);const es=el("summary",null,`環境の終了日（${envs.length}件）`);es.style.cssText="padding:4px 0;font-size:13px;font-weight:700;cursor:pointer";ends.append(es);
+    const tbl=el("div");tbl.style.cssText="display:flex;flex-direction:column;gap:6px;padding:4px 0 2px";
+    for(const x of envs){const rr=el("div");rr.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px";
+      const set=(cfg.crEnd||{})[x.id];
+      const di=el("input");di.type="date";di.id=`end_${x.id}`;di.value=set||ymd(x.ended);di.setAttribute("aria-label",`${x.name}の終了日`);di.style.cssText="border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:var(--surface);width:auto";
+      di.onchange=()=>{cfg.crEnd=Object.assign({},cfg.crEnd||{});if(di.value)cfg.crEnd[x.id]=di.value;else delete cfg.crEnd[x.id];queueSave();renderMemberEd()};
+      const q=el("a",null,"終了日を検索");q.href="https://www.google.com/search?q="+encodeURIComponent(`${x.name} 期間 シャドウバース`);q.target="_blank";q.rel="noopener";q.style.cssText="font-size:12px;color:var(--accent)";
+      const st=el("span",set?"status ok":"status warn",set?"入力済み":"仮の日付（次の環境を作った日）");st.style.fontSize="12px";
+      const nmb=el("b",null,x.name);nmb.style.cssText="min-width:12em";rr.append(nmb,di,q,st);tbl.append(rr)}
+    if(!envs.length)tbl.append(el("p","hint","終わった環境はまだありません"));
+    ends.append(tbl);g.append(ends);P.append(g)}
   L.forEach((c,i)=>{const row=el("div","mrow"+(c.show===false?" hide":""));row.id=`mrow_${c.id}`;
     const hd=el("div","mrow-h");
     const ord=el("div");ord.style.cssText="display:flex;gap:4px";
