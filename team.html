@@ -345,7 +345,7 @@ const SAMPLE={sample:true,tagline:"Shadowverse: Worlds Beyond で大会上位を
   rules:[
     {title:"活動方針",body:"公式大会で好成績を収める\n毎シーズンのランクマッチでCR上位を目指す"},
     {title:"求める人材",body:"帰属意識を持ってチーム活動に参加できる方\nSNSにおいてモラル・マナーを遵守した発信ができる方\n毎シーズンシャドウバースに全力で取り組める方\nチームの活動（VC等）に積極的に参加できる方\n自身の思考を言語化できる方"},
-    {title:"現メンバー実績",body:"シャドウバースランクマッチ覇者\nシャドウバース元プロ選手在籍\nシャドウバースレート杯出場\nシャドウバースRAGEプレーオフ進出\nシャドウバースオンライン大会プレーオフ進出\nシャドバWB 最終CR2200超多数\nシャドバWB 大型大会Day2進出率約50%\nシャドバWB PS志望選手在籍"}
+    {title:"現メンバー実績",body:"シャドウバースランクマッチ覇者\nシャドウバース元プロ選手在籍\nシャドウバースレート杯出場\nシャドウバースRAGEプレーオフ進出\nシャドウバースオンライン大会プレーオフ進出\nシャドバWB 最終CR2200超多数\nシャドバWB 大型大会Day2進出率約67%(前回)\nシャドバWB PS志望選手在籍"}
   ],at:Date.parse("2026-11-20")};
 
 /* ============ public view ============ */
@@ -448,12 +448,15 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("dlg").open)$(
 
 /* ============ editor (?b=<board id>) ============ */
 let members={},records={},cfg=null,published=null,saveTimer=null;
-const blankCfg=()=>({tagline:"",intro:"",xurl:"",mv:"",news:[],rules:[],members:{}});
+const blankCfg=()=>({tagline:"",intro:"",xurl:"",mv:"",news:[],rules:[],members:{},order:[]});
 const mc=mid=>{cfg.members[mid]=cfg.members[mid]||{};return cfg.members[mid]};
 // records that belong to a roster member: explicit list once edited, otherwise matched by roster id or name
 function autoRecs(mid){const m=members[mid]||{};return Object.keys(records).filter(rid=>rid==="m_"+mid||(norm(records[rid].name)&&norm(records[rid].name)===norm(m.name)))}
 const linked=mid=>Array.isArray(mc(mid).recs)?mc(mid).recs.filter(r=>records[r]):autoRecs(mid);
-function sortedMembers(){return Object.entries(members).sort((a,b)=>(a[1].order||0)-(b[1].order||0))}
+// HP order: the order set on this page (cfg.order) first, then anyone new in the roster order
+function sortedMembers(){const roster=Object.entries(members).sort((a,b)=>(a[1].order||0)-(b[1].order||0));const pos=new Map((cfg.order||[]).map((id,i)=>[id,i]));
+  return roster.map((x,i)=>[x,pos.has(x[0])?pos.get(x[0]):1e6+i]).sort((a,b)=>a[1]-b[1]).map(x=>x[0])}
+function moveMember(mid,d){const ids=sortedMembers().map(x=>x[0]);const i=ids.indexOf(mid),j=i+d;if(i<0||j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];cfg.order=ids;queueSave();renderMemberEd();const b=$(`mv${d<0?"u":"d"}_${mid}`);if(b&&!b.disabled)b.focus()}
 // manual results are free text (e.g. 優勝 / ベスト8 / ウィッチ 最終12位); older entries had a place + memo
 const extraRes=x=>(x.res!=null?x.res:[x.place&&x.place!=="other"?PLACE[x.place]:"",x.note||""].filter(Boolean).join(" ")).trim();
 function buildSite(){
@@ -533,10 +536,11 @@ function pastEntries(){
 }
 function renderMemberEd(){
   const P=$("memEd");P.replaceChildren();
-  const ms=sortedMembers();
+  const ms=sortedMembers();const last=ms.length-1;
   if(!ms.length){P.append(el("p","hint","名簿にメンバーがいません。CRスコア表の「メンバー名簿」に追加すると、ここに出てきます。"));return}
   // everything entered so far (all members) + tournament names from the cup app, offered as choices
   const dlT=el("datalist");dlT.id="dlTitles";const dlR=el("datalist");dlR.id="dlRes";P.append(dlT,dlR);refreshLists();
+  P.append(el("p","hint","↑↓ でホームページでの並び順を変えられます（CRスコア表の名簿の順番は変わりません）。"));
   P.append(el("p","hint","XYZ CUP の記録（優勝・準優勝・3位・決勝進出）は大会アプリから自動で集計されます。同じ人の記録にチェックを入れてください。名前が同じ記録は最初から選ばれています。"));
   const taken=new Set();for(const [mid] of ms)for(const r of linked(mid))taken.add(r);
   for(const [mid,m] of ms){const c=mc(mid);const row=el("div","mrow"+(c.show===false?" hide":""));
@@ -545,7 +549,10 @@ function renderMemberEd(){
     av.onclick=()=>fi.click();av.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fi.click()}};
     const nm=el("div","nm");nm.append(el("b",null,m.name||"(名前なし)"),el("span",null,m.handle?"@"+m.handle:"XのID未登録"));
     const tg=el("label","tog");const cb=el("input");cb.type="checkbox";cb.checked=c.show!==false;cb.onchange=()=>{c.show=cb.checked;queueSave();renderMemberEd()};tg.append(cb,document.createTextNode("ホームページに載せる"));
-    hd.append(av,fi,nm,tg);if(c.icon){const rm=el("button","btn small","アイコンを外す");rm.type="button";rm.onclick=()=>{delete c.icon;queueSave();renderMemberEd()};hd.append(rm)}
+    const ord=el("div");ord.style.cssText="display:flex;gap:4px";const k=ms.findIndex(x=>x[0]===mid);
+    const up=el("button","btn small","↑");up.type="button";up.id=`mvu_${mid}`;up.setAttribute("aria-label",`${m.name||""}を上へ`);up.disabled=k===0;up.onclick=()=>moveMember(mid,-1);
+    const dn=el("button","btn small","↓");dn.type="button";dn.id=`mvd_${mid}`;dn.setAttribute("aria-label",`${m.name||""}を下へ`);dn.disabled=k===last;dn.onclick=()=>moveMember(mid,1);ord.append(up,dn);
+    hd.append(ord,av,fi,nm,tg);if(c.icon){const rm=el("button","btn small","アイコンを外す");rm.type="button";rm.onclick=()=>{delete c.icon;queueSave();renderMemberEd()};hd.append(rm)}
     row.append(hd);
     if(c.show!==false){
       const two=el("div","two");two.append(fld("肩書き（任意）",input(`role_${mid}`,c.role,v=>{c.role=v.slice(0,16);queueSave()},"例：LEADER / リーダー")),fld("ひとこと（任意）",input(`cm_${mid}`,c.comment,v=>{c.comment=v.slice(0,120);queueSave()},"使用クラスや意気込みなど")));row.append(two);
