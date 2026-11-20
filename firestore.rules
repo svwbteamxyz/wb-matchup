@@ -27,11 +27,24 @@ service cloud.firestore {
       allow get: if true;
       allow list, delete: if false;
       allow create, update: if id == 'xyz'
-        && request.resource.data.keys().hasOnly(['tagline', 'intro', 'xurl', 'mv', 'news', 'rules', 'members', 'at', 'n'])
+        && request.resource.data.keys().hasOnly(['tagline', 'intro', 'xurl', 'mv', 'mvk', 'news', 'rules', 'members', 'at', 'n'])
         && request.resource.data.n is string
         && request.resource.data.n.size() >= 16
         && !exists(/databases/$(database)/documents/sitegate/$(request.resource.data.n))
         && existsAfter(/databases/$(database)/documents/sitegate/$(request.resource.data.n));
+
+      // メンバー写真・メインビジュアル（1枚ずつ別のドキュメント）。書き込みの条件は本体と同じ
+      match /ph/{pid} {
+        allow get: if true;
+        allow list, delete: if false;
+        allow create, update: if id == 'xyz'
+          && request.resource.data.keys().hasOnly(['d', 'n'])
+          && request.resource.data.d is string
+          && request.resource.data.n is string
+          && request.resource.data.n.size() >= 16
+          && !exists(/databases/$(database)/documents/sitegate/$(request.resource.data.n))
+          && existsAfter(/databases/$(database)/documents/sitegate/$(request.resource.data.n));
+      }
     }
     match /sitegate/{n} {
       allow read, update, delete: if false;
