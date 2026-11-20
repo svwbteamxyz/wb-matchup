@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Team XYZ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Shadowverse: Worlds Beyond のチーム XYZ 公式サイト。ニュース、所属プレイヤー、大会実績、チーム概要。">
+<meta name="description" content="Shadowverse: Worlds Beyond のチーム XYZ 公式サイト。ニュース、所属プレイヤー、実績、チーム概要。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
@@ -132,7 +132,8 @@ section.sec{padding-block:88px 0}
 .yr::after{content:"";flex:1;height:1px;background:var(--line)}
 .yr:first-child{margin-top:0}
 .perf{border-top:1px solid var(--ink)}
-.prow{display:grid;grid-template-columns:96px 104px minmax(0,1fr) minmax(0,200px);gap:16px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--line)}
+.prow{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,240px) minmax(0,170px);grid-template-areas:"d t r p";gap:16px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--line)}
+.prow .d{grid-area:d}.prow .t{grid-area:t}.prow .res{grid-area:r;white-space:normal;flex-wrap:wrap;row-gap:4px;min-width:0}.prow .p{grid-area:p}
 .prow .d{font-family:var(--f-sub);color:var(--muted);font-size:14px;letter-spacing:.04em}
 .res{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:14px;white-space:nowrap}
 .res i{width:10px;height:10px;border-radius:50%;background:var(--c)}
@@ -142,7 +143,7 @@ section.sec{padding-block:88px 0}
 .prow .t small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
 .prow .p{display:flex;align-items:center;gap:8px;min-width:0;font-size:14px}
 .prow .p .av{width:28px;height:28px;font-size:12px}
-@media (max-width:640px){.prow{grid-template-columns:auto minmax(0,1fr);gap:2px 12px}.prow .d{grid-column:1/-1}.prow .res{grid-row:2}.prow .t{grid-row:2}.prow .p{grid-column:1/-1;margin-top:4px}}
+@media (max-width:640px){.prow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"d p" "t t" "r r";gap:4px 12px}.prow .p{justify-self:end}}
 .av{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;background:var(--soft);color:var(--muted);overflow:hidden}
 .av img{width:100%;height:100%;object-fit:cover}
 
@@ -157,6 +158,20 @@ section.sec{padding-block:88px 0}
 .ab li::before{content:"";position:absolute;left:2px;top:.72em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .ab p{margin:6px 0 0;white-space:pre-wrap}
 @media (max-width:800px){.ab{grid-template-columns:72px minmax(0,1fr);gap:8px 16px;padding:28px 4px}.ab-no{font-size:48px}.ab-t{font-size:19px;padding-top:2px}.ab ul,.ab p{grid-column:1/-1;padding-top:10px}}
+
+/* entry (recruiting) band */
+.entry{margin-top:104px;background:var(--black);color:var(--black-ink);position:relative;overflow:hidden}
+.entry .wrap{padding-block:72px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px 48px;align-items:end;position:relative;z-index:1}
+.entry-bg{position:absolute;right:-1vw;top:50%;transform:translateY(-50%);font-family:var(--f-en);font-size:clamp(140px,22vw,300px);line-height:.8;color:transparent;-webkit-text-stroke:1px var(--black-line);pointer-events:none;user-select:none}
+.entry h2{display:flex;flex-direction:column;gap:8px}
+.entry h2 .big{font-family:var(--f-en);font-weight:400;font-size:clamp(52px,8vw,88px);line-height:.9;letter-spacing:.03em}
+.entry h2 .ja{font-size:13px;font-weight:700;color:#B9AEFF;letter-spacing:.1em}
+.entry p{margin:18px 0 0;color:var(--black-muted);max-width:36em}
+.entry-btn{display:inline-flex;align-items:center;gap:14px;background:var(--black-ink);color:var(--black);text-decoration:none;border-radius:999px;padding:18px 34px;font-weight:700;font-size:16px;white-space:nowrap;transition:background .15s,color .15s}
+.entry-btn::after{content:"→";font-family:var(--f-sub)}
+.entry-btn:hover{background:#B9AEFF}
+@media (max-width:700px){.entry .wrap{grid-template-columns:minmax(0,1fr);padding-block:56px}.entry-btn{justify-self:start}}
+.entry+.follow{margin-top:0}
 
 /* follow + footer */
 .follow{margin-top:104px;background:var(--soft)}
@@ -266,6 +281,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
     <a href="#news" data-sec="news">NEWS</a>
     <a href="#players" data-sec="players">PLAYERS</a>
     <a href="#performance" data-sec="performance">PERFORMANCE</a>
+    <a href="#entry" data-sec="entry">ENTRY</a>
     <a class="xi" id="navX" href="https://x.com/" target="_blank" rel="noopener" aria-label="公式X" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg></a>
   </nav>
 </div></header>
@@ -294,17 +310,27 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
     <div class="players" id="plHost"></div>
   </div></section>
   <section class="sec" id="performance"><div class="wrap">
-    <div class="sec-h"><h2><span class="big">PERFORMANCE</span><span class="ja">大会実績</span></h2></div>
+    <div class="sec-h"><h2><span class="big">PERFORMANCE</span><span class="ja">実績</span></h2></div>
     <div id="perfHost"></div>
   </div></section>
 </main>
+<section class="entry" id="entry">
+  <div class="entry-bg" aria-hidden="true">JOIN</div>
+  <div class="wrap">
+    <div>
+      <h2><span class="big">ENTRY</span><span class="ja">メンバー募集</span></h2>
+      <p>Team XYZ では、一緒に上を目指すメンバーを募集しています。求める人材は ABOUT をご覧のうえ、エントリーフォームからご応募ください。</p>
+    </div>
+    <a class="entry-btn" href="https://forms.gle/xwXr7nMfW8sGEA59A" target="_blank" rel="noopener">エントリーする</a>
+  </div>
+</section>
 <aside class="follow" id="follow" hidden><div class="wrap">
   <div><h3>FOLLOW US</h3><p>最新情報は公式Xで発信しています</p></div>
   <a class="xbig" id="followX" href="https://x.com/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.4L6.3 22H3.2l7.3-8.3L1 2h6.3l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></svg><span id="followXt">公式Xをフォロー</span></a>
 </div></aside>
 <footer><div class="wrap">
   <div class="f-top"><a class="logo" href="#top">XYZ<small>TEAM</small></a>
-    <nav class="f-nav" aria-label="フッターメニュー"><a href="#about">ABOUT</a><a href="#news">NEWS</a><a href="#players">PLAYERS</a><a href="#performance">PERFORMANCE</a></nav></div>
+    <nav class="f-nav" aria-label="フッターメニュー"><a href="#about">ABOUT</a><a href="#news">NEWS</a><a href="#players">PLAYERS</a><a href="#performance">PERFORMANCE</a><a href="#entry">ENTRY</a></nav></div>
   <div class="f-bot"><span>© Team XYZ</span><span id="updated"></span></div>
 </div></footer>
 <button class="pagetop" id="pagetop" type="button" aria-label="ページの先頭へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg></button>
@@ -338,7 +364,7 @@ const SAMPLE={sample:true,tagline:"Shadowverse: Worlds Beyond で大会上位を
     {date:"2026-10-12",cat:"result",t:"WB Open 秋 にてぺんぎん丸がベスト8",body:""}
   ],
   members:[
-    {name:"ぺんぎん丸",handle:"penguin_sv",role:"LEADER",cr:2312,crc:"witch",comment:"ウィッチ使い。チームの代表です。",ev:[{t:"XYZ CUP #12",place:"champion",at:Date.parse("2026-11-04")},{t:"XYZ CUP #10",place:"runner",at:Date.parse("2026-10-21")},{t:"シーズン3 ランクマッチ",at:Date.parse("2026-10-31"),res:"ウィッチ 最終12位"},{t:"WB Open 秋",at:Date.parse("2026-10-12"),res:"ベスト8"},{t:"XYZ CUP #8",place:"third",at:Date.parse("2026-09-30")},{t:"RAGE Shadowverse 予選",at:Date.parse("2026-09-14"),res:"Day2 進出"},{t:"XYZ CUP #6",place:"champion",at:Date.parse("2026-09-02")},{t:"JCG Open",at:Date.parse("2026-08-23"),res:"ベスト16"},{t:"XYZ CUP #4",place:"runner",at:Date.parse("2026-08-05")},{t:"WB Open 夏",at:Date.parse("2026-07-19"),res:"ベスト32"},{t:"XYZ CUP #2",place:"top",at:Date.parse("2026-07-08")}]},
+    {name:"ぺんぎん丸",handle:"penguin_sv",role:"LEADER",cr:2312,crc:"witch",comment:"ウィッチ使い。チームの代表です。",ev:[{t:"XYZ CUP #12",place:"champion",at:Date.parse("2026-11-04")},{t:"XYZ CUP #10",place:"runner",at:Date.parse("2026-10-21")},{t:"神殺し・アナテマ<前半> ランクマッチ",at:Date.parse("2026-11-28"),res:"ナイトメア 最終29位"},{t:"神殺し・アナテマ<前半> ランクマッチ",at:Date.parse("2026-11-28"),res:"ビショップ 最終4位"},{t:"シーズン3 ランクマッチ",at:Date.parse("2026-10-31"),res:"ウィッチ 最終12位"},{t:"WB Open 秋",at:Date.parse("2026-10-12"),res:"ベスト8"},{t:"XYZ CUP #8",place:"third",at:Date.parse("2026-09-30")},{t:"RAGE Shadowverse 予選",at:Date.parse("2026-09-14"),res:"Day2 進出"},{t:"XYZ CUP #6",place:"champion",at:Date.parse("2026-09-02")},{t:"JCG Open",at:Date.parse("2026-08-23"),res:"ベスト16"},{t:"XYZ CUP #4",place:"runner",at:Date.parse("2026-08-05")},{t:"WB Open 夏",at:Date.parse("2026-07-19"),res:"ベスト32"},{t:"XYZ CUP #2",place:"top",at:Date.parse("2026-07-08")}]},
     {name:"しろくま",handle:"shirokuma_wb",role:"MANAGER",cr:2205,crc:"nemesis",ev:[{t:"XYZ CUP #11",place:"champion",at:Date.parse("2026-10-28")},{t:"XYZ CUP #12",place:"third",at:Date.parse("2026-11-04")}]},
     {name:"あおいとり",handle:"aoitori_sv",cr:2241,crc:"elf",ev:[{t:"XYZ CUP #12",place:"runner",at:Date.parse("2026-11-04")},{t:"XYZ CUP #11",place:"top",at:Date.parse("2026-10-28")}]},
     {name:"Frogman",handle:"frogman_sv",cr:2180,crc:"dragon",ev:[{t:"XYZ CUP #10",place:"champion",at:Date.parse("2026-10-21")}]},
@@ -407,7 +433,7 @@ function renderPlayers(){
 function renderPerf(all){
   const H=$("perfHost");H.replaceChildren();
   const rows=all.filter(e=>e.t).sort((a,b)=>(b.at||0)-(a.at||0)||PLACE_ORDER.indexOf(a.place)-PLACE_ORDER.indexOf(b.place));
-  if(!rows.length){H.append(el("div","empty","大会実績はまだありません"));return}
+  if(!rows.length){H.append(el("div","empty","実績はまだありません"));return}
   let yr=null,box=null;
   for(const e of rows.slice(0,perfLimit)){const y=e.at?new Date(e.at).getFullYear():"—";if(y!==yr){yr=y;H.append(el("h3","yr",String(y)));box=el("div","perf");H.append(box)}
     const r=el("div","prow");const res=resEl(e);
@@ -443,7 +469,7 @@ $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
 const setMenu=o=>{document.body.classList.toggle("menu-open",o);$("burger").setAttribute("aria-expanded",o?"true":"false")};
 $("burger").onclick=()=>setMenu(!document.body.classList.contains("menu-open"));
 $("nav").addEventListener("click",e=>{if(e.target.closest("a"))setMenu(false)});
-const secs=["about","news","players","performance"];
+const secs=["about","news","players","performance","entry"];
 function onScroll(){let cur=null;for(const s of secs){const r=$(s).getBoundingClientRect();if(r.top<140)cur=s}document.querySelectorAll(".nav a[data-sec]").forEach(a=>a.classList.toggle("on",a.dataset.sec===cur));$("pagetop").classList.toggle("show",scrollY>600)}
 addEventListener("scroll",onScroll,{passive:true});onScroll();
 $("pagetop").onclick=()=>scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
