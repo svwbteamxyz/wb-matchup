@@ -480,7 +480,7 @@ function migrate(){
 }
 /* ---------- CR score sheet → achievements ---------- */
 const CLSN=Object.fromEntries(CLS);
-const crOpt=()=>Object.assign({rank:100,rate:2200,cur:false},cfg.crAuto||{});
+const crOpt=()=>Object.assign({rank:100,rate:2200},cfg.crAuto||{});
 const numv=v=>{const n=parseFloat(String(v??"").replace(/[^0-9.]/g,""));return isFinite(n)&&n>0?n:null};
 function crRows(c){// this member's rows in every season of the CR sheet: by roster link when both have one, otherwise by name
   const link=c.mid||(members[c.id]?c.id:null);const out=[];
@@ -489,16 +489,18 @@ function crRows(c){// this member's rows in every season of the CR sheet: by ros
   return out}
 function crAutoEntries(c){
   const o=crOpt();const ev=[];
-  for(const {s,p} of crRows(c)){if(s.current&&!o.cur)continue;
+  for(const {s,p} of crRows(c)){if(s.current)continue;// only finished environments
     for(const [k,n] of CLS){const e=(p.e||{})[k];if(!e)continue;const rk=numv(e.rank),rt=numv(e.rate);
       if(!((rk&&o.rank&&rk<=o.rank)||(rt&&o.rate&&rt>=o.rate)))continue;
-      const word=s.current?"":"最終";const res=rk?`${n} ${word}${rk}位`:`${n} ${word}CR${Math.round(rt)}`;
-      ev.push({t:`${s.name} ランクマッチ`,at:s.created||0,res:s.current?res+"（暫定）":res,auto:1})}}
+      const res=rk?`${n} 最終${rk}位`:`${n} 最終CR${Math.round(rt)}`;
+      ev.push({t:`${s.name} ランクマッチ`,at:s.ended||s.created||0,res,auto:1})}}
   return ev}
 function crBest(c){let best=null;for(const {p} of crRows(c))for(const [k] of CLS){const rt=numv(((p.e||{})[k]||{}).rate);if(rt&&(!best||rt>best.cr))best={cr:Math.round(rt),crc:k}}return best}
 async function loadCrSheet(){
   try{const meta=await F.getDoc(F.doc(db,ROOT));const d=meta.exists()?meta.data():{};const ss=Array.isArray(d.seasons)?d.seasons:[];
-    crSeasons=await Promise.all(ss.map(async x=>{const ps=[];try{const q=await F.getDocs(F.collection(db,`${ROOT}/seasons/${x.id}/players`));q.forEach(y=>ps.push(y.data()))}catch(e){console.warn(e)}return{id:x.id,name:x.name||"",created:x.created||0,current:x.id===d.current,players:ps}}))}
+    // an environment ends when the next one is created
+    const byDate=ss.slice().sort((a,b)=>(a.created||0)-(b.created||0));const endOf=Object.fromEntries(byDate.map((x,i)=>[x.id,byDate[i+1]?byDate[i+1].created||0:0]));
+    crSeasons=await Promise.all(ss.map(async x=>{const ps=[];try{const q=await F.getDocs(F.collection(db,`${ROOT}/seasons/${x.id}/players`));q.forEach(y=>ps.push(y.data()))}catch(e){console.warn(e)}return{id:x.id,name:x.name||"",created:x.created||0,ended:endOf[x.id]||0,current:x.id===d.current,players:ps}}))}
   catch(e){console.warn(e);crSeasons=[]}
 }
 function moveMember(i,d){const j=i+d;if(j<0||j>=cfg.list.length)return;const L=cfg.list;[L[i],L[j]]=[L[j],L[i]];queueSave();renderMemberEd();const b=$(`mv${d<0?"u":"d"}_${L[j].id}`);if(b&&!b.disabled)b.focus()}
@@ -603,8 +605,7 @@ function renderMemberEd(){
     const nIn=(id,v,on)=>{const i=el("input");i.id=id;i.type="number";i.inputMode="numeric";i.min="0";i.value=v||"";i.style.cssText="width:90px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface)";i.oninput=()=>{on(parseInt(i.value,10)||0);queueSave()};i.onchange=()=>renderMemberEd();return i};
     const a=el("label");a.append(document.createTextNode("順位が "),nIn("crRank",o.rank,v=>{cfg.crAuto=Object.assign(crOpt(),{rank:v})}),document.createTextNode(" 位以内"));
     const b=el("label");b.append(document.createTextNode("または CRが "),nIn("crRate",o.rate,v=>{cfg.crAuto=Object.assign(crOpt(),{rate:v})}),document.createTextNode(" 以上"));
-    const cu=el("label","tog");const cc=el("input");cc.type="checkbox";cc.id="crCur";cc.checked=!!o.cur;cc.onchange=()=>{cfg.crAuto=Object.assign(crOpt(),{cur:cc.checked});queueSave();renderMemberEd()};cu.append(cc,document.createTextNode("今の環境も載せる（暫定として表示）"));
-    r.append(a,b,cu);g.append(r,el("p","hint",`クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます。CR管理表の環境：${crSeasons.length}件`));P.append(g)}
+    r.append(a,b);g.append(r,el("p","hint",`終わった環境のうち、クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます（日付はその環境が終わった日＝次の環境を作った日）。CR管理表の環境：${crSeasons.length}件`));P.append(g)}
   L.forEach((c,i)=>{const row=el("div","mrow"+(c.show===false?" hide":""));row.id=`mrow_${c.id}`;
     const hd=el("div","mrow-h");
     const ord=el("div");ord.style.cssText="display:flex;gap:4px";
