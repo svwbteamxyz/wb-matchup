@@ -21,6 +21,25 @@ service cloud.firestore {
       }
     }
 
+    // チームHP（公開ページ）。誰でも読めるが、書き込めるのは運営用URL（表のID）を知っている人だけ。
+    // 公開するときは sitegate に表のIDを一緒に書き、そのハッシュが一致したときだけ通す（sitegate は誰も読めない）
+    match /site/{id} {
+      allow get: if true;
+      allow list, delete: if false;
+      allow create, update: if id == 'xyz'
+        && request.resource.data.keys().hasOnly(['tagline', 'intro', 'xurl', 'mv', 'news', 'rules', 'members', 'at', 'n'])
+        && request.resource.data.n is string
+        && request.resource.data.n.size() >= 16
+        && !exists(/databases/$(database)/documents/sitegate/$(request.resource.data.n))
+        && existsAfter(/databases/$(database)/documents/sitegate/$(request.resource.data.n));
+    }
+    match /sitegate/{n} {
+      allow read, update, delete: if false;
+      allow create: if request.resource.data.keys().hasOnly(['k', 'at'])
+        && request.resource.data.k is string
+        && hashing.sha256(request.resource.data.k).toHexString().lower() == '98d67cc2a5983417cfeb60df50d533a6ab6be1109b485bce4895a659207b4368';
+    }
+
     // CRスコア管理表
     match /scoreboards/{board} {
       allow get: if board.size() >= 16;
@@ -105,6 +124,11 @@ service cloud.firestore {
       }
       // 運営の設定（アーキタイプの選択肢など）
       match /settings/{x} {
+        allow read, write: if board.size() >= 16;
+      }
+
+      // チームHPの編集内容（運営用URLを知っている人だけ）
+      match /site/{x} {
         allow read, write: if board.size() >= 16;
       }
 
