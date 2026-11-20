@@ -356,8 +356,12 @@ const SAMPLE={sample:true,tagline:"Shadowverse: Worlds Beyond で大会上位を
 /* ============ public view ============ */
 let SITE=null,showAllNews=false,showAllPl=false,perfLimit=15;
 function tallyOf(ev){const t={champion:0,runner:0,third:0,top:0};for(const e of ev||[])if(t[e.place]!=null)t[e.place]++;return t}
-function avatar(m){const a=el("div","av");if(m.icon){const i=el("img");i.src=m.icon;i.alt="";a.append(i)}else a.textContent=(m.name||"?").trim().slice(0,1).toUpperCase();return a}
-function photo(m){const p=el("div","ph");if(m.icon){const i=el("img");i.src=m.icon;i.alt="";i.loading="lazy";p.append(i)}else p.append(el("span","ini",(m.name||"?").trim().slice(0,1).toUpperCase()));return p}
+// photos are stored as separate documents (one per image) so the main page data stays small; PH caches them by key
+const PH={};const imgOf=m=>m.icon||(m.ph&&PH[m.ph])||"";
+// short content hash: a photo is only uploaded again when it actually changed
+const hkey=s=>{let h1=0x811c9dc5,h2=0;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,16777619)>>>0;h2=(h2*31+c)>>>0}return h1.toString(36)+h2.toString(36)+s.length.toString(36)};
+function avatar(m){const a=el("div","av");if(imgOf(m)){const i=el("img");i.src=imgOf(m);i.alt="";a.append(i)}else a.textContent=(m.name||"?").trim().slice(0,1).toUpperCase();return a}
+function photo(m){const p=el("div","ph");if(imgOf(m)){const i=el("img");i.src=imgOf(m);i.alt="";i.loading="lazy";p.append(i)}else p.append(el("span","ini",(m.name||"?").trim().slice(0,1).toUpperCase()));return p}
 const xHref=h=>"https://x.com/"+encodeURIComponent(h);
 const placeText=e=>e.res||(e.place&&e.place!=="other"?PLACE[e.place]:"")||e.note||"";
 // dot colour: tournament placings get medal colours, anything else (rate rank, best 8 …) is neutral
@@ -373,7 +377,7 @@ function more(label,on){const w=el("div","center");const b=el("button","btn-more
 function render(site){
   SITE=site;
   $("tagline").textContent=site.tagline||"";$("intro").textContent=site.intro||"";$("intro").hidden=!site.intro;
-  const mv=$("mvImg");if(site.mv){mv.style.backgroundImage=`url("${site.mv}")`;mv.hidden=false}else{mv.hidden=true;mv.style.backgroundImage=""}
+  const mv=$("mvImg");const mvSrc=site.mv||(site.mvk&&PH[site.mvk])||"";if(mvSrc){mv.style.backgroundImage=`url("${mvSrc}")`;mv.hidden=false}else{mv.hidden=true;mv.style.backgroundImage=""}
   const x=site.xurl&&/^https:\/\//.test(site.xurl)?site.xurl:null;
   $("navX").hidden=!x;$("follow").hidden=!x;if(x){$("navX").href=x;$("followX").href=x;const h=x.match(/x\.com\/([A-Za-z0-9_]+)/);$("followXt").textContent=h?`@${h[1]} をフォロー`:"公式Xをフォロー"}
   const ms=site.members||[];const all=ms.flatMap(m=>(m.ev||[]).map(e=>Object.assign({who:m},e)));
@@ -448,9 +452,14 @@ $("pagetop").onclick=()=>scrollTo({top:0,behavior:matchMedia("(prefers-reduced-m
 let F=null,db=null;
 async function fb(){if(db)return true;try{const [{initializeApp},fs]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-firestore.js")]);F=fs;db=fs.getFirestore(initializeApp(FIREBASE_CONFIG));return true}catch(e){console.warn(e);return false}}
 function notice(t){const n=$("noticeHost");n.replaceChildren();if(!t)return;const d=el("div","notice");d.append(el("div","wrap",t));n.append(d)}
+async function loadPhotos(site){
+  const keys=[...new Set([...(site.members||[]).map(m=>m.ph),site.mvk].filter(k=>k&&!PH[k]))];if(!keys.length)return;
+  await Promise.all(keys.map(k=>F.getDoc(F.doc(db,"site",SITE_ID,"ph",k)).then(d=>{if(d.exists()&&d.data().d)PH[k]=d.data().d}).catch(e=>console.warn(e))));
+  render(site);
+}
 async function loadPublic(){
   if(!(await fb())){render(SAMPLE);notice("プレビュー用のサンプル表示です（実際のデータはチームのサイトで表示されます）");return}
-  try{const s=await F.getDoc(F.doc(db,"site",SITE_ID));if(s.exists())render(s.data());else{render({members:[],rules:[],news:[]});notice("ホームページはまだ公開されていません")}}
+  try{const s=await F.getDoc(F.doc(db,"site",SITE_ID));if(s.exists()){const site=s.data();render(site);loadPhotos(site)}else{render({members:[],rules:[],news:[]});notice("ホームページはまだ公開されていません")}}
   catch(e){console.warn(e);render(SAMPLE);notice("データを読み込めなかったため、サンプルを表示しています")}
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("dlg").open)$("dlg").close();setMenu(false)}});
@@ -473,17 +482,24 @@ function moveMember(i,d){const j=i+d;if(j<0||j>=cfg.list.length)return;const L=c
 // manual results are free text (e.g. 優勝 / ベスト8 / ウィッチ 最終12位); older entries had a place + memo
 const extraRes=x=>(x.res!=null?x.res:[x.place&&x.place!=="other"?PLACE[x.place]:"",x.note||""].filter(Boolean).join(" ")).trim();
 function buildSite(){
-  const out={tagline:cfg.tagline||"",intro:cfg.intro||"",xurl:cfg.xurl||"",mv:cfg.mv||"",news:(cfg.news||[]).filter(n=>(n.t||"").trim()).map(n=>({date:n.date||"",cat:n.cat||"info",t:n.t.trim(),body:(n.body||"").trim()})),rules:(cfg.rules||[]).filter(r=>(r.title||"").trim()||(r.body||"").trim()).map(r=>({title:(r.title||"").trim(),body:(r.body||"").trim()})),members:[]};
+  const out={tagline:cfg.tagline||"",intro:cfg.intro||"",xurl:cfg.xurl||"",mvk:cfg.mv?hkey(cfg.mv):"",news:(cfg.news||[]).filter(n=>(n.t||"").trim()).map(n=>({date:n.date||"",cat:n.cat||"info",t:n.t.trim(),body:(n.body||"").trim()})),rules:(cfg.rules||[]).filter(r=>(r.title||"").trim()||(r.body||"").trim()).map(r=>({title:(r.title||"").trim(),body:(r.body||"").trim()})),members:[]};
   for(const c of cfg.list||[]){if(c.show===false||!(c.name||"").trim())continue;
     const ev=[];for(const x of c.extra||[])if((x.t||"").trim()){const r=extraRes(x);ev.push(Object.assign({t:x.t.trim(),at:x.date?Date.parse(x.date):0},r?{res:r}:{}))}
     ev.sort((a,b)=>(b.at||0)-(a.at||0));
-    const o={name:c.name.trim(),handle:(c.handle||"").trim().replace(/^@+/,""),ev};if((c.role||"").trim())o.role=c.role.trim();if((c.comment||"").trim())o.comment=c.comment.trim();if(c.icon)o.icon=c.icon;
+    const o={name:c.name.trim(),handle:(c.handle||"").trim().replace(/^@+/,""),ev};if((c.role||"").trim())o.role=c.role.trim();if((c.comment||"").trim())o.comment=c.comment.trim();if(c.icon)o.ph=hkey(c.icon);
     const cr=parseInt(c.cr,10);if(cr>0){o.cr=cr;if(c.crc)o.crc=c.crc}
     out.members.push(o)}
   return out;
 }
 const sig=s=>stable(Object.assign({},s,{at:0,n:0}));
-function queueSave(){clearTimeout(saveTimer);setStatus("保存中…");saveTimer=setTimeout(async()=>{try{await F.setDoc(F.doc(db,`${ROOT}/site/config`),JSON.parse(JSON.stringify(cfg)));setStatus()}catch(e){console.warn(e);setStatus("保存できませんでした。通信を確認してください","warn")}},700);refresh()}
+const savedImg={};// id -> key already stored under ROOT/site/ph_<id>
+function cfgForSave(){const out=JSON.parse(JSON.stringify(cfg));const imgs=[];
+  for(const c of out.list||[]){if(c.icon){const k=hkey(c.icon);if(savedImg[c.id]!==k)imgs.push([c.id,k,c.icon]);c.ik=k}else delete c.ik;delete c.icon}
+  if(out.mv){const k=hkey(out.mv);if(savedImg.mv!==k)imgs.push(["mv",k,out.mv]);out.mvk=k}else delete out.mvk;delete out.mv;
+  return{out,imgs}}
+function queueSave(){clearTimeout(saveTimer);setStatus("保存中…");saveTimer=setTimeout(async()=>{try{const {out,imgs}=cfgForSave();
+    for(const [id,k,d] of imgs){await F.setDoc(F.doc(db,`${ROOT}/site/ph_${id}`),{d,k});savedImg[id]=k}
+    await F.setDoc(F.doc(db,`${ROOT}/site/config`),out);setStatus()}catch(e){console.warn(e);setStatus("保存できませんでした。通信を確認してください","warn")}},700);refresh()}
 let statusMsg=null;
 function setStatus(t,c){statusMsg=t?{t,c}:null;paintStatus()}
 function paintStatus(){const s=$("edStatus");if(!s)return;const dirty=!published||sig(buildSite())!==sig(published);
@@ -491,13 +507,21 @@ function paintStatus(){const s=$("edStatus");if(!s)return;const dirty=!published
   else if(dirty){s.textContent=published?"公開中の内容と違いがあります。「ホームページに公開」で反映されます":"まだ公開されていません";s.className="status warn"}
   else{s.textContent=`公開中の内容と同じです（${new Date(published.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})} 公開）`;s.className="status ok"}
   const b=$("pubBtn");if(b)b.disabled=!dirty}
-function refresh(){render(Object.assign(buildSite(),{at:Date.now()}));paintStatus()}
+function refresh(){for(const c of cfg.list||[])if(c.icon)PH[hkey(c.icon)]=c.icon;if(cfg.mv)PH[hkey(cfg.mv)]=cfg.mv;render(Object.assign(buildSite(),{at:Date.now()}));paintStatus()}
 
 async function publish(){
   const b=$("pubBtn");b.disabled=true;setStatus("公開しています…");
   const site=Object.assign(buildSite(),{at:Date.now(),n:rnd(24)});
-  if(new Blob([JSON.stringify(site)]).size>900000){setStatus("データが大きすぎます。メンバーのアイコンを減らしてください","warn");b.disabled=false;return}
-  try{const w=F.writeBatch(db);w.set(F.doc(db,"sitegate",site.n),{k:BOARD,at:site.at});w.set(F.doc(db,"site",SITE_ID),site);await w.commit();published=site;setStatus("公開しました","ok");setTimeout(()=>{if(statusMsg&&statusMsg.t==="公開しました")setStatus()},4000)}
+  if(new Blob([JSON.stringify(site)]).size>900000){setStatus("文章が多すぎて公開できません。お知らせや実績を少し減らしてください","warn");b.disabled=false;return}
+  // photos go in their own documents; only ones not already published are sent
+  const had=new Set([...((published&&published.members)||[]).map(m=>m.ph),published&&published.mvk].filter(Boolean));
+  const imgs=new Map();for(const c of cfg.list||[])if(c.icon&&c.show!==false)imgs.set(hkey(c.icon),c.icon);if(cfg.mv)imgs.set(hkey(cfg.mv),cfg.mv);
+  const send=[...imgs].filter(([k])=>!had.has(k));
+  try{
+    // a batch request is capped at about 10MB, so photos are sent in groups (each group has its own gate)
+    const groups=[];let cur=[],size=0;for(const x of send){if(cur.length&&(size+x[1].length>6e6||cur.length>=200)){groups.push(cur);cur=[];size=0}cur.push(x);size+=x[1].length}if(cur.length)groups.push(cur);
+    for(const g of groups){const n=rnd(24);const w=F.writeBatch(db);w.set(F.doc(db,"sitegate",n),{k:BOARD,at:Date.now()});for(const [k,d] of g)w.set(F.doc(db,"site",SITE_ID,"ph",k),{d,n});await w.commit()}
+    const w=F.writeBatch(db);w.set(F.doc(db,"sitegate",site.n),{k:BOARD,at:site.at});w.set(F.doc(db,"site",SITE_ID),site);await w.commit();published=site;setStatus("公開しました","ok");setTimeout(()=>{if(statusMsg&&statusMsg.t==="公開しました")setStatus()},4000)}
   catch(e){console.warn(e);setStatus("公開できませんでした。Firestore のルールが最新か確認してください","warn");b.disabled=false}
 }
 
@@ -640,7 +664,11 @@ async function loadEditor(){
     const [mS,cS,pS]=await Promise.all([F.getDocs(F.collection(db,`${ROOT}/members`)),F.getDoc(F.doc(db,`${ROOT}/site/config`)),F.getDoc(F.doc(db,"site",SITE_ID))]);
     members={};mS.forEach(d=>members[d.id]=d.data());
     const raw=cS.exists()?cS.data():null;cfg=Object.assign(blankCfg(),raw||{});if(!raw||!Array.isArray(raw.list))delete cfg.list;migrate();published=pS.exists()?pS.data():null;
-    buildEditor();refresh();
+    // images live in their own docs (older configs kept them inline: those are moved out on the next save)
+    let legacy=false;await Promise.all([...(cfg.list||[]).map(async c=>{if(c.icon){legacy=true;return}if(!c.ik)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_${c.id}`));if(d.exists()&&d.data().d){c.icon=d.data().d;savedImg[c.id]=d.data().k||hkey(c.icon)}}catch(e){console.warn(e)}}),
+      (async()=>{if(cfg.mv){legacy=true;return}if(!cfg.mvk)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_mv`));if(d.exists()&&d.data().d){cfg.mv=d.data().d;savedImg.mv=d.data().k||hkey(cfg.mv)}}catch(e){console.warn(e)}})()]);
+    delete cfg.mvk;for(const c of cfg.list||[])delete c.ik;
+    buildEditor();refresh();if(legacy)queueSave();
   }catch(e){console.warn(e);notice("編集データを読み込めませんでした。URLが正しいか、Firestore のルールが最新か確認してください");render(SAMPLE)}
 }
 
