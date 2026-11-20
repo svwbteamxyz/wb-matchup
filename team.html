@@ -465,8 +465,8 @@ async function loadPublic(){
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("dlg").open)$("dlg").close();setMenu(false)}});
 
 /* ============ editor (?b=<board id>) ============ */
-let members={},cfg=null,published=null,saveTimer=null;
-const blankCfg=()=>({tagline:"",intro:"",xurl:"",mv:"",news:[],rules:[],list:[]});
+let members={},cfg=null,published=null,saveTimer=null,crSeasons=[];// crSeasons: [{id,name,created,current,players:[...]}] from the CR score sheet
+const blankCfg=()=>({tagline:"",intro:"",xurl:"",mv:"",news:[],rules:[],list:[],crAuto:{rank:100,rate:2200,cur:false}});
 const CLS=[["elf","エルフ"],["royal","ロイヤル"],["witch","ウィッチ"],["dragon","ドラゴン"],["nightmare","ナイトメア"],["bishop","ビショップ"],["nemesis","ネメシス"]];
 const newId=()=>"p"+Date.now().toString(36)+rnd(4);
 // HP members are their own list (adding/removing here does not touch the CR score roster).
@@ -475,8 +475,31 @@ function migrate(){
   if(Array.isArray(cfg.list))return;
   const roster=Object.entries(members).sort((a,b)=>(a[1].order||0)-(b[1].order||0));const pos=new Map((cfg.order||[]).map((id,i)=>[id,i]));
   const ordered=roster.map((x,i)=>[x,pos.has(x[0])?pos.get(x[0]):1e6+i]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
-  cfg.list=ordered.map(([mid,m])=>{const c=(cfg.members||{})[mid]||{};const o={id:mid,name:m.name||"",handle:m.handle||"",show:c.show!==false,role:c.role||"",comment:c.comment||"",extra:c.extra||[]};if(c.icon)o.icon=c.icon;return o});
+  cfg.list=ordered.map(([mid,m])=>{const c=(cfg.members||{})[mid]||{};const o={id:mid,mid,name:m.name||"",handle:m.handle||"",show:c.show!==false,role:c.role||"",comment:c.comment||"",extra:c.extra||[]};if(c.icon)o.icon=c.icon;return o});
   delete cfg.members;delete cfg.order;
+}
+/* ---------- CR score sheet → achievements ---------- */
+const CLSN=Object.fromEntries(CLS);
+const crOpt=()=>Object.assign({rank:100,rate:2200,cur:false},cfg.crAuto||{});
+const numv=v=>{const n=parseFloat(String(v??"").replace(/[^0-9.]/g,""));return isFinite(n)&&n>0?n:null};
+function crRows(c){// this member's rows in every season of the CR sheet: by roster link when both have one, otherwise by name
+  const link=c.mid||(members[c.id]?c.id:null);const out=[];
+  for(const s of crSeasons)for(const p of s.players){const nm=p.member&&members[p.member]?members[p.member].name:p.name;
+    const ok=link&&p.member?p.member===link:!!norm(nm)&&norm(nm)===norm(c.name);if(ok)out.push({s,p})}
+  return out}
+function crAutoEntries(c){
+  const o=crOpt();const ev=[];
+  for(const {s,p} of crRows(c)){if(s.current&&!o.cur)continue;
+    for(const [k,n] of CLS){const e=(p.e||{})[k];if(!e)continue;const rk=numv(e.rank),rt=numv(e.rate);
+      if(!((rk&&o.rank&&rk<=o.rank)||(rt&&o.rate&&rt>=o.rate)))continue;
+      const word=s.current?"":"最終";const res=rk?`${n} ${word}${rk}位`:`${n} ${word}CR${Math.round(rt)}`;
+      ev.push({t:`${s.name} ランクマッチ`,at:s.created||0,res:s.current?res+"（暫定）":res,auto:1})}}
+  return ev}
+function crBest(c){let best=null;for(const {p} of crRows(c))for(const [k] of CLS){const rt=numv(((p.e||{})[k]||{}).rate);if(rt&&(!best||rt>best.cr))best={cr:Math.round(rt),crc:k}}return best}
+async function loadCrSheet(){
+  try{const meta=await F.getDoc(F.doc(db,ROOT));const d=meta.exists()?meta.data():{};const ss=Array.isArray(d.seasons)?d.seasons:[];
+    crSeasons=await Promise.all(ss.map(async x=>{const ps=[];try{const q=await F.getDocs(F.collection(db,`${ROOT}/seasons/${x.id}/players`));q.forEach(y=>ps.push(y.data()))}catch(e){console.warn(e)}return{id:x.id,name:x.name||"",created:x.created||0,current:x.id===d.current,players:ps}}))}
+  catch(e){console.warn(e);crSeasons=[]}
 }
 function moveMember(i,d){const j=i+d;if(j<0||j>=cfg.list.length)return;const L=cfg.list;[L[i],L[j]]=[L[j],L[i]];queueSave();renderMemberEd();const b=$(`mv${d<0?"u":"d"}_${L[j].id}`);if(b&&!b.disabled)b.focus()}
 // manual results are free text (e.g. 優勝 / ベスト8 / ウィッチ 最終12位); older entries had a place + memo
@@ -485,9 +508,10 @@ function buildSite(){
   const out={tagline:cfg.tagline||"",intro:cfg.intro||"",xurl:cfg.xurl||"",mvk:cfg.mv?hkey(cfg.mv):"",news:(cfg.news||[]).filter(n=>(n.t||"").trim()).map(n=>({date:n.date||"",cat:n.cat||"info",t:n.t.trim(),body:(n.body||"").trim()})),rules:(cfg.rules||[]).filter(r=>(r.title||"").trim()||(r.body||"").trim()).map(r=>({title:(r.title||"").trim(),body:(r.body||"").trim()})),members:[]};
   for(const c of cfg.list||[]){if(c.show===false||!(c.name||"").trim())continue;
     const ev=[];for(const x of c.extra||[])if((x.t||"").trim()){const r=extraRes(x);ev.push(Object.assign({t:x.t.trim(),at:x.date?Date.parse(x.date):0},r?{res:r}:{}))}
+    if(!c.crOff)for(const a of crAutoEntries(c))if(!ev.some(e=>e.t===a.t&&e.res===a.res))ev.push({t:a.t,at:a.at,res:a.res});
     ev.sort((a,b)=>(b.at||0)-(a.at||0));
     const o={name:c.name.trim(),handle:(c.handle||"").trim().replace(/^@+/,""),ev};if((c.role||"").trim())o.role=c.role.trim();if((c.comment||"").trim())o.comment=c.comment.trim();if(c.icon)o.ph=hkey(c.icon);
-    const cr=parseInt(c.cr,10);if(cr>0){o.cr=cr;if(c.crc)o.crc=c.crc}
+    const cr=parseInt(c.cr,10);if(cr>0){o.cr=cr;if(c.crc)o.crc=c.crc}else if(!c.crOff){const b=crBest(c);if(b){o.cr=b.cr;o.crc=b.crc}}
     out.members.push(o)}
   return out;
 }
@@ -574,6 +598,13 @@ function renderMemberEd(){
   const P=$("memEd");P.replaceChildren();const L=cfg.list;
   const dlT=el("datalist");dlT.id="dlTitles";const dlR=el("datalist");dlR.id="dlRes";P.append(dlT,dlR);refreshLists();
   P.append(el("p","hint","↑↓ で並び順を変えられます。ここでの追加・削除はホームページだけに反映され、CRスコア表の名簿は変わりません。"));
+  {const o=crOpt();const g=el("div","mrow");g.append(el("div","sub","CR管理表からの自動記録の条件（全員共通）"));
+    const r=el("div");r.style.cssText="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:13px";
+    const nIn=(id,v,on)=>{const i=el("input");i.id=id;i.type="number";i.inputMode="numeric";i.min="0";i.value=v||"";i.style.cssText="width:90px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface)";i.oninput=()=>{on(parseInt(i.value,10)||0);queueSave()};i.onchange=()=>renderMemberEd();return i};
+    const a=el("label");a.append(document.createTextNode("順位が "),nIn("crRank",o.rank,v=>{cfg.crAuto=Object.assign(crOpt(),{rank:v})}),document.createTextNode(" 位以内"));
+    const b=el("label");b.append(document.createTextNode("または CRが "),nIn("crRate",o.rate,v=>{cfg.crAuto=Object.assign(crOpt(),{rate:v})}),document.createTextNode(" 以上"));
+    const cu=el("label","tog");const cc=el("input");cc.type="checkbox";cc.id="crCur";cc.checked=!!o.cur;cc.onchange=()=>{cfg.crAuto=Object.assign(crOpt(),{cur:cc.checked});queueSave();renderMemberEd()};cu.append(cc,document.createTextNode("今の環境も載せる（暫定として表示）"));
+    r.append(a,b,cu);g.append(r,el("p","hint",`クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます。CR管理表の環境：${crSeasons.length}件`));P.append(g)}
   L.forEach((c,i)=>{const row=el("div","mrow"+(c.show===false?" hide":""));row.id=`mrow_${c.id}`;
     const hd=el("div","mrow-h");
     const ord=el("div");ord.style.cssText="display:flex;gap:4px";
@@ -598,7 +629,16 @@ function renderMemberEd(){
       cs.onchange=()=>{c.crc=cs.value;queueSave()};
       const ci=el("input");ci.id=`cr_${c.id}`;ci.type="number";ci.inputMode="numeric";ci.min="0";ci.max="9999";ci.placeholder="例：2250";ci.setAttribute("aria-label","最高CR");ci.value=c.cr||"";ci.style.cssText="width:120px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--surface)";
       ci.oninput=()=>{const v=parseInt(ci.value,10);c.cr=v>0?Math.min(v,9999):"";queueSave()};
-      crr.append(cs,ci);crf.append(crr);row.append(crf);
+      {const b=crBest(c);if(b&&!c.crOff)ci.placeholder=`自動：${b.cr}`;}
+      crr.append(cs,ci,el("span","hint","空欄ならCR管理表の最高値を自動で表示します"));crr.style.alignItems="center";crf.append(crr);row.append(crf);
+      // automatic entries from the CR sheet
+      {const auto=crAutoEntries(c);const box=el("div");box.style.cssText="display:flex;flex-direction:column;gap:4px";
+        const h=el("div");h.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap";h.append(el("span","sub",`CR管理表からの自動記録（${c.crOff?"オフ":auto.length+"件"}）`));
+        const tg2=el("label","tog");const cb2=el("input");cb2.type="checkbox";cb2.id=`crOn_${c.id}`;cb2.checked=!c.crOff;cb2.onchange=()=>{c.crOff=!cb2.checked;queueSave();renderMemberEd()};tg2.append(cb2,document.createTextNode("載せる"));h.append(tg2);box.append(h);
+        if(!c.crOff){if(!crRows(c).length)box.append(el("p","hint","CR管理表にこの人の行が見つかりません（名簿から追加した人か、名前が同じ人と結び付けます）"));
+          else if(!auto.length)box.append(el("p","hint","条件に合う記録はまだありません"));
+          else{const ul=el("div");ul.style.cssText="display:flex;flex-direction:column;font-size:13px;border-left:3px solid var(--line);padding-left:10px";for(const a of auto)ul.append(el("span",null,`${fmtD(a.at)}　${a.t}　${a.res}`));box.append(ul)}}
+        row.append(box)}
       // results
       row.append(el("div","sub","実績（大会・リーグ・ランクマッチなど）"));row.append(el("p","hint","結果をクラス名から書くと（例：ウィッチ 最終12位）、公開ページでクラスの色のラベルが付きます。"));
       c.extra=c.extra||[];
@@ -626,7 +666,7 @@ function renderMemberEd(){
   const have=new Set(L.map(c=>norm(c.name)));const pool=Object.values(members).filter(m=>m.name&&!have.has(norm(m.name))).sort((a,b)=>(a.order||0)-(b.order||0));
   if(pool.length){const sel=el("select");sel.id="fromRoster";sel.setAttribute("aria-label","CRスコア表の名簿から追加");sel.style.cssText="border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 8px;width:auto;max-width:100%";
     const z=el("option",null,"＋ CRスコア表の名簿から追加");z.value="";sel.append(z);pool.forEach((m,k)=>{const o=el("option",null,m.name+(m.handle?`（@${m.handle}）`:""));o.value=String(k);sel.append(o)});
-    sel.onchange=()=>{if(sel.value==="")return;const m=pool[+sel.value];L.push({id:newId(),name:m.name,handle:m.handle||"",show:true,role:"",comment:"",extra:[]});queueSave();renderMemberEd()};ar.append(sel)}
+    sel.onchange=()=>{if(sel.value==="")return;const m=pool[+sel.value];L.push({id:newId(),mid:Object.keys(members).find(k=>members[k]===m),name:m.name,handle:m.handle||"",show:true,role:"",comment:"",extra:[]});queueSave();renderMemberEd()};ar.append(sel)}
   P.append(ar);
 }
 function renderNewsEd(){
@@ -663,7 +703,7 @@ async function loadEditor(){
   try{
     const [mS,cS,pS]=await Promise.all([F.getDocs(F.collection(db,`${ROOT}/members`)),F.getDoc(F.doc(db,`${ROOT}/site/config`)),F.getDoc(F.doc(db,"site",SITE_ID))]);
     members={};mS.forEach(d=>members[d.id]=d.data());
-    const raw=cS.exists()?cS.data():null;cfg=Object.assign(blankCfg(),raw||{});if(!raw||!Array.isArray(raw.list))delete cfg.list;migrate();published=pS.exists()?pS.data():null;
+    const raw=cS.exists()?cS.data():null;cfg=Object.assign(blankCfg(),raw||{});if(!raw||!Array.isArray(raw.list))delete cfg.list;migrate();published=pS.exists()?pS.data():null;await loadCrSheet();
     // images live in their own docs (older configs kept them inline: those are moved out on the next save)
     let legacy=false;await Promise.all([...(cfg.list||[]).map(async c=>{if(c.icon){legacy=true;return}if(!c.ik)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_${c.id}`));if(d.exists()&&d.data().d){c.icon=d.data().d;savedImg[c.id]=d.data().k||hkey(c.icon)}}catch(e){console.warn(e)}}),
       (async()=>{if(cfg.mv){legacy=true;return}if(!cfg.mvk)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_mv`));if(d.exists()&&d.data().d){cfg.mv=d.data().d;savedImg.mv=d.data().k||hkey(cfg.mv)}}catch(e){console.warn(e)}})()]);
