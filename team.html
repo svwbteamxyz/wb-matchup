@@ -528,8 +528,9 @@ function crBest(c){let best=null;for(const {p} of crRows(c))for(const [k] of CLS
 async function loadCrSheet(){
   try{const meta=await F.getDoc(F.doc(db,ROOT));const d=meta.exists()?meta.data():{};const ss=Array.isArray(d.seasons)?d.seasons:[];
     // an environment ends when the next one is created
-    const byDate=ss.slice().sort((a,b)=>(a.created||0)-(b.created||0));const endOf=Object.fromEntries(byDate.map((x,i)=>[x.id,byDate[i+1]?byDate[i+1].created||0:0]));
-    crSeasons=await Promise.all(ss.map(async x=>{const ps=[];try{const q=await F.getDocs(F.collection(db,`${ROOT}/seasons/${x.id}/players`));q.forEach(y=>ps.push(y.data()))}catch(e){console.warn(e)}return{id:x.id,name:x.name||"",created:x.created||0,ended:endOf[x.id]||0,current:x.id===d.current,players:ps}}))}
+    // oldest → newest: the hand-set order of the CR sheet when there is one (o: 0 = newest), otherwise creation date
+    const hand=ss.length&&ss.every(x=>typeof x.o==="number");const byDate=ss.slice().sort((a,b)=>hand?b.o-a.o:(a.created||0)-(b.created||0));const endOf=Object.fromEntries(byDate.map((x,i)=>[x.id,byDate[i+1]?byDate[i+1].created||0:0]));
+    crSeasons=await Promise.all(ss.map(async x=>{const ps=[];try{const q=await F.getDocs(F.collection(db,`${ROOT}/seasons/${x.id}/players`));q.forEach(y=>ps.push(y.data()))}catch(e){console.warn(e)}return{id:x.id,name:x.name||"",created:x.created||0,ended:endOf[x.id]||0,rank:byDate.indexOf(x),current:x.id===d.current,players:ps}}))}
   catch(e){console.warn(e);crSeasons=[]}
 }
 function moveMember(i,d){const j=i+d;if(j<0||j>=cfg.list.length)return;const L=cfg.list;[L[i],L[j]]=[L[j],L[i]];queueSave();renderMemberEd();const b=$(`mv${d<0?"u":"d"}_${L[j].id}`);if(b&&!b.disabled)b.focus()}
@@ -636,7 +637,7 @@ function renderMemberEd(){
     const b=el("label");b.append(document.createTextNode("または CRが "),nIn("crRate",o.rate,v=>{cfg.crAuto=Object.assign(crOpt(),{rate:v})}),document.createTextNode(" 以上"));
     r.append(a,b);g.append(r,el("p","hint","終わった環境のうち、クラスごとに条件を満たした記録を「環境名 ランクマッチ／ウィッチ 最終12位」の形で自動で載せます。日付は下の「環境の終了日」です。"));
     // per-environment end dates (official schedule); until entered, the day the next environment was created is used
-    const envs=crSeasons.filter(x=>!x.current).sort((x,y)=>(y.created||0)-(x.created||0));
+    const envs=crSeasons.filter(x=>!x.current).sort((x,y)=>y.rank-x.rank);
     const ends=el("details");ends.open=envs.some(x=>!(cfg.crEnd||{})[x.id]);const es=el("summary",null,`環境の終了日（${envs.length}件）`);es.style.cssText="padding:4px 0;font-size:13px;font-weight:700;cursor:pointer";ends.append(es);
     const tbl=el("div");tbl.style.cssText="display:flex;flex-direction:column;gap:6px;padding:4px 0 2px";
     for(const x of envs){const rr=el("div");rr.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px";
