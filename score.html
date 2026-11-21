@@ -102,6 +102,11 @@ textarea.post{width:100%;font:inherit;font-size:.95rem;line-height:1.6;color:var
 .tag.past{background:var(--soft);color:var(--muted)}
 .inline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:8px}
 .inline input[type=text]{flex:1 1 220px}
+.ordlist{display:flex;flex-direction:column;gap:6px;width:100%}
+.ordrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.ordrow .n{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}
+.ordrow .no{font-family:"JetBrains Mono",monospace;color:var(--muted,#888);font-size:.8rem;width:2em;text-align:right}
+.ordrow button{padding:4px 10px}
 .check{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);font-weight:700}
 details.members>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
 details.members>summary::-webkit-details-marker{display:none}
@@ -141,6 +146,7 @@ details.members[open]>summary::before{transform:rotate(90deg)}
       <select id="seasonSel" aria-label="表示する環境"></select>
       <span class="tag" id="seasonTag"></span>
       <span class="spacer"></span>
+      <button type="button" id="orderBtn">並び替え</button>
       <button type="button" id="renameBtn">名前を変更</button>
       <button type="button" class="primary" id="newSeasonBtn">新しい環境を始める</button>
     </div>
@@ -149,6 +155,12 @@ details.members[open]>summary::before{transform:rotate(90deg)}
       <label class="check"><input type="checkbox" id="newSeasonMembers" checked> 名簿のメンバーを全員入れておく</label>
       <button type="button" class="primary" id="createSeason">作成</button>
       <button type="button" id="cancelSeason">やめる</button>
+    </div>
+    <div class="inline" id="orderForm" hidden>
+      <div class="ordlist" id="orderList"></div>
+      <span class="spacer"></span>
+      <button type="button" id="orderReset">作った順に戻す</button>
+      <button type="button" class="primary" id="orderDone">閉じる</button>
     </div>
     <div class="inline" id="renameForm" hidden>
       <input type="text" id="renameInput" maxlength="40" aria-label="環境の名前">
@@ -293,14 +305,24 @@ function computed(){
 }
 
 /* ---------- seasons ---------- */
-function sortedSeasons(){return meta.seasons.slice().sort((a,b)=>(b.created||0)-(a.created||0))}
+// display order: set by hand (o = 0 is the top of the list) once reordered, otherwise newest first
+function sortedSeasons(){const all=meta.seasons.slice();if(all.length&&all.every(s=>typeof s.o==="number"))return all.sort((a,b)=>a.o-b.o);return all.sort((a,b)=>(b.created||0)-(a.created||0))}
+function saveOrder(list){const pos=new Map(list.map((s,i)=>[s.id,i]));meta={seasons:meta.seasons.map(s=>Object.assign({},s,{o:pos.get(s.id)})),current:meta.current};write(ROOT,{seasons:meta.seasons,current:meta.current});renderSeasonBar();renderOrder()}
+function renderOrder(){const L=$("orderList");if(!L||$("orderForm").hidden)return;L.replaceChildren();const list=sortedSeasons();
+  list.forEach((s,i)=>{const r=el("div","ordrow");r.append(el("span","no",String(i+1)),el("span","n",s.name+(s.id===meta.current?"（入力中）":"")));
+    const up=el("button",null,"↑");up.type="button";up.disabled=i===0;up.setAttribute("aria-label",`${s.name}を上へ`);up.onclick=()=>{const l=list.slice();[l[i-1],l[i]]=[l[i],l[i-1]];saveOrder(l)};
+    const dn=el("button",null,"↓");dn.type="button";dn.disabled=i===list.length-1;dn.setAttribute("aria-label",`${s.name}を下へ`);dn.onclick=()=>{const l=list.slice();[l[i+1],l[i]]=[l[i],l[i+1]];saveOrder(l)};
+    r.append(up,dn);L.append(r)})}
+$("orderBtn").onclick=()=>{const f=$("orderForm");f.hidden=!f.hidden;$("newSeasonForm").hidden=true;$("renameForm").hidden=true;renderOrder()};
+$("orderDone").onclick=()=>{$("orderForm").hidden=true};
+$("orderReset").onclick=()=>{meta={seasons:meta.seasons.map(s=>{const c=Object.assign({},s);delete c.o;return c}),current:meta.current};write(ROOT,{seasons:meta.seasons,current:meta.current});renderSeasonBar();renderOrder()};
 function renderSeasonBar(){
   const sel=$("seasonSel");sel.replaceChildren();
   for(const s of sortedSeasons()){const o=el("option",null,s.name+(s.id===meta.current?"（最新）":""));o.value=s.id;if(s.id===viewSid)o.selected=true;sel.append(o)}
   const isCur=viewSid&&viewSid===meta.current;
   $("seasonTag").textContent=viewSid?(isCur?"入力中の環境":"過去の環境"):"";
   $("seasonTag").className="tag"+(isCur?"":" past");
-  $("seasonTag").hidden=!viewSid;$("renameBtn").disabled=!viewSid;
+  $("seasonTag").hidden=!viewSid;$("renameBtn").disabled=!viewSid;$("orderBtn").disabled=meta.seasons.length<2;renderOrder();
   if(viewSid&&!isCur)$("banner").textContent=`過去の環境「${seasonName()}」を表示しています。修正もできます。`;
   else if($("banner").dataset.base!=null)$("banner").textContent=$("banner").dataset.base;
 }
@@ -325,7 +347,8 @@ $("createSeason").onclick=()=>{
   if($("newSeasonMembers").checked){
     let order=0;for(const [mid,m] of sortedMembers())write(`${seasonPath(id)}/players/${uid("p")}`,{member:mid,name:m.name||"",handle:m.handle||"",order:++order,e:{}});
   }
-  meta={seasons:meta.seasons.concat([{id,name:name.slice(0,40),created:Date.now()}]),current:id};
+  const hand=meta.seasons.length&&meta.seasons.every(s=>typeof s.o==="number");
+  meta={seasons:(hand?meta.seasons.map(s=>Object.assign({},s,{o:s.o+1})):meta.seasons).concat([Object.assign({id,name:name.slice(0,40),created:Date.now()},hand?{o:0}:{})]),current:id};
   write(ROOT,{seasons:meta.seasons,current:id});
   $("newSeasonForm").hidden=true;$("newSeasonName").value="";
   renderSeasonBar();openSeason(id);
