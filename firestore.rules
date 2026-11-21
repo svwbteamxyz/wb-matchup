@@ -66,6 +66,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // 大会成績管理表（大会ごとに1件。出場メンバーの戦績は players に入る）
+      match /tourneys/{t} {
+        allow read, delete: if board.size() >= 16;
+        allow create, update: if board.size() >= 16
+          && request.resource.data.keys().hasOnly(['date', 'name', 'line', 'lineW', 'stages', 'hp', 'created', 'players', 'tags', 'imgTags'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 60;
+      }
+
       // チームメンバー名簿
       match /members/{member} {
         allow read, delete: if board.size() >= 16;
