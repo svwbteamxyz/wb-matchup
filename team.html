@@ -491,7 +491,7 @@ async function loadPublic(){
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("dlg").open)$("dlg").close();setMenu(false)}});
 
 /* ============ editor (?b=<board id>) ============ */
-let members={},cfg=null,published=null,saveTimer=null,crSeasons=[];// crSeasons: [{id,name,created,current,players:[...]}] from the CR score sheet
+let members={},cfg=null,published=null,saveTimer=null,crSeasons=[],tourneys=[];// tourneys: tournament results sheet// crSeasons: [{id,name,created,current,players:[...]}] from the CR score sheet
 const blankCfg=()=>({tagline:"",intro:"",xurl:"",mv:"",news:[],rules:[],list:[],crAuto:{rank:100,rate:2200,cur:false}});
 const CLS=[["elf","エルフ"],["royal","ロイヤル"],["witch","ウィッチ"],["dragon","ドラゴン"],["nightmare","ナイトメア"],["bishop","ビショップ"],["nemesis","ネメシス"]];
 const newId=()=>"p"+Date.now().toString(36)+rnd(4);
@@ -525,6 +525,23 @@ function crAutoEntries(c){
 const envEnd=s=>{const d=(cfg.crEnd||{})[s.id];return d?Date.parse(d):(s.ended||s.created||0)};
 const ymd=ms=>{if(!ms)return"";const d=new Date(ms);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 function crBest(c){let best=null;for(const {p} of crRows(c))for(const [k] of CLS){const rt=numv(((p.e||{})[k]||{}).rate);if(rt&&(!best||rt>best.cr))best={cr:Math.round(rt),crc:k}}return best}
+/* ---------- tournament results sheet → achievements ---------- */
+async function loadTourneys(){try{const q=await F.getDocs(F.collection(db,`${ROOT}/tourneys`));const L=[];q.forEach(d=>L.push(Object.assign({id:d.id},d.data())));tourneys=L}catch(e){console.warn(e);tourneys=[]}}
+// stages: Day1 → Day2 → …; stage 0 record is p.w/p.l/p.pass, later ones p.s[i]
+const tnStages=T=>Array.isArray(T.stages)&&T.stages.length?T.stages:[{label:"",line:T.line||"",lineW:T.lineW}];
+const tnRec=(p,i)=>i===0?{w:p.w,l:p.l,pass:p.pass}:(((p.s||{})[i])||{});
+function tnPassedAt(T,p,i){const r=tnRec(p,i);if(r.pass==="yes")return true;if(r.pass==="no")return false;const need=numv((tnStages(T)[i]||{}).lineW),w=parseFloat(r.w);return need&&isFinite(w)?w>=need:false}
+function tnBest(T,p){let b=-1;const S=tnStages(T);for(let i=0;i<S.length;i++){if(tnPassedAt(T,p,i))b=i;else break}return b}
+// entries for one HP member: tournaments marked for the HP where they passed a line or have a final result (the furthest stage is shown)
+function tnEntries(c){
+  const link=c.mid||(members[c.id]?c.id:null);const out=[];
+  for(const T of tourneys){if(T.hp===false||!T.name)continue;const S=tnStages(T);
+    for(const p of Object.values(T.players||{})){const nm=p.member&&members[p.member]?members[p.member].name:p.name;
+      const ok=link&&p.member?p.member===link:!!norm(nm)&&norm(nm)===norm(c.name);if(!ok)continue;
+      const b=tnBest(T,p);if(b<0&&!p.res)continue;
+      const r=tnRec(p,Math.max(0,b));const rec=r.w!=null&&r.l!=null?`（${r.w}-${r.l}）`:"";
+      out.push({t:T.name,at:T.date?Date.parse(T.date):0,res:(p.res||(S[Math.max(0,b)]||{}).line||"突破")+rec})}}
+  return out.sort((a,b)=>b.at-a.at)}
 async function loadCrSheet(){
   try{const meta=await F.getDoc(F.doc(db,ROOT));const d=meta.exists()?meta.data():{};const ss=Array.isArray(d.seasons)?d.seasons:[];
     // an environment ends when the next one is created
@@ -540,6 +557,7 @@ function buildSite(){
   const out={tagline:cfg.tagline||"",intro:cfg.intro||"",xurl:cfg.xurl||"",mvk:cfg.mv?hkey(cfg.mv):"",news:(cfg.news||[]).filter(n=>(n.t||"").trim()).map(n=>({date:n.date||"",cat:n.cat||"info",t:n.t.trim(),body:(n.body||"").trim()})),rules:(cfg.rules||[]).filter(r=>(r.title||"").trim()||(r.body||"").trim()).map(r=>({title:(r.title||"").trim(),body:(r.body||"").trim()})),members:[]};
   for(const c of cfg.list||[]){if(c.show===false||!(c.name||"").trim())continue;
     const ev=[];for(const x of c.extra||[])if((x.t||"").trim()){const r=extraRes(x);ev.push(Object.assign({t:x.t.trim(),at:x.date?Date.parse(x.date):0},r?{res:r}:{}))}
+    if(!c.tnOff)for(const a of tnEntries(c))if(!ev.some(e=>e.t===a.t&&e.res===a.res))ev.push(a);
     if(!c.crOff)for(const a of crAutoEntries(c))if(!ev.some(e=>e.t===a.t&&e.res===a.res))ev.push({t:a.t,at:a.at,res:a.res});
     ev.sort((a,b)=>(b.at||0)-(a.at||0));
     const o={name:c.name.trim(),handle:(c.handle||"").trim().replace(/^@+/,""),ev};if((c.role||"").trim())o.role=c.role.trim();if((c.comment||"").trim())o.comment=c.comment.trim();if(c.icon)o.ph=hkey(c.icon);
@@ -675,6 +693,13 @@ function renderMemberEd(){
       ci.oninput=()=>{const v=parseInt(ci.value,10);c.cr=v>0?Math.min(v,9999):"";queueSave()};
       {const b=crBest(c);if(b&&!c.crOff)ci.placeholder=`自動：${b.cr}`;}
       crr.append(cs,ci,el("span","hint","空欄ならCR管理表の最高値を自動で表示します"));crr.style.alignItems="center";crf.append(crr);row.append(crf);
+      // automatic entries from the tournament results sheet
+      {const auto=tnEntries(c);const box=el("div");box.style.cssText="display:flex;flex-direction:column;gap:4px";
+        const h=el("div");h.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap";h.append(el("span","sub",`大会成績管理表からの自動記録（${c.tnOff?"オフ":auto.length+"件"}）`));
+        const tg3=el("label","tog");const cb3=el("input");cb3.type="checkbox";cb3.id=`tnOn_${c.id}`;cb3.checked=!c.tnOff;cb3.onchange=()=>{c.tnOff=!cb3.checked;queueSave();renderMemberEd()};tg3.append(cb3,document.createTextNode("載せる"));h.append(tg3);box.append(h);
+        if(!c.tnOff){if(!auto.length)box.append(el("p","hint","突破した大会や最終成績を入れた大会はまだありません"));
+          else{const ul=el("div");ul.style.cssText="display:flex;flex-direction:column;font-size:13px;border-left:3px solid var(--line);padding-left:10px";for(const a of auto)ul.append(el("span",null,`${fmtD(a.at)}　${a.t}　${a.res}`));box.append(ul)}}
+        row.append(box)}
       // automatic entries from the CR sheet
       {const auto=crAutoEntries(c);const box=el("div");box.style.cssText="display:flex;flex-direction:column;gap:4px";
         const h=el("div");h.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap";h.append(el("span","sub",`CR管理表からの自動記録（${c.crOff?"オフ":auto.length+"件"}）`));
@@ -747,7 +772,7 @@ async function loadEditor(){
   try{
     const [mS,cS,pS]=await Promise.all([F.getDocs(F.collection(db,`${ROOT}/members`)),F.getDoc(F.doc(db,`${ROOT}/site/config`)),F.getDoc(F.doc(db,"site",SITE_ID))]);
     members={};mS.forEach(d=>members[d.id]=d.data());
-    const raw=cS.exists()?cS.data():null;cfg=Object.assign(blankCfg(),raw||{});if(!raw||!Array.isArray(raw.list))delete cfg.list;migrate();published=pS.exists()?pS.data():null;await loadCrSheet();
+    const raw=cS.exists()?cS.data():null;cfg=Object.assign(blankCfg(),raw||{});if(!raw||!Array.isArray(raw.list))delete cfg.list;migrate();published=pS.exists()?pS.data():null;await Promise.all([loadCrSheet(),loadTourneys()]);
     // images live in their own docs (older configs kept them inline: those are moved out on the next save)
     let legacy=false;await Promise.all([...(cfg.list||[]).map(async c=>{if(c.icon){legacy=true;return}if(!c.ik)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_${c.id}`));if(d.exists()&&d.data().d){c.icon=d.data().d;savedImg[c.id]=d.data().k||hkey(c.icon)}}catch(e){console.warn(e)}}),
       (async()=>{if(cfg.mv){legacy=true;return}if(!cfg.mvk)return;try{const d=await F.getDoc(F.doc(db,`${ROOT}/site/ph_mv`));if(d.exists()&&d.data().d){cfg.mv=d.data().d;savedImg.mv=d.data().k||hkey(cfg.mv)}}catch(e){console.warn(e)}})()]);
